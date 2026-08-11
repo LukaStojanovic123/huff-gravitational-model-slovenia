@@ -1,0 +1,13 @@
+geopandas==1.1.3
+momepy==0.11.0
+networkx==3.6.1
+scipy
+scikit-learn
+pandas
+numpy
+matplotlib
+jupyterlab
+openpyxl
+shap
+esda
+libpysal

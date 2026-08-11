@@ -1,0 +1,32 @@
+# Large spatial/data directories — not committed, keep folder via .gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Large GPKG outputs — not committed, keep folder via .gitkeep
+outputs/gpkg/*
+!outputs/gpkg/.gitkeep
+
+# Specific large intermediate files (in case they land elsewhere)
+huff_od_matrix.csv
+huff_NW_od_matrix.csv
+ml_input_table.csv
+accessibility_combined.csv
+
+# outputs/figures/ and outputs/tables/ ARE committed (small, paper-ready files)
+
+# Standard Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+.ipynb_checkpoints/
+*.egg-info/
+.pytest_cache/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
