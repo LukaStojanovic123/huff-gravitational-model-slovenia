@@ -19,7 +19,7 @@ validation against observed 2023 commuting flows.
   at 1.5–3.0), projected CRS EPSG:3794, network cutoff distance 300 km.
 - **Raw data** lives outside this repository at the path configured in
   `config.py` (`DATA_RAW`) and includes:
-  - `all_roads.gpkg` — OSM road network
+  - `Roads.shp` — OSM road network (motorway + primary only; see note in `02_road_network.py`)
   - `Municipalities_All_Groups_Weighted_AHP.gpkg` — AHP-weighted GI inputs
   - `Municipalities_All_Groups_NotWeighted_Normalized.gpkg` — non-weighted GI inputs
   - `Municipalities_Points_normalized.gpkg` — municipality centroids
@@ -98,6 +98,31 @@ huff-gravitational-model-slovenia/
    Each script depends on outputs from earlier scripts in the sequence
    (written to `data/processed/`), so they should be run in order on a
    first pass.
+
+## Cached intermediates
+
+`data/processed/distance_matrix.npy` is the key cached intermediate in the
+pipeline: the village-to-municipality road-network distance matrix produced
+by Dijkstra shortest paths over the noded road graph (`02_road_network.py`'s
+`data/processed/roads_noded.gpkg`). It is saved alongside two companion
+arrays, `distance_matrix_village_ids.npy` and `distance_matrix_muni_ids.npy`,
+which record the row/column order it was computed with — a script only
+reuses the cached matrix if both id arrays match its current village and
+municipality data, otherwise it recomputes.
+
+Building this matrix (212 municipalities × 6,036 villages via Dijkstra) is
+the most expensive step in the pipeline. `03_huff_ahp.py` computes and
+caches it if missing; `04_huff_nonweighted.py` reuses the same cached matrix
+(the network distances don't depend on which GI scenario is being scored).
+`07_beta_sensitivity.py` and `08_euclidean_comparison.py` also depend on
+having this distance matrix available rather than recomputing it.
+
+`03_huff_ahp.py` and `04_huff_nonweighted.py` additionally short-circuit at
+the output level: if `outputs/tables/huff_AHP_summary.csv` or
+`huff_NW_summary.csv` already exists, the script skips computation entirely
+and just reports the existing file. Delete the relevant summary CSV (and,
+if you want the distances themselves recomputed, `data/processed/distance_matrix*.npy`)
+to force a fresh run.
 
 ## Outputs
 
