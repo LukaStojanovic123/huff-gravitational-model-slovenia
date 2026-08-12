@@ -141,6 +141,23 @@ to force a fresh run.
 | 11 | Commuting-vs-Huff comparison and disagreement classification |
 | 12 | 6 tables, 3 supplementary tables, 9 figures (PNG/PDF), all GPKG layers |
 
+## Results summary
+
+| Analysis | Key result |
+|---|---|
+| GI_AHP top municipality | Ljubljana (1.000) |
+| GI_AHP mean across 212 municipalities | 0.039 |
+| AHP Huff — Ljubljana catchment | 1,222 settlements |
+| AHP vs NW agreement | 88.6% (5,349/6,036 settlements) |
+| Beta sensitivity range (κ) | 0.732 to 0.826 across β=1.5–3.0 |
+| Random Forest R² (AHP target) | 0.845 ± 0.088 (spatial 5-fold CV) |
+| Random Forest R² (NW target) | 0.844 ± 0.066 (spatial 5-fold CV) |
+| AHP Huff vs ML agreement | 75.5% (4,557/6,036 settlements) |
+| NW Huff vs ML agreement | 77.4% (4,672/6,036 settlements) |
+| Huff vs commuting agreement | 68.9% (146/212 municipalities) |
+| Distance feature importance | 62.5% |
+| GI_AHP composite importance | 22.8% |
+
 ## Citation
 
 > Placeholder — citation to be added upon publication.
