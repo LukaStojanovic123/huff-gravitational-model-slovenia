@@ -3,8 +3,13 @@ Build 1.28M row ML input table, spatial 5-fold CV, Random Forest
 189 features, SHAP values, save feature importance and predictions.
 """
 
+import argparse
 import sys
 from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -16,7 +21,7 @@ import pandas as pd
 import geopandas as gpd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
-from sklearn.cluster import KMeans
+from scipy.cluster.vq import kmeans2
 import matplotlib.pyplot as plt
 import gc
 
@@ -48,16 +53,29 @@ def build_municipality_features(munis_pts_path, acc_path, munis_ahp_path):
     return munis_features
 
 
-def build_spatial_blocks(munis_pts_path, n_blocks=5, random_state=42):
-    """KMeans spatial blocks on municipality centroids."""
+def build_spatial_blocks(munis_pts_path, cache_path=None, n_blocks=5, random_state=42):
+    """Spatial blocks on municipality centroids via KMeans (scipy backend —
+    sklearn's KMeans on this machine hits a broken MKL threadpoolctl check,
+    see _check_mkl_vcomp, and crashes the process). Cached to cache_path so
+    the clustering only has to run once.
+    """
+    if cache_path is not None and cache_path.exists():
+        print(f"  Loading spatial blocks from cache: {cache_path}")
+        return pd.read_csv(cache_path)
+
     munis_pts = gpd.read_file(munis_pts_path)
-    coords = np.column_stack([munis_pts.geometry.x, munis_pts.geometry.y])
-    kmeans = KMeans(n_clusters=n_blocks, random_state=random_state, n_init=10)
-    blocks = kmeans.fit_predict(coords)
+    coords = np.column_stack([munis_pts.geometry.x, munis_pts.geometry.y]).astype(np.float64)
+    _, blocks = kmeans2(coords, k=n_blocks, seed=random_state, minit="++")
     result = pd.DataFrame({
         "Muni_ID": munis_pts["Muni_ID"].values,
         "spatial_block": blocks,
     })
+
+    if cache_path is not None:
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        result.to_csv(cache_path, index=False)
+        print(f"  Cached spatial blocks: {cache_path}")
+
     return result
 
 
@@ -80,7 +98,7 @@ def melt_od_matrix(od_path):
     return df_pij.merge(df_dist, on=["Village_ID", "Muni_Name"], how="left")
 
 
-def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij"):
+def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij", sample_frac=1.0):
     """Train Random Forest with spatial 5-fold cross-validation."""
     fold_results = []
     all_preds = {}
@@ -90,6 +108,9 @@ def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij"):
         t_start = time.time()
         test_df = df_ml_cv[df_ml_cv["spatial_block"] == fold]
         train_df = df_ml_cv[df_ml_cv["spatial_block"] != fold]
+
+        if sample_frac < 1.0:
+            train_df = train_df.sample(frac=sample_frac, random_state=42)
 
         X_train = train_df[feature_cols].values.astype(np.float32)
         y_train = train_df[target_col].values.astype(np.float32)
@@ -176,6 +197,11 @@ def run_shap(rf_model, X_sample, feature_cols, figures_path, prefix="AHP"):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", choices=["AHP", "NW", "both"], default="both")
+    parser.add_argument("--sample-frac", type=float, default=1.0)
+    args = parser.parse_args()
+
     print("=== ML FRAMEWORK ===")
     print()
 
@@ -187,6 +213,7 @@ def main():
     nw_od_path = MATRIX_TABLES / "huff_NW_od_matrix.csv"
     ahp_sum_path = MATRIX_TABLES / "huff_summary.csv"
     nw_sum_path = MATRIX_TABLES / "huff_NW_summary.csv"
+    blocks_cache_path = DATA_PROCESSED / "spatial_blocks.csv"
 
     TABLES.mkdir(parents=True, exist_ok=True)
     FIGURES.mkdir(parents=True, exist_ok=True)
@@ -198,93 +225,97 @@ def main():
     print(f"  Feature table: {munis_features.shape}")
 
     print("Building spatial blocks...")
-    blocks_df = build_spatial_blocks(munis_pts_path)
+    blocks_df = build_spatial_blocks(munis_pts_path, cache_path=blocks_cache_path)
     print(f"  Blocks: {blocks_df['spatial_block'].value_counts().sort_index().to_dict()}")
 
     feature_cols = [c for c in munis_features.columns
                     if c not in ["Muni_ID", "Muni_Name"]]
     print(f"  Features per municipality: {len(feature_cols)}")
+
+    # dist_to_muni comes from the OD melt (identical for both AHP/NW od
+    # matrices), so this list is valid regardless of which model(s) run.
+    all_feature_cols = feature_cols + ["dist_to_muni"]
+    print(f"  Total features: {len(all_feature_cols)}")
     print()
 
     # ════════════════════════════════════════════════════════
     # MODEL 1 — AHP Huff as target
     # ════════════════════════════════════════════════════════
-    print("=== MODEL 1: AHP Huff target ===")
-    print("Melting AHP OD matrix...")
-    df_pairs_ahp = melt_od_matrix(ahp_od_path)
-    print(f"  Pairs: {df_pairs_ahp.shape}")
+    if args.model in ["AHP", "both"]:
+        print("=== MODEL 1: AHP Huff target ===")
+        print("Melting AHP OD matrix...")
+        df_pairs_ahp = melt_od_matrix(ahp_od_path)
+        print(f"  Pairs: {df_pairs_ahp.shape}")
 
-    df_ml_ahp = df_pairs_ahp.merge(munis_features, on="Muni_Name", how="left")
-    df_ml_ahp = df_ml_ahp.merge(blocks_df, on="Muni_ID", how="left")
-    print(f"  ML table: {df_ml_ahp.shape}")
+        df_ml_ahp = df_pairs_ahp.merge(munis_features, on="Muni_Name", how="left")
+        df_ml_ahp = df_ml_ahp.merge(blocks_df, on="Muni_ID", how="left")
+        print(f"  ML table: {df_ml_ahp.shape}")
+        print()
 
-    all_feature_cols = [c for c in df_ml_ahp.columns
-                         if c not in ["Village_ID", "Village_Name", "Muni_Name",
-                                      "Muni_ID", "Pij", "spatial_block"]]
-    print(f"  Total features: {len(all_feature_cols)}")
-    print()
+        print("Training AHP Random Forest (spatial 5-fold CV)...")
+        df_results_ahp, preds_ahp, fi_ahp = train_rf_spatial_cv(
+            df_ml_ahp, all_feature_cols, target_col="Pij",
+            sample_frac=args.sample_frac)
+        print()
+        print("AHP CV Summary:")
+        print(f"  Mean R²:   {df_results_ahp['r2'].mean():.4f} ± {df_results_ahp['r2'].std():.4f}")
+        print(f"  Mean MAE:  {df_results_ahp['mae'].mean():.6f}")
+        print(f"  Mean RMSE: {df_results_ahp['rmse'].mean():.6f}")
 
-    print("Training AHP Random Forest (spatial 5-fold CV)...")
-    df_results_ahp, preds_ahp, fi_ahp = train_rf_spatial_cv(
-        df_ml_ahp, all_feature_cols, target_col="Pij")
-    print()
-    print("AHP CV Summary:")
-    print(f"  Mean R²:   {df_results_ahp['r2'].mean():.4f} ± {df_results_ahp['r2'].std():.4f}")
-    print(f"  Mean MAE:  {df_results_ahp['mae'].mean():.6f}")
-    print(f"  Mean RMSE: {df_results_ahp['rmse'].mean():.6f}")
+        # Save AHP outputs
+        df_importance_ahp = pd.DataFrame({
+            "feature": all_feature_cols, "importance": fi_ahp
+        }).sort_values("importance", ascending=False).reset_index(drop=True)
+        df_importance_ahp.to_csv(TABLES / "ml_AHP_feature_importance.csv", index=False)
+        df_results_ahp.to_csv(TABLES / "ml_AHP_cv_results.csv", index=False)
 
-    # Save AHP outputs
-    df_importance_ahp = pd.DataFrame({
-        "feature": all_feature_cols, "importance": fi_ahp
-    }).sort_values("importance", ascending=False).reset_index(drop=True)
-    df_importance_ahp.to_csv(TABLES / "ml_AHP_feature_importance.csv", index=False)
-    df_results_ahp.to_csv(TABLES / "ml_AHP_cv_results.csv", index=False)
+        df_ml_ahp["Pij_predicted"] = df_ml_ahp.index.map(preds_ahp)
+        comparison_ahp = build_comparison(df_ml_ahp, preds_ahp, ahp_sum_path)
+        comparison_ahp.to_csv(TABLES / "ml_AHP_vs_AHP_comparison.csv", index=False)
 
-    df_ml_ahp["Pij_predicted"] = df_ml_ahp.index.map(preds_ahp)
-    comparison_ahp = build_comparison(df_ml_ahp, preds_ahp, ahp_sum_path)
-    comparison_ahp.to_csv(TABLES / "ml_AHP_vs_AHP_comparison.csv", index=False)
-
-    agree_ahp = comparison_ahp["agreement"].sum()
-    print(f"  AHP vs ML agreement: {agree_ahp}/{len(comparison_ahp)} "
-          f"({agree_ahp/len(comparison_ahp)*100:.1f}%)")
-    print()
+        agree_ahp = comparison_ahp["agreement"].sum()
+        print(f"  AHP vs ML agreement: {agree_ahp}/{len(comparison_ahp)} "
+              f"({agree_ahp/len(comparison_ahp)*100:.1f}%)")
+        print()
 
     # ════════════════════════════════════════════════════════
     # MODEL 2 — NW Huff as target
     # ════════════════════════════════════════════════════════
-    print("=== MODEL 2: NW Huff target ===")
-    print("Melting NW OD matrix...")
-    df_pairs_nw = melt_od_matrix(nw_od_path)
-    print(f"  Pairs: {df_pairs_nw.shape}")
+    if args.model in ["NW", "both"]:
+        print("=== MODEL 2: NW Huff target ===")
+        print("Melting NW OD matrix...")
+        df_pairs_nw = melt_od_matrix(nw_od_path)
+        print(f"  Pairs: {df_pairs_nw.shape}")
 
-    df_ml_nw = df_pairs_nw.merge(munis_features, on="Muni_Name", how="left")
-    df_ml_nw = df_ml_nw.merge(blocks_df, on="Muni_ID", how="left")
-    print(f"  ML table: {df_ml_nw.shape}")
-    print()
+        df_ml_nw = df_pairs_nw.merge(munis_features, on="Muni_Name", how="left")
+        df_ml_nw = df_ml_nw.merge(blocks_df, on="Muni_ID", how="left")
+        print(f"  ML table: {df_ml_nw.shape}")
+        print()
 
-    print("Training NW Random Forest (spatial 5-fold CV)...")
-    df_results_nw, preds_nw, fi_nw = train_rf_spatial_cv(
-        df_ml_nw, all_feature_cols, target_col="Pij")
-    print()
-    print("NW CV Summary:")
-    print(f"  Mean R²:   {df_results_nw['r2'].mean():.4f} ± {df_results_nw['r2'].std():.4f}")
-    print(f"  Mean MAE:  {df_results_nw['mae'].mean():.6f}")
-    print(f"  Mean RMSE: {df_results_nw['rmse'].mean():.6f}")
+        print("Training NW Random Forest (spatial 5-fold CV)...")
+        df_results_nw, preds_nw, fi_nw = train_rf_spatial_cv(
+            df_ml_nw, all_feature_cols, target_col="Pij",
+            sample_frac=args.sample_frac)
+        print()
+        print("NW CV Summary:")
+        print(f"  Mean R²:   {df_results_nw['r2'].mean():.4f} ± {df_results_nw['r2'].std():.4f}")
+        print(f"  Mean MAE:  {df_results_nw['mae'].mean():.6f}")
+        print(f"  Mean RMSE: {df_results_nw['rmse'].mean():.6f}")
 
-    # Save NW outputs
-    df_importance_nw = pd.DataFrame({
-        "feature": all_feature_cols, "importance": fi_nw
-    }).sort_values("importance", ascending=False).reset_index(drop=True)
-    df_importance_nw.to_csv(TABLES / "ml_NW_feature_importance.csv", index=False)
-    df_results_nw.to_csv(TABLES / "ml_NW_cv_results.csv", index=False)
+        # Save NW outputs
+        df_importance_nw = pd.DataFrame({
+            "feature": all_feature_cols, "importance": fi_nw
+        }).sort_values("importance", ascending=False).reset_index(drop=True)
+        df_importance_nw.to_csv(TABLES / "ml_NW_feature_importance.csv", index=False)
+        df_results_nw.to_csv(TABLES / "ml_NW_cv_results.csv", index=False)
 
-    comparison_nw = build_comparison(df_ml_nw, preds_nw, nw_sum_path)
-    comparison_nw.to_csv(TABLES / "ml_NW_vs_NW_comparison.csv", index=False)
+        comparison_nw = build_comparison(df_ml_nw, preds_nw, nw_sum_path)
+        comparison_nw.to_csv(TABLES / "ml_NW_vs_NW_comparison.csv", index=False)
 
-    agree_nw = comparison_nw["agreement"].sum()
-    print(f"  NW vs ML agreement: {agree_nw}/{len(comparison_nw)} "
-          f"({agree_nw/len(comparison_nw)*100:.1f}%)")
-    print()
+        agree_nw = comparison_nw["agreement"].sum()
+        print(f"  NW vs ML agreement: {agree_nw}/{len(comparison_nw)} "
+              f"({agree_nw/len(comparison_nw)*100:.1f}%)")
+        print()
 
     print("All ML outputs saved to outputs/tables/")
     print("Done.")
