@@ -1,9 +1,2 @@
-Metric,Value
-Municipalities compared,212
-Agreement same dominant center,146 (68.9%)
-Disagreement,66 (31.1%)
-Cohens kappa,0.6755
-Commuting functional centers,101
-Pattern 1 Huff self Commuting external,31
-Pattern 2 Commuting self Huff external,22
-Pattern 3 Both external different center,13
+n_municipalities,n_agree,agreement_pct,cohen_kappa,n_Agree,n_Pattern_1,n_Pattern_2,n_Pattern_3
+212,146,68.86792452830188,0.675502678633549,146,31,22,13

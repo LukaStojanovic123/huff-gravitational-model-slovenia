@@ -10,8 +10,8 @@ dependencies:
   - scipy
   - scikit-learn
   - pandas
-  - numpy
-  - matplotlib
+  - numpy==2.2.6
+  - matplotlib==3.11.1
   - jupyterlab
   - openpyxl
   - shap
