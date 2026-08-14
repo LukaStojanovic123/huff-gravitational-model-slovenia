@@ -1,167 +1,215 @@
-# Huff Gravitational Model of Slovenia
+# Functional Gravitational Modelling of Service Catchments in Slovenia
 
-A spatial accessibility study of Slovenia's 212 municipalities and 6,036
-settlements using a Huff gravity model. Municipal attractiveness is
-captured by a Gravitational Index (GI) built from 100 indicators, both
-non-weighted and AHP-weighted with rarity and group weights, and combined
-with road-network travel distances (via Dijkstra shortest paths over an
-OSM-derived graph) to estimate settlement-to-municipality interaction
-probabilities. The pipeline further evaluates model robustness through
-beta sensitivity analysis, Euclidean-vs-network distance comparison,
-Shannon entropy of assignment uncertainty, Moran's I spatial
-autocorrelation, a machine-learning (Random Forest + SHAP) benchmark, and
-validation against observed 2023 commuting flows.
+Code repository for the paper:
 
-## Study Area and Data
+> Stojanović, L., Drobne, S. and Lisec, A. Functional gravitational
+> modelling of service catchments in Slovenia: a modified Huff approach
+> with explainable machine learning assessment. *Applied Geography*
+> (under review).
 
-- **Study area:** Slovenia — 212 municipalities, 6,036 settlements.
-- **Model parameters:** distance-decay exponent β = 2 (sensitivity tested
-  at 1.5–3.0), projected CRS EPSG:3794, network cutoff distance 300 km.
-- **Raw data** lives outside this repository at the path configured in
-  `config.py` (`DATA_RAW`) and includes:
-  - `Roads.shp` — OSM road network (motorway + primary only; see note in `02_road_network.py`)
-  - `Municipalities_All_Groups_Weighted_AHP.gpkg` — AHP-weighted GI inputs
-  - `Municipalities_All_Groups_NotWeighted_Normalized.gpkg` — non-weighted GI inputs
-  - `Municipalities_Points_normalized.gpkg` — municipality centroids
-  - `Villages_points_real.shp` — settlement points
-  - `NA.shp` — settlement polygons
-  - `2023tabela.xlsx` — SURS 2023 commuting matrix
+---
 
-## Repository Structure
+## Overview
+
+This repository contains the complete analytical pipeline for a
+modified Huff spatial interaction model applied to Slovenia's 212
+municipalities and 6,036 settlements. Municipal attractiveness is
+quantified through a Gravitational Index (GI) built from 100 functional
+indicators, weighted through a two-level procedure combining functional
+rarity weighting at the indicator level with AHP pairwise comparison at
+the group level. Road network distances derived from a topologically
+corrected OpenStreetMap graph serve as the friction surface.
+
+The pipeline includes sensitivity analysis across distance decay
+assumptions, comparison between road network and Euclidean distances,
+Random Forest and SHAP diagnostics, entropy-based uncertainty
+quantification, spatial autocorrelation analysis, and comparison with
+observed 2023 commuting flows.
+
+---
+
+## Study area and parameters
+
+- Slovenia: 212 municipalities, 6,036 settlements
+- Coordinate system: EPSG:3794
+- Distance decay exponent: β = 2 (sensitivity tested at 1.5, 2.0, 2.5, 3.0)
+- Network cutoff distance: 300 km
+- All data collected in April 2026
+
+---
+
+## Repository structure
 
 ```
 huff-gravitational-model-slovenia/
-├── README.md                          this file
-├── requirements.txt                   pip dependency list
-├── environment.yml                    conda environment (huff_env)
-├── .gitignore                         excludes large/raw data
-├── config.py                          paths and study constants
+├── README.md
+├── requirements.txt        pip dependency list
+├── environment.yml         conda environment (Python 3.11)
+├── config.py                data paths and study constants — edit before running
 ├── data/
-│   ├── raw/                           (not committed) local mirror, if used
-│   └── processed/                     (not committed) large intermediates
-├── src/
-│   ├── 01_gi_construction.py          normalise 100 indicators, build non-weighted + AHP-weighted GI
-│   ├── 02_road_network.py             build routable road graph from OSM data
-│   ├── 03_huff_ahp.py                 OD matrix + AHP-weighted Huff probabilities
-│   ├── 04_huff_nonweighted.py         OD matrix + non-weighted Huff probabilities
-│   ├── 05_accessibility.py            per-municipality accessibility to 86 facility types
-│   ├── 06_ml_framework.py             Random Forest + SHAP benchmark of Huff assignments
-│   ├── 07_beta_sensitivity.py         Huff model sensitivity to distance-decay exponent
-│   ├── 08_euclidean_comparison.py     Euclidean vs. road-network distance comparison
-│   ├── 09_entropy_uncertainty.py      Shannon entropy of Pij assignment uncertainty
-│   ├── 10_morans_i.py                 spatial autocorrelation of GI, Pij, and disagreement
-│   ├── 11_commuting_comparison.py     validation against observed 2023 commuting flows
-│   └── 12_export_outputs.py           export paper-ready tables, figures, and GPKG layers
-├── notebooks/
-│   ├── 01_data_exploration.ipynb      exploratory look at raw datasets
-│   ├── 02_gi_validation.ipynb         GI construction sanity checks
-│   └── 03_results_visualization.ipynb interactive results exploration
+│   └── processed/            intermediate files (not committed — regenerated by scripts)
+├── src/                      12 pipeline scripts (run in order)
+├── notebooks/                 3 exploratory notebooks
 └── outputs/
-    ├── tables/                        paper-ready tables (committed)
-    ├── figures/                       paper-ready figures (committed)
-    ├── gpkg/                          spatial layers for QGIS (not committed)
-    └── supplementary/                 supplementary tables (committed)
+    ├── tables/                paper-ready tables
+    ├── figures/               paper-ready figures
+    ├── gpkg/                  spatial layers for QGIS (not committed — regenerated by script 12)
+    └── supplementary/         supplementary tables S1–S4
 ```
 
-## How to Run
+---
 
-1. Create and activate the conda environment:
+## Setup
 
-   ```
-   conda env create -f environment.yml
-   conda activate huff_env
-   ```
+> **Before running any script, open `config.py` and set `DATA_RAW` to
+> the path of your local raw data directory. This is the only file you
+> need to edit.**
 
-   (Alternatively, `pip install -r requirements.txt` into an existing
-   Python 3.11 environment.)
+**Step 1 — Create environment**
 
-2. Edit `DATA_RAW` in `config.py` if the raw data path differs on your
-   machine.
+```bash
+conda env create -f environment.yml
+conda activate huff_env
+```
 
-3. Run the scripts in order from the repository root:
+Or with pip:
 
-   ```
-   python src/01_gi_construction.py
-   python src/02_road_network.py
-   python src/03_huff_ahp.py
-   python src/04_huff_nonweighted.py
-   python src/05_accessibility.py
-   python src/06_ml_framework.py
-   python src/07_beta_sensitivity.py
-   python src/08_euclidean_comparison.py
-   python src/09_entropy_uncertainty.py
-   python src/10_morans_i.py
-   python src/11_commuting_comparison.py
-   python src/12_export_outputs.py
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-   Each script depends on outputs from earlier scripts in the sequence
-   (written to `data/processed/`), so they should be run in order on a
-   first pass.
+**Step 2 — Edit config.py**
+
+Open `config.py` and update `DATA_RAW`:
+
+```python
+DATA_RAW = Path(r"your/path/to/raw/data")
+```
+
+**Step 3 — Run scripts in order**
+
+```bash
+python src/01_gi_construction.py
+python src/02_road_network.py
+python src/03_huff_ahp.py
+python src/04_huff_nonweighted.py
+python src/05_accessibility.py
+python src/06_ml_framework.py
+python src/07_beta_sensitivity.py
+python src/08_euclidean_comparison.py
+python src/09_entropy_uncertainty.py
+python src/10_morans_i.py
+python src/11_commuting_comparison.py
+python src/12_export_outputs.py
+```
+
+Each script depends on outputs from earlier scripts. The most
+computationally expensive step is the OD matrix computation in
+`03_huff_ahp.py` (approximately 6 minutes). The result is cached in
+`data/processed/` and reused by subsequent scripts.
+
+---
+
+## Data sources
+
+Raw data files are not included in the repository due to size. Place
+them in the directory specified by `DATA_RAW` in `config.py`.
+
+| File | Description | Source |
+|---|---|---|
+| `all_roads.gpkg` | OSM road network, all drivable classes (motorway through service/residential — see `02_road_network.py` for full list) | OpenStreetMap via Geofabrik, April 2026 |
+| `Municipalities_All_Groups_Weighted_AHP.gpkg` | Municipality layer with AHP-weighted GI | Computed by this pipeline |
+| `Municipalities_All_Groups_NotWeighted_Normalized.gpkg` | Municipality layer with non-weighted GI | Computed by this pipeline |
+| `Municipalities_Points_normalized.gpkg` | Municipality centroids with 100 normalised indicators | GURS, OSM, SURS, ZZZS |
+| `Villages_points_real.shp` | Settlement centroids | GURS |
+| `NA.shp` | Settlement polygons | GURS |
+| `obcine_poligoni.shp` | Municipality polygons | GURS |
+| `2023tabela.xlsx` | SURS 2023 commuting flow matrix | SURS (Statistični urad RS) |
+
+---
+
+## Scripts and outputs
+
+| Script | Description | Key output |
+|---|---|---|
+| 01 | Normalise 100 indicators, build non-weighted and AHP-weighted GI | GI per municipality |
+| 02 | Build routable road graph from OSM data | `data/processed/roads_noded.gpkg` |
+| 03 | OD matrix and AHP-weighted Huff probabilities | `huff_AHP_summary.csv` |
+| 04 | Non-weighted Huff probabilities (reuses distance matrix) | `huff_NW_summary.csv` |
+| 05 | Accessibility to 86 facility types per municipality | `accessibility_normalized.csv` |
+| 06 | Random Forest and SHAP benchmark of Huff assignments | Feature importance, CV results |
+| 07 | Beta sensitivity analysis (β = 1.5–3.0) | `table_beta_sensitivity_clean.csv` |
+| 08 | Euclidean vs road-network distance comparison | `table_euclidean_vs_network.csv` |
+| 09 | Shannon entropy of assignment uncertainty per settlement | `table_entropy_summary.csv` |
+| 10 | Spatial autocorrelation of model disagreements | `table_morans_i_results.csv` |
+| 11 | Comparison with 2023 SURS commuting flows | `table_huff_vs_commuting_summary.csv` |
+| 12 | Export all paper tables, figures, and GPKG layers | All outputs |
+
+---
 
 ## Cached intermediates
 
-`data/processed/distance_matrix.npy` is the key cached intermediate in the
-pipeline: the village-to-municipality road-network distance matrix produced
-by Dijkstra shortest paths over the noded road graph (`02_road_network.py`'s
-`data/processed/roads_noded.gpkg`). It is saved alongside two companion
-arrays, `distance_matrix_village_ids.npy` and `distance_matrix_muni_ids.npy`,
-which record the row/column order it was computed with — a script only
-reuses the cached matrix if both id arrays match its current village and
-municipality data, otherwise it recomputes.
+The following files in `data/processed/` are not committed to git but
+are generated automatically by scripts and reused to avoid recomputation:
 
-Building this matrix (212 municipalities × 6,036 villages via Dijkstra) is
-the most expensive step in the pipeline. `03_huff_ahp.py` computes and
-caches it if missing; `04_huff_nonweighted.py` reuses the same cached matrix
-(the network distances don't depend on which GI scenario is being scored).
-`07_beta_sensitivity.py` and `08_euclidean_comparison.py` also depend on
-having this distance matrix available rather than recomputing it.
+| File | Generated by | Used by |
+|---|---|---|
+| `roads_noded.gpkg` | `02_road_network.py` | `03`, `04`, `05`, `08` |
+| `distance_matrix.npy` | `03_huff_ahp.py` | `04`, `07`, `08` |
+| `spatial_blocks.csv` | `06_ml_framework.py` | `06` |
 
-`03_huff_ahp.py` and `04_huff_nonweighted.py` additionally short-circuit at
-the output level: if `outputs/tables/huff_AHP_summary.csv` or
-`huff_NW_summary.csv` already exists, the script skips computation entirely
-and just reports the existing file. Delete the relevant summary CSV (and,
-if you want the distances themselves recomputed, `data/processed/distance_matrix*.npy`)
-to force a fresh run.
+---
 
-## Outputs
+## Key results
 
-| Script | Produces |
+| Analysis | Result |
 |---|---|
-| 01 | Non-weighted and AHP-weighted GI per municipality |
-| 02 | Largest connected component of the drivable road graph |
-| 03 | `huff_od_matrix.csv`, `huff_summary.csv` (AHP-weighted) |
-| 04 | `huff_NW_od_matrix.csv`, `huff_NW_summary.csv` (non-weighted) |
-| 05 | `accessibility_normalized.csv` — 86-facility accessibility scores |
-| 06 | Random Forest feature importances, SHAP values, predictions |
-| 07 | Beta sensitivity agreement table and figure |
-| 08 | Euclidean-vs-network agreement table and spatial layer |
-| 09 | Settlement-level entropy/uncertainty layer |
-| 10 | Moran's I results for GI, Pij, and ML–AHP disagreement |
-| 11 | Commuting-vs-Huff comparison and disagreement classification |
-| 12 | 6 tables, 3 supplementary tables, 9 figures (PNG/PDF), all GPKG layers |
-
-## Results summary
-
-| Analysis | Key result |
-|---|---|
-| GI_AHP top municipality | Ljubljana (1.000) |
-| GI_AHP mean across 212 municipalities | 0.039 |
+| GI_AHP — Ljubljana | 1.000 (rank 1 of 212) |
 | AHP Huff — Ljubljana catchment | 1,222 settlements |
-| AHP vs NW agreement | 88.6% (5,349/6,036 settlements) |
-| Beta sensitivity range (κ) | 0.732 to 0.826 across β=1.5–3.0 |
-| Random Forest R² (AHP target) | 0.845 ± 0.088 (spatial 5-fold CV) |
-| Random Forest R² (NW target) | 0.844 ± 0.066 (spatial 5-fold CV) |
-| AHP Huff vs ML agreement | 75.5% (4,557/6,036 settlements) |
-| NW Huff vs ML agreement | 77.4% (4,672/6,036 settlements) |
-| Huff vs commuting agreement | 68.9% (146/212 municipalities) |
+| AHP vs non-weighted agreement | 88.6% (5,349/6,036) |
+| Beta sensitivity κ range | 0.732–0.826 across β = 1.5–3.0 |
+| Euclidean vs network agreement | 88.4%, κ = 0.879 |
+| RF R² — AHP target (5-fold spatial CV) | 0.845 ± 0.088 |
+| RF R² — NW target (5-fold spatial CV) | 0.844 ± 0.066 |
+| AHP Huff vs ML agreement | 75.5% (4,557/6,036) |
+| NW Huff vs ML agreement | 77.4% (4,672/6,036) |
+| Huff vs commuting agreement | 68.9% (146/212 municipalities), κ = 0.676 |
 | Distance feature importance | 62.5% |
 | GI_AHP composite importance | 22.8% |
+| Moran's I — AHP vs NW | I = 0.184, p = 0.001 |
+| Moran's I — AHP vs ML | I = 0.451, p = 0.001 |
+
+---
+
+## Note on NW Random Forest
+
+The non-weighted Random Forest model (`src/06_ml_framework.py --model NW`)
+was trained on a 30% sample per fold due to memory constraints on the
+analysis machine. Results are nearly identical to the full-sample AHP
+model (R² 0.844 vs 0.845), confirming that the finding of high internal
+coherence holds for both GI specifications. To reproduce with full data
+run:
+
+```bash
+python src/06_ml_framework.py --model NW --sample-frac 1.0
+```
+
+---
+
+## License
+
+Code: MIT License
+Data: see individual source organisations listed above
+
+---
 
 ## Citation
 
-> Placeholder — citation to be added upon publication.
+> Placeholder — update with DOI upon publication.
 
-## Authors and Contact
+---
 
-Luka Stojanovič — luka.stojanovich95@gmail.com
+## Contact
+
+Luka Stojanović — Luka.Stojanovic@fgg.uni-lj.si
+Faculty of Civil and Geodetic Engineering, University of Ljubljana
