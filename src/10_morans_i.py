@@ -18,6 +18,7 @@ from config import GPKG, TABLES
 
 AHP_VS_NW_PATH = GPKG / "map_AHP_vs_NW_villages.gpkg"
 AHP_VS_ML_PATH = GPKG / "map_AHP_vs_ML_villages.gpkg"
+NW_VS_ML_PATH = GPKG / "map_NW_vs_ML_villages.gpkg"
 RESULTS_PATH = TABLES / "table_morans_i_results.csv"
 LISA_OUTPUT_PATH = GPKG / "map_lisa_AHP_vs_NW.gpkg"
 
@@ -89,6 +90,10 @@ def main():
     print("Loading map_AHP_vs_ML_villages.gpkg...")
     ahp_vs_ml = load_agreement_layer(AHP_VS_ML_PATH)
     print(f"  {len(ahp_vs_ml)} villages")
+
+    print("Loading map_NW_vs_ML_villages.gpkg...")
+    nw_vs_ml = load_agreement_layer(NW_VS_ML_PATH)
+    print(f"  {len(nw_vs_ml)} villages")
     print()
 
     print("Computing global Moran's I...")
@@ -98,6 +103,9 @@ def main():
 
     result_ml, w_ml, y_ml = global_morans_i(ahp_vs_ml, "agreement", "AHP_vs_ML")
     results.append(result_ml)
+
+    result_nw_ml, w_nw_ml, y_nw_ml = global_morans_i(nw_vs_ml, "agreement", "NW_vs_ML")
+    results.append(result_nw_ml)
     print()
 
     results_df = pd.DataFrame(results)
