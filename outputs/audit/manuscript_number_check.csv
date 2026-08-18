@@ -1,0 +1,22 @@
+claim,draft_value,repository_value,status,source_file
+AHP vs NW agreement,"88.6%, 5349/6036","88.62%, 5349/6036",CONFIRMED,outputs/gpkg/map_AHP_vs_NW_villages.gpkg
+AHP vs ML agreement,"75.4%, 4551/6036","75.50%, 4557/6036",DIFFERS,outputs/gpkg/map_AHP_vs_ML_villages.gpkg
+NW vs ML agreement,"77.4%, 4672/6036","77.40%, 4672/6036",CONFIRMED,outputs/gpkg/map_NW_vs_ML_villages.gpkg
+Euclidean vs network agreement,"88.4%, 5335/6036, kappa 0.879","88.39%, 5335/6036, kappa 0.8785 (see table_euclidean_vs_network.csv)",CONFIRMED,outputs/tables/table_euclidean_vs_network.csv
+Moran's I AHP vs NW,"0.184, z 24.18","I=0.1838, z=23.68",CONFIRMED (I; z is a permutation estimate and fluctuates run to run),outputs/tables/table_morans_i_results.csv
+Moran's I AHP vs ML,"0.451, z 59.55","I=0.4505, z=60.13",CONFIRMED (I; z is a permutation estimate and fluctuates run to run),outputs/tables/table_morans_i_results.csv
+Moran's I NW vs ML,"0.447, z 57.40","I=0.4473, z=55.30",CONFIRMED (I; z is a permutation estimate and fluctuates run to run),outputs/tables/table_morans_i_results.csv
+LISA AHP vs ML,"706 LL, 255 HL, 116 LH, 1077 significant","HH=210, LL=835, HL=0, LH=0, significant=1045",DIFFERS - draft assumed HL/LH categories exist; actual AHP-vs-ML LISA layer has none (same pattern as AHP-vs-NW),outputs/gpkg/map_lisa_AHP_vs_ML.gpkg
+Ljubljana catchment AHP,1222 settlements,1222 settlements,CONFIRMED,outputs/tables/huff_AHP_summary.csv
+Ljubljana catchment NW,1022 settlements,1022 settlements,CONFIRMED,outputs/tables/huff_NW_summary.csv
+Top 5 catchments combined,"2147, 35.6%","2147, 35.6%",CONFIRMED,outputs/tables/huff_AHP_summary.csv
+Top 10 catchments combined,"2830, 46.9%","2830, 46.9%",CONFIRMED,outputs/tables/huff_AHP_summary.csv
+Municipalities with 1 settlement,32,32,CONFIRMED,outputs/tables/huff_AHP_summary.csv
+Mean catchment size,"28.5, median 6.0","28.5, median 6.0",CONFIRMED,outputs/tables/huff_AHP_summary.csv
+Ljubljana disagreements under AHP vs ML,940 settlements,915 settlements,MATCHES USER'S SUSPECTED CORRECTION (915),outputs/gpkg/map_AHP_vs_ML_villages.gpkg
+Entropy AHP/NW,AHP mean 0.505 max 0.801 (3748/1891/397); NW mean 0.527 max 0.847 (3983/1670/383),"[{'GI_scenario': 'AHP', 'min': 1.960860155778524e-08, 'max': 0.8009450192193118, 'mean': 0.5051800074061952, 'std': 0.1689282125363231, 'n_low': 397, 'n_medium': 1891, 'n_high': 3748}, {'GI_scenario': 'NW', 'min': 2.5106931294369928e-08, 'max': 0.847444467791011, 'mean': 0.5267889107712135, 'std': 0.1770280696567134, 'n_low': 383, 'n_medium': 1670, 'n_high': 3983}]",CONFIRMED (see table_entropy_summary.csv),outputs/tables/table_entropy_summary.csv
+RF AHP mean R squared,0.845 +/- 0.088,0.848 +/- 0.080,DIFFERS (rounding),outputs/tables/ml_AHP_cv_results.csv
+RF NW mean R squared,0.844 +/- 0.066,0.844 +/- 0.066,CONFIRMED,outputs/tables/ml_NW_cv_results.csv
+Commuting agreement,"68.9%, 146/212, kappa 0.676","68.87%, 146/212, kappa 0.6755",CONFIRMED,outputs/tables/table_huff_vs_commuting_summary.csv
+Commuting functional centres,101,101,CONFIRMED,outputs/tables/table_huff_vs_commuting.csv
+Beta sensitivity kappa range,0.732 to 0.826,0.732 to 0.826,CONFIRMED,outputs/tables/table_beta_sensitivity_clean.csv

@@ -1,0 +1,101 @@
+indicator_name,indicator_code,thematic_group,n_nonzero_munis,n_missing,raw_min,raw_max,raw_mean,raw_median,rarity_score_ri,floor_0.01_applied,within_group_weight_wi,ahp_group_weight_pct
+Zoos,n_Zoo,Culture,1,0,0.0,1.0,0.0047169811320754715,0.0,0.995283,False,0.106941,5.35
+Archives,n_Archives,Culture,6,0,0.0,1.0,0.012971698113207548,0.0,0.971698,False,0.105666,5.35
+Theaters,n_Theater,Culture,15,0,0.0,1.0,0.013561320754716982,0.0,0.929245,False,0.103332,5.35
+Cinemas,n_Cinemas,Culture,17,0,0.0,1.0,0.025943396226415096,0.0,0.919811,False,0.102806,5.35
+Book stores,n_Book_Store,Culture,27,0,0.0,1.0,0.015094339622641508,0.0,0.872642,False,0.100136,5.35
+Archaeological sites,n_Arch_Site,Culture,30,0,0.0,1.0,0.03419811320754717,0.0,0.858491,False,0.09932,5.35
+Religious buildings,n_Religion_B,Culture,43,0,0.0,1.0,0.06415094339622641,0.0,0.79717,False,0.095707,5.35
+Libraries,n_Libraries,Culture,64,0,0.0,1.0,0.028563941299790358,0.0,0.698113,False,0.089564,5.35
+Museums,n_Museums,Culture,71,0,0.0,1.0,0.054063860667634245,0.0,0.665094,False,0.08742,5.35
+Artworks,n_Artwork,Culture,101,0,0.0,1.0,0.016575313587013807,0.0,0.523585,False,0.077565,5.35
+Chapels,n_Chapels,Culture,204,0,0.0,1.0,0.1737982929020665,0.125,0.037736,False,0.020823,5.35
+Protected cultural heritage sites,n_PCHeritage,Culture,211,0,0.0,1.0,0.09989810005916772,0.06411149825783972,0.01,True,0.010719,5.35
+SAZU (Slovenian Academy of Sciences),n_SAZU,Education,1,0,0.0,1.0,0.0047169811320754715,0.0,0.995283,False,0.119839,18.81
+Universities,n_University,Education,5,0,0.0,1.0,0.02358490566037736,0.0,0.976415,False,0.118698,18.81
+Schools of music,n_School_Mus,Education,6,0,0.0,1.0,0.015723270440251572,0.0,0.971698,False,0.118411,18.81
+Schools of arts,n_School_Art,Education,7,0,0.0,1.0,0.02358490566037736,0.0,0.966981,False,0.118123,18.81
+Faculties,n_Faculties,Education,11,0,0.0,1.0,0.015566037735849058,0.0,0.948113,False,0.116965,18.81
+Student dormitories,n_Dorms,Education,24,0,0.0,1.0,0.010827615780445969,0.0,0.886792,False,0.113119,18.81
+Secondary schools,n_Second_Sch,Education,48,0,0.0,1.0,0.020552560646900267,0.0,0.773585,False,0.105652,18.81
+Private schools,n_Privat_Sch,Education,56,0,0.0,1.0,0.05660377358490566,0.0,0.735849,False,0.103043,18.81
+Kindergartens,n_Kindergard,Education,202,0,0.0,1.0,0.03232108965055264,0.011834319526627219,0.04717,False,0.026089,18.81
+Enrolled in kindergarten,n_Enrolled_K,Education,211,0,0.0,1.0,0.03394487991104777,0.017195767195767195,0.01,True,0.012012,18.81
+University students,n_Students,Education,211,0,0.0,1.0,0.032874127176412235,0.01636861135541874,0.01,True,0.012012,18.81
+Enrolled in secondary school,n_Enrolled_S,Education,211,0,0.0,1.0,0.037485526014018083,0.018430674967882203,0.01,True,0.012012,18.81
+Primary schools,n_Primary_Sc,Education,211,0,0.0,1.0,0.0627288087862574,0.03731343283582089,0.01,True,0.012012,18.81
+Enrolled in primary school,n_Enroll_Pri,Education,211,0,0.0,1.0,0.03462221338452905,0.01627723812024153,0.01,True,0.012012,18.81
+Currency exchange offices,n_Exchange_C,Finance,3,0,0.0,1.0,0.014150943396226415,0.0,0.985849,False,0.342083,8.03
+Financial offices,n_Finance_of,Finance,15,0,0.0,1.0,0.02672955974842767,0.0,0.929245,False,0.332118,8.03
+Banks,n_Banks,Finance,79,0,0.0,1.0,0.023927958833619208,0.0,0.627358,False,0.272888,8.03
+ATMs,n_ATMs,Finance,207,0,0.0,1.0,0.028395107763442465,0.007905138339920948,0.023585,False,0.052911,8.03
+Nursing homes,n_Nursing_H,Healthcare,4,0,0.0,1.0,0.018867924528301886,0.0,0.981132,False,0.127251,27.16
+Clinics,n_Clinics,Healthcare,12,0,0.0,1.0,0.01088534107402032,0.0,0.943396,False,0.12478,27.16
+Hospitals,n_Hospitals,Healthcare,17,0,0.0,1.0,0.04245283018867924,0.0,0.919811,False,0.12321,27.16
+Veterinarian offices,n_Veterinary,Healthcare,24,0,0.0,1.0,0.05188679245283019,0.0,0.886792,False,0.120979,27.16
+Dentist offices,n_Dentists,Healthcare,42,0,0.0,1.0,0.02234359483614697,0.0,0.801887,False,0.115041,27.16
+Doctor offices,n_Doctor_off,Healthcare,47,0,0.0,1.0,0.031204644412191583,0.0,0.778302,False,0.113337,27.16
+Number of doctors,n_NumberDr,Healthcare,49,0,0.0,1.0,0.02573957605404146,0.0,0.768868,False,0.112648,27.16
+Health centres (dom zdravja),n_Dom_zdrav,Healthcare,55,0,0.0,1.0,0.11108158384267872,0.0,0.740566,False,0.110555,27.16
+Pharmacies,n_Pharmacy,Healthcare,177,0,0.0,1.0,0.03456095791001451,0.019230769230769232,0.165094,False,0.052199,27.16
+Main courthouse,n_Main_Court,Judiciary,1,0,0.0,1.0,0.0047169811320754715,0.0,0.995283,False,0.134707,8.03
+Embassies and consulates,n_Emb_Consul,Judiciary,2,0,0.0,1.0,0.005213505461767626,0.0,0.990566,False,0.134388,8.03
+Higher courts,n_High_Court,Judiciary,4,0,0.0,1.0,0.009433962264150943,0.0,0.981132,False,0.133746,8.03
+Regional courts,n_Reg_Court,Judiciary,11,0,0.0,1.0,0.05188679245283019,0.0,0.948113,False,0.131476,8.03
+Police stations,n_Police_sta,Judiciary,30,0,0.0,1.0,0.028301886792452827,0.0,0.858491,False,0.125108,8.03
+Local courts,n_Local_Cour,Judiciary,44,0,0.0,1.0,0.20754716981132076,0.0,0.792453,False,0.1202,8.03
+Town halls,n_Town_hall,Judiciary,57,0,0.0,1.0,0.08018867924528301,0.0,0.731132,False,0.115456,8.03
+Fire stations,n_Fire_stat,Judiciary,84,0,0.0,1.0,0.1150943396226415,0.0,0.603774,False,0.104919,8.03
+Recycling bins,n_Rec_Bins,Residential,25,0,0.0,1.0,0.007656467990181815,0.0,0.882075,False,0.389943,2.57
+Community centres,n_CommunityC,Residential,54,0,0.0,1.0,0.04821802935010483,0.0,0.745283,False,0.358434,2.57
+Apartments (census),n_Apartments,Residential,203,0,0.0,1.0,0.032060536665505054,0.014511873350923483,0.042453,False,0.085546,2.57
+Total population,n_Population,Residential,211,0,0.0,1.0,0.03240456377062918,0.015777018581784853,0.01,True,0.041519,2.57
+Employed population,n_Employ,Residential,211,0,0.0,1.0,0.031500033185040785,0.014730478740559067,0.01,True,0.041519,2.57
+Number of addresses,n_Addresses,Residential,211,0,0.0,1.0,0.07209385163346747,0.04520016602974222,0.01,True,0.041519,2.57
+Population density,n_Density,Residential,211,0,0.0,1.0,0.10487573972436773,0.06984461616803295,0.01,True,0.041519,2.57
+Outdoor shops,n_Outdoor_S,Sports,9,0,0.0,1.0,0.010023584905660377,0.0,0.957547,False,0.100485,1.88
+Swimming pools,n_Swim_Pool,Sports,13,0,0.0,1.0,0.02358490566037736,0.0,0.938679,False,0.09949,1.88
+Fitness centres,n_Fitness,Sports,29,0,0.0,1.0,0.012971698113207548,0.0,0.863208,False,0.095406,1.88
+Stadiums,n_Stadiums,Sports,33,0,0.0,1.0,0.029350104821802937,0.0,0.84434,False,0.094358,1.88
+Sports halls,n_Sport_Hall,Sports,35,0,0.0,1.0,0.046383647798742135,0.0,0.834906,False,0.093829,1.88
+Bicycle shops,n_Bike_Shop,Sports,45,0,0.0,1.0,0.01567702552719201,0.0,0.787736,False,0.09114,1.88
+Sports shops,n_Sport_Shop,Sports,51,0,0.0,1.0,0.019056603773584906,0.0,0.759434,False,0.089488,1.88
+Camp sites,n_Camp_Site,Sports,53,0,0.0,1.0,0.07547169811320754,0.0,0.75,False,0.08893,1.88
+Playgrounds,n_Playground,Sports,76,0,0.0,1.0,0.025157232704402514,0.0,0.641509,False,0.082247,1.88
+City parks,n_Parks,Sports,136,0,0.0,1.0,0.023839877613462516,0.009009009009009009,0.358491,False,0.061483,1.88
+Bicycle path length (km),n_Bike_paths,Sports,156,0,0.0,1.0,0.030406495479671995,0.010889777270131355,0.264151,False,0.052777,1.88
+Hunting stands,n_Hunt_Stand,Sports,161,0,0.0,1.0,0.09702651062813471,0.0379746835443038,0.240566,False,0.050366,1.88
+Travel agencies,n_Travel_A,Tourism,5,0,0.0,1.0,0.015723270440251572,0.0,0.976415,False,0.126685,3.67
+Gift shops,n_Gift_Shop,Tourism,38,0,0.0,1.0,0.01819407008086253,0.0,0.820755,False,0.116148,3.67
+Fast food outlets,n_Fast_food,Tourism,63,0,0.0,1.0,0.016415094339622644,0.0,0.70283,False,0.107481,3.67
+Hotels,n_Hotels,Tourism,66,0,0.0,1.0,0.02223719676549865,0.0,0.688679,False,0.106394,3.67
+Bakeries,n_Bakery,Tourism,103,0,0.0,1.0,0.02135744234800839,0.0,0.514151,False,0.091929,3.67
+Hostels and motels,n_Hostels,Tourism,108,0,0.0,1.0,0.04329946782776971,0.02564102564102564,0.490566,False,0.089796,3.67
+Public toilets,n_Pub_Toilet,Tourism,118,0,0.0,1.0,0.06654767975522694,0.02702702702702703,0.443396,False,0.08537,3.67
+Restaurants,n_Restaurant,Tourism,156,0,0.0,1.0,0.020343433404591504,0.007389162561576354,0.264151,False,0.065892,3.67
+Clubs and bars,n_Clubs_Bars,Tourism,177,0,0.0,1.0,0.02599648122307832,0.00964630225080386,0.165094,False,0.052092,3.67
+Tourist arrivals,n_Tur_arriv,Tourism,189,0,0.0,1.0,0.023640321538627107,0.002988020632887398,0.108491,False,0.042228,3.67
+Overnight stays,n_OvernightS,Tourism,190,0,0.0,1.0,0.029543688531974012,0.0032962639880258597,0.103774,False,0.0413,3.67
+Tourist information points,n_Tur_inf_p,Tourism,193,0,0.0,1.0,0.08224920205244234,0.027837259100642397,0.089623,False,0.038381,3.67
+Tourist apartments,n_Apartme_OS,Tourism,195,0,0.0,1.0,0.029576013879852526,0.006896551724137931,0.080189,False,0.036305,3.67
+Kiosks,n_Kiosk,Trade,28,0,0.0,1.0,0.015947888589398024,0.0,0.867925,False,0.198867,12.1
+Marketplaces,n_Marketplac,Trade,37,0,0.0,1.0,0.020889487870619946,0.0,0.825472,False,0.193943,12.1
+Shopping malls,n_Shp_mall,Trade,50,0,0.0,1.0,0.05385220125786163,0.0,0.764151,False,0.1866,12.1
+Thematic shops,n_Thematic_S,Trade,83,0,0.0,1.0,0.03795025728987993,0.0,0.608491,False,0.166513,12.1
+Supermarkets,n_Supermarke,Trade,100,0,0.0,1.0,0.02346548841652735,0.0,0.528302,False,0.155154,12.1
+Industrial and business zones,n_Ind_B_Zone,Trade,184,0,0.0,1.0,0.14000857632933103,0.09090909090909091,0.132075,False,0.077577,12.1
+Registered companies,n_Companies,Trade,211,0,0.0,1.0,0.021603423575790447,0.008928039997619189,0.01,True,0.021346,12.1
+Seaports,n_Seaport,Traffic,1,0,0.0,1.0,0.0047169811320754715,0.0,0.995283,False,0.097386,12.42
+Airports,n_Airports,Traffic,29,0,0.0,1.0,0.07075471698113207,0.0,0.863208,False,0.090694,12.42
+Vending parking,n_Parking_V,Traffic,33,0,0.0,1.0,0.00984944764884153,0.0,0.84434,False,0.089698,12.42
+Car rental services,n_Car_Rent,Traffic,38,0,0.0,1.0,0.009256632146403746,0.0,0.820755,False,0.088436,12.42
+Petrol stations,n_Gas_stat,Traffic,39,0,0.0,1.0,0.04481132075471698,0.0,0.816038,False,0.088182,12.42
+Bicycle rental locations,n_Bike_Renta,Traffic,43,0,0.0,1.0,0.03522995283018868,0.0,0.79717,False,0.087156,12.42
+Car wash services,n_Car_Wash,Traffic,48,0,0.0,1.0,0.02780536246276067,0.0,0.773585,False,0.085857,12.42
+Driving schools,n_Driving_sc,Traffic,61,0,0.0,1.0,0.025283018867924528,0.0,0.712264,False,0.082384,12.42
+Highway road length (km),n_Roads_L,Traffic,65,0,0.0,1.0,0.06355097684219782,0.0,0.693396,False,0.081286,12.42
+Railway stations,n_Railway_St,Traffic,97,0,0.0,1.0,0.07959905660377359,0.0,0.542453,False,0.071896,12.42
+Railway length (km),n_Railway_L,Traffic,114,0,0.0,1.0,0.04626989582687404,0.011838402592719992,0.462264,False,0.066369,12.42
+Parking facilities,n_Parking,Traffic,168,0,0.0,1.0,0.08169811320754718,0.03333333333333333,0.207547,False,0.044471,12.42
+Bus stops,n_Bus_stops,Traffic,206,0,0.0,1.0,0.041520333276818366,0.02053915275994865,0.028302,False,0.016422,12.42
+Post offices,n_Post_offic,Traffic,210,0,0.0,1.0,0.07775410833840536,0.03225806451612903,0.01,True,0.009762,12.42

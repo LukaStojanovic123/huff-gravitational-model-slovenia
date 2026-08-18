@@ -1,0 +1,80 @@
+path,type,producing_script,referenced_in_draft,description
+outputs/audit/GI_full_212_municipalities.csv,audit,13_data_audit.py,False,GI_NW and GI_AHP for all 212 municipalities with ranks and 10 group scores each
+outputs/audit/data_audit_report.md,audit,13_data_audit.py,False,"Full data audit: raw inputs, indicators, GI, roads, OD matrix, accessibility, ML, manuscript number check"
+outputs/audit/indicator_audit.csv,audit,13_data_audit.py,False,"Per-indicator audit: group, nonzero counts, rarity score, weights"
+outputs/audit/manuscript_number_check.csv,audit,13_data_audit.py,False,Every manuscript-draft numeric claim vs the repository-computed value
+outputs/audit/raw_input_inventory.csv,audit,13_data_audit.py,False,Inventory (size/CRS/features/columns) of the 8 core DATA_RAW files
+outputs/figures/fig07_beta_sensitivity.png,figure,ORPHAN — no current script,False,Legacy beta-sensitivity figure; superseded by fig_beta_sensitivity.png/.pdf (07_beta_sensitivity.py)
+outputs/figures/fig07_feature_importance.pdf,figure,12_export_outputs.py,True,Top-30 AHP feature importance bar chart (PDF)
+outputs/figures/fig07_feature_importance.png,figure,12_export_outputs.py,True,"Top-30 AHP feature importance bar chart, coloured by thematic group"
+outputs/figures/fig07_feature_importance_AHP.png,figure,ORPHAN — no current script,False,Legacy feature-importance figure; no current script writes this filename
+outputs/figures/fig08_shap_bar_AHP.png,figure,"06_ml_framework.py (run_shap, unreachable — see note)",True,"SHAP bar plot, AHP model — produced by a dead-code function (run_shap) never called from main()"
+outputs/figures/fig08_shap_summary_AHP.png,figure,"06_ml_framework.py (run_shap, unreachable — see note)",True,"SHAP summary/beeswarm plot, AHP model — same dead-code caveat as fig08_shap_bar_AHP.png"
+outputs/figures/fig_beta_sensitivity.pdf,figure,07_beta_sensitivity.py,True,"Agreement and Cohen's kappa vs beta, current beta-sensitivity figure (PDF)"
+outputs/figures/fig_beta_sensitivity.png,figure,07_beta_sensitivity.py,True,"Agreement and Cohen's kappa vs beta, current beta-sensitivity figure"
+outputs/figures/fig_feature_importance_comparison.pdf,figure,15_ml_catchment_structure.py,False,"Paired bar chart: AHP-target vs NW-target RF feature-group importance (Task 2.7, PDF)"
+outputs/figures/fig_feature_importance_comparison.png,figure,15_ml_catchment_structure.py,False,Paired bar chart: AHP-target vs NW-target RF feature-group importance (Task 2.7)
+outputs/figures/fig_shap_dependence_AHP.pdf,figure,16_shap_dependence.py,False,"Multi-panel SHAP dependence plot, top 5 features by mean |SHAP|, AHP model, 5,000-pair sample seed=42 (Task 2.6)"
+outputs/figures/fig_shap_dependence_AHP.png,figure,16_shap_dependence.py,False,"Multi-panel SHAP dependence plot, top 5 features by mean |SHAP|, AHP model, 5,000-pair sample seed=42 (Task 2.6)"
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: GI_AHP (rank 2, mean |SHAP|=0.003548)"
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: GI_AHP (rank 2, mean |SHAP|=0.003548)"
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: dist_to_muni (rank 1, mean |SHAP|=0.005527)"
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: dist_to_muni (rank 1, mean |SHAP|=0.005527)"
+outputs/figures/fig_shap_dependence_AHP_n_NumberDr.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: n_NumberDr (rank 4, mean |SHAP|=0.000102)"
+outputs/figures/fig_shap_dependence_AHP_n_NumberDr.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: n_NumberDr (rank 4, mean |SHAP|=0.000102)"
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Recycle_Bins (rank 3, mean |SHAP|=0.000247)"
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Recycle_Bins (rank 3, mean |SHAP|=0.000247)"
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Theaters (rank 5, mean |SHAP|=0.000096)"
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Theaters (rank 5, mean |SHAP|=0.000096)"
+outputs/gpkg/fig01_study_area.gpkg,gpkg,17_spatial_layers.py,True,"Study area: municipalities (212 polygons) + settlements (6,036 points) layers"
+outputs/gpkg/fig03_GI_NW_municipalities.gpkg,gpkg,17_spatial_layers.py,True,"GI_Final_NotWeighted choropleth layer: 212 municipality polygons, GI value, rank, 10 group scores"
+outputs/gpkg/fig04_GI_AHP_municipalities.gpkg,gpkg,17_spatial_layers.py,True,"GI_AHP choropleth layer: 212 municipality polygons, GI value, rank, 10 group scores"
+outputs/gpkg/fig05_catchments_AHP.gpkg,gpkg,17_spatial_layers.py,True,"AHP Huff catchments: settlements + dissolved-by-municipality layers, catchment_size field"
+outputs/gpkg/fig06_catchments_NW.gpkg,gpkg,17_spatial_layers.py,True,"NW Huff catchments: settlements + dissolved-by-municipality layers, catchment_size field"
+outputs/gpkg/fig10_catchments_ML.gpkg,gpkg,17_spatial_layers.py,True,"RF (AHP-target) catchments: settlements + dissolved-by-municipality layers, catchment_size field"
+outputs/gpkg/fig_huff_vs_commuting_municipalities.gpkg,gpkg,11_commuting_comparison.py,True,"212 municipalities: Huff vs 2023 SURS commuting functional-centre comparison, pattern field"
+outputs/gpkg/map_AHP_vs_ML_villages.gpkg,gpkg,12_export_outputs.py,True,"Map B source layer: AHP Huff vs RF, agreement + map_class + is_ljubljana_source fields (Task 4)"
+outputs/gpkg/map_AHP_vs_NW_villages.gpkg,gpkg,12_export_outputs.py,True,"Map A source layer: AHP Huff vs NW Huff, agreement + map_class + is_ljubljana_source fields (Task 4)"
+outputs/gpkg/map_NW_vs_ML_villages.gpkg,gpkg,12_export_outputs.py,True,"Map C source layer: NW Huff vs RF, agreement + map_class + is_ljubljana_source fields (Task 4)"
+outputs/gpkg/map_disagreement_count_villages.gpkg,gpkg,14_disagreement_synthesis.py,False,"Map D source layer: n_disagree (0-3) across all three pairwise comparisons, entropy fields"
+outputs/gpkg/map_entropy_AHP_villages.gpkg,gpkg,09_entropy_uncertainty.py,True,"Per-settlement normalised Shannon entropy of the AHP Huff Pij distribution, entropy_class"
+outputs/gpkg/map_entropy_NW_villages.gpkg,gpkg,09_entropy_uncertainty.py,True,"Per-settlement normalised Shannon entropy of the NW Huff Pij distribution, entropy_class"
+outputs/gpkg/map_euclidean_vs_network_villages.gpkg,gpkg,08_euclidean_comparison.py,True,Per-settlement Euclidean-distance vs road-network-distance Huff dominant-assignment agreement
+outputs/gpkg/map_lisa_AHP_vs_ML.gpkg,gpkg,10_morans_i.py,False,Local Moran's I (LISA) cluster_type for AHP-vs-ML agreement (Task 2.2)
+outputs/gpkg/map_lisa_AHP_vs_NW.gpkg,gpkg,10_morans_i.py,True,Local Moran's I (LISA) cluster_type for AHP-vs-NW agreement
+outputs/gpkg/map_lisa_NW_vs_ML.gpkg,gpkg,10_morans_i.py,False,Local Moran's I (LISA) cluster_type for NW-vs-ML agreement (Task 2.2)
+outputs/supplementary/tableS1_indicators_sources.csv,supplementary,12_export_outputs.py (consolidate_tables),True,Source (OSM/GURS/SURS/ZZZS) of each of the 100 GI indicators
+outputs/supplementary/tableS2_AHP_priority_weights.csv,supplementary,"pre-existing (AHP pairwise matrix, not regenerated by any script)",True,"10x10 AHP pairwise comparison matrix and derived group priority weights, plus CR/lambda_max/CI/RI"
+outputs/supplementary/tableS3_individual_indicator_weights.csv,supplementary,pre-existing (not regenerated by any script),True,"Per-indicator group, nonzero count, rarity score, and within-group weight reference table"
+outputs/supplementary/tableS4_beta_sensitivity.csv,supplementary,12_export_outputs.py (consolidate_tables),True,Copy of the beta-sensitivity results table
+outputs/tables/accessibility_normalized.csv,table,05_accessibility.py,True,212 municipalities x 86 inverted min-max normalised accessibility indicators
+outputs/tables/huff_AHP_summary.csv,table,03_huff_ahp.py,True,"Per-settlement AHP Huff dominant municipality, Pij, distance"
+outputs/tables/huff_NW_summary.csv,table,04_huff_nonweighted.py,True,"Per-settlement NW Huff dominant municipality, Pij, distance"
+outputs/tables/ml_AHP_cv_results.csv,table,06_ml_framework.py --model AHP,True,"5-fold spatial CV R2/MAE/RMSE, AHP-target Random Forest"
+outputs/tables/ml_AHP_feature_importance.csv,table,06_ml_framework.py --model AHP,True,"189-feature importance ranking, AHP-target Random Forest"
+outputs/tables/ml_AHP_feature_importance_original.csv,table,ORPHAN — no current script,False,Legacy feature-importance file; no current script writes this filename
+outputs/tables/ml_AHP_vs_AHP_comparison.csv,table,06_ml_framework.py --model AHP,True,"Per-settlement AHP-target RF dominant municipality vs AHP Huff, agreement flag"
+outputs/tables/ml_AHP_vs_AHP_comparison_original.csv,table,ORPHAN — no current script,False,Legacy comparison file; no current script writes this filename
+outputs/tables/ml_NW_cv_results.csv,table,06_ml_framework.py --model NW,True,"5-fold spatial CV R2/MAE/RMSE, NW-target Random Forest"
+outputs/tables/ml_NW_feature_importance.csv,table,06_ml_framework.py --model NW,True,"189-feature importance ranking, NW-target Random Forest"
+outputs/tables/ml_NW_vs_NW_comparison.csv,table,06_ml_framework.py --model NW,True,"Per-settlement NW-target RF dominant municipality vs NW Huff, agreement flag"
+outputs/tables/table1_AHP_group_weights.csv,table,12_export_outputs.py (consolidate_tables),True,Paper Table 1: AHP group priority weights and indicator counts per group
+outputs/tables/table2_top20_GI_NotWeighted.csv,table,12_export_outputs.py (consolidate_tables),True,Paper Table 2: top 20 municipalities by GI_Final_NotWeighted
+outputs/tables/table3_top20_GI_AHP.csv,table,12_export_outputs.py (consolidate_tables),True,Paper Table 3: top 20 municipalities by GI_AHP
+outputs/tables/table4_top15_catchments.csv,table,12_export_outputs.py (consolidate_tables),True,"Paper Table 4: top 15 catchments, AHP vs NW"
+outputs/tables/table5_beta_sensitivity.csv,table,12_export_outputs.py (consolidate_tables),True,Paper Table 5: beta sensitivity agreement/kappa by beta
+outputs/tables/table6_cv_performance.csv,table,"12_export_outputs.py (consolidate_tables, copy of ml_AHP_cv_results.csv)",True,Paper Table 6: AHP Random Forest cross-validation performance
+outputs/tables/table_beta_sensitivity.csv,table,ORPHAN — no current script,False,Legacy beta-sensitivity table; superseded by table_beta_sensitivity_clean.csv (07_beta_sensitivity.py)
+outputs/tables/table_beta_sensitivity_clean.csv,table,07_beta_sensitivity.py,True,"Current beta-sensitivity agreement/kappa table, beta = 1.5/2.0/2.5/3.0"
+outputs/tables/table_disagreement_destinations.csv,table,14_disagreement_synthesis.py,False,"Per-comparison destination breakdown for disagreeing settlements, >=5 settlements per pair (Task 2.4)"
+outputs/tables/table_disagreement_synthesis.csv,table,14_disagreement_synthesis.py,False,Settlement counts and mean entropy by n_disagree (0-3) across all three comparisons (Task 2.3)
+outputs/tables/table_entropy_summary.csv,table,09_entropy_uncertainty.py,True,"Entropy summary statistics (min/max/mean/std, low/medium/high counts), AHP and NW"
+outputs/tables/table_euclidean_vs_network.csv,table,08_euclidean_comparison.py,True,Per-settlement Euclidean vs network-distance Huff dominant-assignment comparison
+outputs/tables/table_feature_importance_comparison.csv,table,15_ml_catchment_structure.py,False,AHP-target vs NW-target RF feature-group importance comparison (Task 2.7)
+outputs/tables/table_huff_vs_commuting.csv,table,11_commuting_comparison.py,True,"Per-municipality Huff vs 2023 SURS commuting functional-centre comparison, pattern classification"
+outputs/tables/table_huff_vs_commuting_summary.csv,table,11_commuting_comparison.py,True,"Summary: agreement/kappa and pattern counts, Huff vs commuting"
+outputs/tables/table_join_counts.csv,table,10_morans_i.py,False,"Binary join-count statistic (BB/WW/BW, chi2) — robustness check for Moran's I (Task 2.2)"
+outputs/tables/table_lisa_summary.csv,table,10_morans_i.py,False,"HH/LL/HL/LH/not-significant counts, LISA, all three comparisons (Task 2.2)"
+outputs/tables/table_ml_catchment_sizes.csv,table,15_ml_catchment_structure.py,False,"Top-20-union catchment size and rank under AHP Huff, NW Huff, and RF (Task 2.5)"
+outputs/tables/table_morans_i_results.csv,table,10_morans_i.py,True,"Global Moran's I, all three comparisons"
+outputs/tables/table_three_way_agreement.csv,table,10_morans_i.py,False,"Settlement-level Cohen's kappa (212-class) + Moran's I, all three comparisons (Task 2.1)"

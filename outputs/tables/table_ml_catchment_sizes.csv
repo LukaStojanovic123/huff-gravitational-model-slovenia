@@ -1,0 +1,25 @@
+Muni_Name,AHP_Huff_size,NW_Huff_size,RF_AHP_target_size,RF_NW_target_size,rank_AHP_Huff_size,rank_NW_Huff_size,rank_RF_AHP_target_size,rank_RF_NW_target_size
+Ljubljana,1222,1022,307,181,1,1,2,2
+Novo mesto,271,202,384,245,2,2,1,1
+Maribor,226,185,260,136,3,3,3,6
+Celje,218,158,174,103,4,7,6,15
+Ptuj,210,167,123,120,5,4,14,11
+Krško,167,167,153,145,6,4,9,3
+Črnomelj,149,167,147,137,7,4,10,5
+Trebnje,126,128,154,133,8,8,7,8
+Brežice,125,122,124,120,9,9,13,11
+Murska Sobota,116,98,146,94,10,11,11,20
+Koper,113,110,125,121,11,10,12,10
+Nova Gorica,110,85,92,86,12,16,20,22
+Kranj,98,81,154,90,13,17,7,21
+Sevnica,85,92,91,103,14,13,21,15
+Slovenska Bistrica,85,91,70,130,14,14,24,9
+Rogaška Slatina,82,62,97,73,16,25,19,25
+Sežana,80,67,66,47,17,24,27,39
+Litija,77,70,180,114,18,22,5,14
+Ivančna Gorica,74,98,118,135,19,11,15,7
+Ilirska Bistrica,69,73,68,73,20,20,25,25
+Kočevje,69,75,105,100,20,18,17,17
+Kamnik,69,75,201,138,20,18,4,4
+Šentjur,69,87,98,115,20,15,18,13
+Slovenske Konjice,65,56,112,80,24,28,16,23

@@ -1,9 +1,14 @@
 """
 Export all paper-ready outputs — 6 tables, 3 supplementary tables,
-9 figures as PNG and PDF, all GPKG layers for QGIS.
+9 figures as PNG and PDF, all GPKG layers for QGIS. The completeness
+checklist also covers the audit and Task 2-4 outputs added by
+src/13-18 (three-way agreement, LISA on all comparisons, disagreement
+synthesis, RF catchment structure, SHAP dependence, study-area/GI/
+catchment spatial layers, and the data audit report).
 """
 
 import sys
+import importlib.util
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -15,7 +20,19 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from config import DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY
+from config import DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS
+
+AUDIT = OUTPUTS / "audit"
+SRC_DIR = Path(__file__).resolve().parent
+
+
+def load_module(stem):
+    """Import src/NN_name.py by path (filenames start with a digit)."""
+    path = SRC_DIR / f"{stem}.py"
+    spec = importlib.util.spec_from_file_location(stem, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 TABLES_AND_CHARTS = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\tables and charts")
 HUFFMETHODPAPER_ROOT = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper")
@@ -136,8 +153,17 @@ def plot_feature_importance():
 
 
 def export_agreement_maps(data_raw, tables_path, gpkg_path):
-    """Export three village-polygon agreement GPKG layers."""
+    """Export three village-polygon agreement GPKG layers.
+
+    Also adds the map_class / is_ljubljana_source QGIS symbology fields
+    (Task 4) inline, right before each layer is saved, so a plain rerun of
+    this script can never regenerate Maps A/B/C without them — those fields
+    used to only get added by a separate script (18_map_symbology_fields.py)
+    that had to run *after* this one, and a subsequent rerun of this script
+    would silently wipe them again.
+    """
     print("Exporting agreement maps...")
+    mod18 = load_module("18_map_symbology_fields")
 
     ahp_path = tables_path / "huff_AHP_summary.csv"
     nw_path = tables_path / "huff_NW_summary.csv"
@@ -167,6 +193,8 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
     map1["agreement_label"] = map1["agreement"].map(
         {1: "AHP and NW agree", 0: "AHP and NW disagree"})
     map1.drop(columns=["Village_ID_x", "Village_ID_y"], errors="ignore", inplace=True)
+    map1["map_class"] = mod18.build_map_class(map1, "AHP_dominant_muni", 20)
+    map1["is_ljubljana_source"] = (map1["AHP_dominant_muni"] == "Ljubljana")
     map1.to_file(gpkg_path / "map_AHP_vs_NW_villages.gpkg", driver="GPKG")
     agree1 = map1["agreement"].sum()
     print(f"    Saved: {len(map1)} villages, {agree1} agree ({agree1 / len(map1) * 100:.1f}%)")
@@ -185,6 +213,8 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 
         map2 = na.merge(ml_nw, left_on="NA_MID", right_on="Village_ID", how="left")
         map2.drop(columns=["Village_ID"], errors="ignore", inplace=True)
+        map2["map_class"] = mod18.build_map_class(map2, "ml_dominant_muni", 40)
+        map2["is_ljubljana_source"] = (map2["NW_dominant_muni"] == "Ljubljana")
         map2.to_file(gpkg_path / "map_NW_vs_ML_villages.gpkg", driver="GPKG")
         agree2 = map2["agreement"].sum()
         print(f"    Saved: {len(map2)} villages, {agree2} agree ({agree2 / len(map2) * 100:.1f}%)")
@@ -206,6 +236,8 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 
         map3 = na.merge(ml_ahp, left_on="NA_MID", right_on="Village_ID", how="left")
         map3.drop(columns=["Village_ID"], errors="ignore", inplace=True)
+        map3["map_class"] = mod18.build_map_class(map3, "ml_dominant_muni", 40)
+        map3["is_ljubljana_source"] = (map3["AHP_dominant_muni"] == "Ljubljana")
         map3.to_file(gpkg_path / "map_AHP_vs_ML_villages.gpkg", driver="GPKG")
         agree3 = map3["agreement"].sum()
         print(f"    Saved: {len(map3)} villages, {agree3} agree ({agree3 / len(map3) * 100:.1f}%)")
@@ -249,6 +281,15 @@ EXPECTED_OUTPUTS = {
         TABLES / "table4_top15_catchments.csv",
         TABLES / "table5_beta_sensitivity.csv",
         TABLES / "table6_cv_performance.csv",
+        # Task 2 (src/10, 14, 15) — three-way agreement, LISA, disagreement
+        # synthesis, RF catchment structure, feature importance comparison.
+        TABLES / "table_three_way_agreement.csv",
+        TABLES / "table_join_counts.csv",
+        TABLES / "table_lisa_summary.csv",
+        TABLES / "table_disagreement_synthesis.csv",
+        TABLES / "table_disagreement_destinations.csv",
+        TABLES / "table_ml_catchment_sizes.csv",
+        TABLES / "table_feature_importance_comparison.csv",
     ],
     "outputs/supplementary": [
         SUPPLEMENTARY / "tableS1_indicators_sources.csv",
@@ -263,6 +304,12 @@ EXPECTED_OUTPUTS = {
         FIGURES / "fig07_feature_importance.pdf",
         FIGURES / "fig08_shap_bar_AHP.png",
         FIGURES / "fig08_shap_summary_AHP.png",
+        # Task 2.6/2.7 — SHAP dependence (src/16) and feature importance
+        # comparison (src/15).
+        FIGURES / "fig_shap_dependence_AHP.png",
+        FIGURES / "fig_shap_dependence_AHP.pdf",
+        FIGURES / "fig_feature_importance_comparison.png",
+        FIGURES / "fig_feature_importance_comparison.pdf",
     ],
     "outputs/gpkg": [
         GPKG / "map_AHP_vs_NW_villages.gpkg",
@@ -273,6 +320,26 @@ EXPECTED_OUTPUTS = {
         GPKG / "map_entropy_NW_villages.gpkg",
         GPKG / "map_lisa_AHP_vs_NW.gpkg",
         GPKG / "fig_huff_vs_commuting_municipalities.gpkg",
+        # Task 2.2 — LISA for all three comparisons (src/10).
+        GPKG / "map_lisa_AHP_vs_ML.gpkg",
+        GPKG / "map_lisa_NW_vs_ML.gpkg",
+        # Task 2.3 — three-way disagreement synthesis (src/14).
+        GPKG / "map_disagreement_count_villages.gpkg",
+        # Task 3 — study area, GI choropleths, catchment layers (src/17).
+        GPKG / "fig01_study_area.gpkg",
+        GPKG / "fig03_GI_NW_municipalities.gpkg",
+        GPKG / "fig04_GI_AHP_municipalities.gpkg",
+        GPKG / "fig05_catchments_AHP.gpkg",
+        GPKG / "fig06_catchments_NW.gpkg",
+        GPKG / "fig10_catchments_ML.gpkg",
+    ],
+    "outputs/audit": [
+        AUDIT / "data_audit_report.md",
+        AUDIT / "raw_input_inventory.csv",
+        AUDIT / "indicator_audit.csv",
+        AUDIT / "GI_full_212_municipalities.csv",
+        AUDIT / "manuscript_number_check.csv",
+        AUDIT / "output_manifest.csv",
     ],
 }
 
@@ -299,6 +366,7 @@ def main():
     FIGURES.mkdir(parents=True, exist_ok=True)
     GPKG.mkdir(parents=True, exist_ok=True)
     SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
+    AUDIT.mkdir(parents=True, exist_ok=True)
 
     consolidate_tables()
     export_agreement_maps(DATA_RAW, TABLES, GPKG)
