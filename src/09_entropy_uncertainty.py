@@ -15,8 +15,6 @@ import geopandas as gpd
 from config import DATA_RAW, TABLES, GPKG, N_MUNICIPALITIES, SETTLEMENTS_POLY, EPSG
 from crs_utils import ensure_crs
 
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
-
 LOW_THRESHOLD = 0.2
 HIGH_THRESHOLD = 0.5
 
@@ -67,8 +65,8 @@ def main():
     TABLES.mkdir(parents=True, exist_ok=True)
     GPKG.mkdir(parents=True, exist_ok=True)
 
-    ahp_od_path = MATRIX_TABLES / "huff_od_matrix.csv"
-    nw_od_path = MATRIX_TABLES / "huff_NW_od_matrix.csv"
+    ahp_od_path = TABLES / "huff_od_matrix.csv"
+    nw_od_path = TABLES / "huff_NW_od_matrix.csv"
 
     print("Loading village polygons (NA.shp)...")
     na = gpd.read_file(DATA_RAW / SETTLEMENTS_POLY)

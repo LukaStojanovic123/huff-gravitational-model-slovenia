@@ -17,8 +17,6 @@ from sklearn.metrics import cohen_kappa_score
 from config import DATA_RAW, TABLES, FIGURES, BETA, MUNICIPALITIES_AHP, EPSG
 from crs_utils import ensure_crs
 
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
-
 BETAS = [1.5, 2.0, 2.5, 3.0]
 
 
@@ -80,8 +78,8 @@ def main():
     FIGURES.mkdir(parents=True, exist_ok=True)
 
     munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
-    od_path = MATRIX_TABLES / "huff_od_matrix.csv"
-    summary_path = MATRIX_TABLES / "huff_summary.csv"
+    od_path = TABLES / "huff_od_matrix.csv"
+    summary_path = TABLES / "huff_AHP_summary.csv"
 
     print("Loading GI_AHP...")
     gi_series = load_gi_ahp(munis_ahp_path)

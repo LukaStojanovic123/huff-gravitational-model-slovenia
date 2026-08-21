@@ -20,11 +20,15 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from config import DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS, EPSG
+from config import (
+    DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS, EPSG, REPO_ROOT,
+    MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
+)
 from crs_utils import ensure_crs
 
 AUDIT = OUTPUTS / "audit"
 SRC_DIR = Path(__file__).resolve().parent
+DATA_EXTERNAL = REPO_ROOT / "data" / "external"
 
 
 def load_module(stem):
@@ -34,10 +38,6 @@ def load_module(stem):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
-
-TABLES_AND_CHARTS = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\tables and charts")
-HUFFMETHODPAPER_ROOT = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper")
-
 
 def safe_copy(src, dst, label):
     """Copy src to dst if src exists; report status either way."""
@@ -57,22 +57,58 @@ def first_existing(*paths):
     return None
 
 
+def build_top20_gi_table(gpkg_path, gi_col, out_path, label):
+    """Rank all municipalities by a GI column, save the top 20. Computed
+    directly from the raw municipality layer — no external table needed."""
+    gdf = gpd.read_file(gpkg_path)
+    gdf = ensure_crs(gdf, EPSG, label=gpkg_path.name)
+    ranked = gdf[["Muni_Name", gi_col]].sort_values(gi_col, ascending=False).reset_index(drop=True)
+    ranked.insert(0, "Rank", ranked.index + 1)
+    ranked = ranked.rename(columns={"Muni_Name": "Municipality"})
+    ranked.head(20).to_csv(out_path, index=False)
+    print(f"  OK    {label} -> {out_path.name} (computed from {gpkg_path.name})")
+
+
+def build_top15_catchment_table(out_path, label):
+    """Top 15 combined catchment sizes under AHP and NW, side by side.
+    Computed directly from huff_AHP_summary.csv / huff_NW_summary.csv —
+    no external table needed."""
+    ahp = pd.read_csv(TABLES / "huff_AHP_summary.csv")
+    nw = pd.read_csv(TABLES / "huff_NW_summary.csv")
+    ahp_counts = ahp["dominant_municipality"].value_counts().head(15).reset_index()
+    ahp_counts.columns = ["Municipality (AHP)", "Villages (AHP)"]
+    nw_counts = nw["dominant_municipality"].value_counts().head(15).reset_index()
+    nw_counts.columns = ["Municipality (NW)", "Villages (NW)"]
+    combined = pd.concat([ahp_counts, nw_counts], axis=1)
+    combined.insert(0, "Rank", range(1, len(combined) + 1))
+    combined.to_csv(out_path, index=False)
+    print(f"  OK    {label} -> {out_path.name} (computed from huff_AHP_summary.csv / huff_NW_summary.csv)")
+
+
 def consolidate_tables():
-    """Copy/rename the paper's final tables (table1-6, tableS1-S4) into place."""
+    """Build/copy the paper's final tables (table1-6, tableS1-S4) into place.
+
+    table1 and tableS1 are genuine inputs (the AHP pairwise-comparison result
+    and the indicator source citations) that no script computes from data —
+    those are copied from data/external/, which is committed to the repo, not
+    an absolute path on one machine. table2-4 are pure rankings/derivations
+    with no ambiguity, so they're computed here directly from repo data
+    instead of being copied from a pre-existing file.
+    """
     print("Consolidating paper tables...")
 
-    # table1: the FIXED original already combines AHP priority weight + indicator count
-    safe_copy(TABLES_AND_CHARTS / "table1_AHP_group_weights_FIXED.csv",
+    # table1: the AHP group priority weights are a pairwise-comparison judgment,
+    # not a data-derived result — a genuine input, not something to recompute.
+    safe_copy(DATA_EXTERNAL / "table1_AHP_group_weights_FIXED.csv",
               TABLES / "table1_AHP_group_weights.csv", "table1_AHP_group_weights")
 
-    safe_copy(TABLES_AND_CHARTS / "table2_top20_GI_NotWeighted.csv",
-              TABLES / "table2_top20_GI_NotWeighted.csv", "table2_top20_GI_NotWeighted")
+    build_top20_gi_table(DATA_RAW / MUNICIPALITIES_NW, "GI_Final_NotWeighted",
+                          TABLES / "table2_top20_GI_NotWeighted.csv", "table2_top20_GI_NotWeighted")
 
-    safe_copy(TABLES_AND_CHARTS / "table3_top20_GI_AHP.csv",
-              TABLES / "table3_top20_GI_AHP.csv", "table3_top20_GI_AHP")
+    build_top20_gi_table(DATA_RAW / MUNICIPALITIES_AHP, "GI_AHP",
+                          TABLES / "table3_top20_GI_AHP.csv", "table3_top20_GI_AHP")
 
-    safe_copy(TABLES_AND_CHARTS / "table4_top15_catchment_AHP_vs_NW.csv",
-              TABLES / "table4_top15_catchments.csv", "table4_top15_catchments")
+    build_top15_catchment_table(TABLES / "table4_top15_catchments.csv", "table4_top15_catchments")
 
     beta_src = first_existing(TABLES / "table_beta_sensitivity.csv",
                                TABLES / "table_beta_sensitivity_clean.csv")
@@ -86,7 +122,8 @@ def consolidate_tables():
     safe_copy(TABLES / "ml_AHP_cv_results.csv",
               TABLES / "table6_cv_performance.csv", "table6_cv_performance")
 
-    safe_copy(HUFFMETHODPAPER_ROOT / "tableS1_indicators_sources.csv",
+    # tableS1: indicator source citations — reference metadata, not a computed result.
+    safe_copy(DATA_EXTERNAL / "tableS1_indicators_sources.csv",
               SUPPLEMENTARY / "tableS1_indicators_sources.csv", "tableS1_indicators_sources")
 
     for name in ("tableS2_AHP_priority_weights.csv", "tableS3_individual_indicator_weights.csv"):

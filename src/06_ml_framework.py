@@ -34,8 +34,6 @@ from config import (
 )
 from crs_utils import ensure_crs
 
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
-
 
 def build_municipality_features(munis_pts_path, acc_path, munis_ahp_path):
     """Load and join GI indicators, accessibility, and GI_AHP."""
@@ -209,14 +207,17 @@ def main():
     print("=== ML FRAMEWORK ===")
     print()
 
-    # Paths
+    # Paths — all repository-relative. These used to point outside the repo
+    # at "Matrix and tables"; see crs_utils / Stage 2A audit trail for why
+    # that was a problem (no working data availability statement is possible
+    # while a script depends on a path only one machine has).
     munis_pts_path = DATA_RAW / MUNICIPALITIES_PTS
     munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
-    acc_path = MATRIX_TABLES / "accessibility_normalized.csv"
-    ahp_od_path = MATRIX_TABLES / "huff_od_matrix.csv"
-    nw_od_path = MATRIX_TABLES / "huff_NW_od_matrix.csv"
-    ahp_sum_path = MATRIX_TABLES / "huff_summary.csv"
-    nw_sum_path = MATRIX_TABLES / "huff_NW_summary.csv"
+    acc_path = TABLES / "accessibility_normalized.csv"
+    ahp_od_path = TABLES / "huff_od_matrix.csv"
+    nw_od_path = TABLES / "huff_NW_od_matrix.csv"
+    ahp_sum_path = TABLES / "huff_AHP_summary.csv"
+    nw_sum_path = TABLES / "huff_NW_summary.csv"
     blocks_cache_path = DATA_PROCESSED / "spatial_blocks.csv"
 
     TABLES.mkdir(parents=True, exist_ok=True)

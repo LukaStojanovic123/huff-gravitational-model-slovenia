@@ -32,7 +32,6 @@ from config import (
 from crs_utils import ensure_crs
 
 AUDIT_DIR = OUTPUTS / "audit"
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 OBCINE_FILE = "obcine_poligoni.shp"
 SRC_DIR = Path(__file__).resolve().parent
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"

@@ -44,7 +44,6 @@ import matplotlib.pyplot as plt
 
 from config import DATA_RAW, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_PTS, TABLES
 
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 SRC_DIR = Path(__file__).resolve().parent
 
 RF_SEED = 42
@@ -75,8 +74,8 @@ def main():
 
     munis_pts_path = DATA_RAW / MUNICIPALITIES_PTS
     munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
-    acc_path = MATRIX_TABLES / "accessibility_normalized.csv"
-    ahp_od_path = MATRIX_TABLES / "huff_od_matrix.csv"
+    acc_path = TABLES / "accessibility_normalized.csv"
+    ahp_od_path = TABLES / "huff_od_matrix.csv"
 
     print("Building municipality features...")
     munis_features = mod06.build_municipality_features(munis_pts_path, acc_path, munis_ahp_path)

@@ -3,6 +3,7 @@ Reuse distance matrix, swap GI to non-weighted, compute NW Huff
 probabilities, save huff_NW_od_matrix.csv and huff_NW_summary.csv.
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -26,6 +27,7 @@ DIST_MATRIX_PATH = DATA_PROCESSED / "distance_matrix.npy"
 DIST_VILLAGE_IDS_PATH = DATA_PROCESSED / "distance_matrix_village_ids.npy"
 DIST_MUNI_IDS_PATH = DATA_PROCESSED / "distance_matrix_muni_ids.npy"
 OUTPUT_PATH = TABLES / "huff_NW_summary.csv"
+OD_MATRIX_PATH = TABLES / "huff_NW_od_matrix.csv"
 
 
 def load_graph():
@@ -128,15 +130,20 @@ def compute_huff(gi_values, dist_matrix):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true",
+                         help="Recompute even if huff_NW_summary.csv already exists.")
+    args = parser.parse_args()
+
     print("=== HUFF NON-WEIGHTED ===")
     print()
 
     TABLES.mkdir(parents=True, exist_ok=True)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
 
-    if OUTPUT_PATH.exists():
-        print(f"Found existing {OUTPUT_PATH} — skipping full computation.")
-        print("Delete this file to force recomputation from the road network.")
+    if OUTPUT_PATH.exists() and not args.force:
+        print(f"WARNING: reusing existing {OUTPUT_PATH} — skipping full computation.")
+        print("Pass --force to recompute from the road network instead.")
         existing = pd.read_csv(OUTPUT_PATH)
         print(f"  {len(existing)} rows loaded")
         print(existing.head(3).to_string(index=False))
@@ -202,6 +209,18 @@ def main():
 
     summary.to_csv(OUTPUT_PATH, index=False)
     print(f"Saved {OUTPUT_PATH}")
+    print()
+
+    print("Saving full OD probability matrix...")
+    od = pd.DataFrame({
+        "Village_ID": villages["Village_ID"].values,
+        "Village_Name": villages["Village_Name"].values,
+    })
+    for j, name in enumerate(muni_names):
+        od[f"dist_{name}"] = dist_matrix[:, j]
+        od[f"Pij_{name}"] = pij[:, j]
+    od.to_csv(OD_MATRIX_PATH, index=False)
+    print(f"Saved {OD_MATRIX_PATH}  ({od.shape[0]} rows x {od.shape[1]} cols)")
     print()
     print("Done.")
 

@@ -3,6 +3,7 @@ For each of 86 facility types compute nearest-facility road distance
 per municipality, normalise inverted 0-1, save accessibility_normalized.csv.
 """
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -125,13 +126,19 @@ def nearest_facility_distances(G, muni_node, facility_nodes, primary_cutoff, ext
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force", action="store_true",
+                         help="Recompute even if accessibility_normalized.csv already exists.")
+    args = parser.parse_args()
+
     print("=== ACCESSIBILITY ===")
     print()
 
     TABLES.mkdir(parents=True, exist_ok=True)
 
-    if NORM_OUTPUT_PATH.exists():
-        print(f"Found existing {NORM_OUTPUT_PATH} — skipping computation.")
+    if NORM_OUTPUT_PATH.exists() and not args.force:
+        print(f"WARNING: reusing existing {NORM_OUTPUT_PATH} — skipping computation.")
+        print("Pass --force to recompute instead.")
         existing = pd.read_csv(NORM_OUTPUT_PATH)
         print(f"  {existing.shape[0]} rows, {existing.shape[1]} columns loaded")
         print()

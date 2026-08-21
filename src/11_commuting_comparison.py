@@ -16,8 +16,6 @@ from sklearn.metrics import cohen_kappa_score
 from config import DATA_RAW, TABLES, GPKG, COMMUTING_FILE, VILLAGES_FILE, EPSG
 from crs_utils import ensure_crs
 
-MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
-
 OBCINE_FILE = "obcine_poligoni.shp"
 
 
@@ -126,7 +124,7 @@ def main():
     commuting_path = DATA_RAW / COMMUTING_FILE
     obcine_path = DATA_RAW / OBCINE_FILE
     villages_path = DATA_RAW / VILLAGES_FILE
-    huff_summary_path = MATRIX_TABLES / "huff_summary.csv"
+    huff_summary_path = TABLES / "huff_AHP_summary.csv"
 
     print("Building commuting-derived functional centres...")
     commuting = build_commuting_centres(commuting_path)
