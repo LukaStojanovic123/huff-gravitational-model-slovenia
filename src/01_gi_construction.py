@@ -13,9 +13,10 @@ import pandas as pd
 import geopandas as gpd
 
 from config import (
-    DATA_RAW, TABLES, SUPPLEMENTARY, N_MUNICIPALITIES,
+    DATA_RAW, TABLES, SUPPLEMENTARY, N_MUNICIPALITIES, EPSG,
     MUNICIPALITIES_AHP, MUNICIPALITIES_NW, MUNICIPALITIES_PTS,
 )
+from crs_utils import ensure_crs
 
 
 def load_indicator_group_map(supplementary_path):
@@ -60,6 +61,7 @@ def main():
 
     print("Loading raw indicators (Municipalities_Points_normalized.gpkg)...")
     pts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
+    pts = ensure_crs(pts, EPSG, label=MUNICIPALITIES_PTS)
     n_cols = [c for c in pts.columns if c.startswith("n_")]
     print(f"  Shape: {pts.shape}  ({len(n_cols)} n_-prefixed columns)")
 
@@ -86,10 +88,12 @@ def main():
 
     print("Loading GI_Final_NotWeighted (Municipalities_All_Groups_NotWeighted_Normalized.gpkg)...")
     nw = gpd.read_file(DATA_RAW / MUNICIPALITIES_NW)
+    nw = ensure_crs(nw, EPSG, label=MUNICIPALITIES_NW)
     print(f"  Shape: {nw.shape}")
 
     print("Loading GI_AHP (Municipalities_All_Groups_Weighted_AHP.gpkg)...")
     ahp = gpd.read_file(DATA_RAW / MUNICIPALITIES_AHP)
+    ahp = ensure_crs(ahp, EPSG, label=MUNICIPALITIES_AHP)
     print(f"  Shape: {ahp.shape}")
     print()
 

@@ -12,7 +12,8 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
-from config import DATA_RAW, TABLES, GPKG, N_MUNICIPALITIES, SETTLEMENTS_POLY
+from config import DATA_RAW, TABLES, GPKG, N_MUNICIPALITIES, SETTLEMENTS_POLY, EPSG
+from crs_utils import ensure_crs
 
 MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 
@@ -71,6 +72,7 @@ def main():
 
     print("Loading village polygons (NA.shp)...")
     na = gpd.read_file(DATA_RAW / SETTLEMENTS_POLY)
+    na = ensure_crs(na, EPSG, label=SETTLEMENTS_POLY)
     print(f"  Villages: {len(na)}")
     print()
 

@@ -14,7 +14,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 from sklearn.metrics import cohen_kappa_score
 
-from config import DATA_RAW, TABLES, FIGURES, BETA, MUNICIPALITIES_AHP
+from config import DATA_RAW, TABLES, FIGURES, BETA, MUNICIPALITIES_AHP, EPSG
+from crs_utils import ensure_crs
 
 MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 
@@ -24,6 +25,7 @@ BETAS = [1.5, 2.0, 2.5, 3.0]
 def load_gi_ahp(munis_ahp_path):
     """Load GI_AHP per municipality, indexed by municipality name."""
     munis_ahp = gpd.read_file(munis_ahp_path)
+    munis_ahp = ensure_crs(munis_ahp, EPSG, label=munis_ahp_path.name)
     return munis_ahp.set_index("Muni_Name")["GI_AHP"]
 
 

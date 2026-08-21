@@ -15,7 +15,8 @@ import networkx as nx
 import momepy
 from scipy.spatial import cKDTree
 
-from config import DATA_RAW, DATA_PROCESSED, TABLES, MUNICIPALITIES_PTS, CUTOFF_M
+from config import DATA_RAW, DATA_PROCESSED, TABLES, REPO_ROOT, MUNICIPALITIES_PTS, CUTOFF_M, EPSG
+from crs_utils import ensure_crs
 
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
 RAW_OUTPUT_PATH = TABLES / "accessibility_raw_distances.csv"
@@ -23,62 +24,44 @@ NORM_OUTPUT_PATH = TABLES / "accessibility_normalized.csv"
 
 PRIMARY_CUTOFF_M = 80_000
 
-# Non-facility layers in DATA_RAW, excluded from the facility scan.
-# Calibrated against the 86 nacc_ columns already present in
-# accessibility_normalized.csv (from the original analysis).
-EXCLUDE_NAMES = {
-    # road / rail / bike network
-    "Roads", "Roads_Dissolve", "Roads_Mot", "Roads_Pri",
-    "Railways", "Railways_Dissolve", "DissolvedBikePaths",
-    "kolesarske_poti_osm1", "ceste_prave",
-    # municipality layers (raw, grouped, normalized, AHP/NW, with_index)
-    "Municipalities", "Municipalities_Points", "Municipalities_Points1",
-    "Municipalities_Points_normalized",
-    "Municipalities_Group_Culture", "Municipalities_Group_Education",
-    "Municipalities_Group_Finance", "Municipalities_Group_Healthcare",
-    "Municipalities_Group_JudiciaryAndEmerg", "Municipalities_Group_Residential",
-    "Municipalities_Group_SportRecreation", "Municipalities_Group_Tourism",
-    "Municipalities_Group_TradeAndBus", "Municipalities_Group_TrafficAndCommunication",
-    "Municipalities_Group_Culture_normalized", "Municipalities_Group_Education_normalized",
-    "Municipalities_Group_Finance_normalized", "Municipalities_Group_Healthcare_normalized",
-    "Municipalities_Group_JudiciaryAndEmerg_normalized", "Municipalities_Group_Residential_normalized",
-    "Municipalities_Group_SportRecreation_normalized", "Municipalities_Group_Tourism_normalized",
-    "Municipalities_Group_TradeAndBus_normalized", "Municipalities_Group_TrafficAndCommunication_normalized",
-    "Municipalities_All_Groups_NotWeighted_Normalized", "Municipalities_All_Groups_Weighted_AHP",
-    "Municipalities_All_Groups_Weighted_Normalized",
-    "Municipalities_Culture_with_index", "Municipalities_Education_with_index",
-    "Municipalities_Finance_with_index", "Municipalities_Healthcare_with_index",
-    "Municipalities_Judiciary_with_index", "Municipalities_Residential_with_index",
-    "Municipalities_Sport_with_index", "Municipalities_Tourism_with_index",
-    "Municipalities_Trade_with_index", "Municipalities_TrafficAndCommunication_with_index",
-    # village layers
-    "Villages_Point", "Villages_Point1", "Villages_points_real",
-    # boundary / administrative reference layers
-    "NA", "OB", "obcine_poligoni", "Slovenia",
-    "stat_regije_poligon", "stat_regije_poligoni", "Statistical_Regions_Points",
-    "naselja_poligoni", "centroidi_naselij", "centroidi_obcin",
-    "centroidi_obcin_pravi", "centroidi_stat_regij", "centroidi_ue", "Europe",
-    # non-facility / duplicate layers (not point-count accessibility indicators)
-    "Addresses", "bolnice", "vrtci_osm",
-}
+# The 86 facility layers, one per line, in data/facility_layers.txt.
+#
+# This used to be a glob over DATA_RAW minus a hand-maintained exclude list.
+# That's what let all_roads.gpkg get silently counted as an 87th facility
+# type when it was dropped into DATA_RAW on 2026-08-14 (see the Stage 1/2A
+# audit trail) — glob discovery makes every file anyone adds to the raw data
+# directory a variable in the analysis. An explicit, version-controlled list
+# means a new file in DATA_RAW does nothing until someone deliberately adds
+# it here.
+FACILITY_LAYERS_MANIFEST = REPO_ROOT / "data" / "facility_layers.txt"
 
 
 def discover_facility_layers(data_raw):
-    """Scan DATA_RAW for .shp/.gpkg files, excluding known non-facility layers."""
-    names = set()
-    for ext in ("shp", "gpkg"):
-        for p in data_raw.glob(f"*.{ext}"):
-            names.add(p.stem)
-    facility_names = sorted(names - EXCLUDE_NAMES)
+    """Resolve the facility layers named in data/facility_layers.txt to paths
+    in DATA_RAW. Raises if a listed layer or an unresolvable duplicate is found —
+    this is meant to fail loudly, not silently drift."""
+    names = [
+        line.strip() for line in FACILITY_LAYERS_MANIFEST.read_text().splitlines()
+        if line.strip()
+    ]
 
     paths = {}
-    for name in facility_names:
+    missing = []
+    for name in names:
         shp = data_raw / f"{name}.shp"
         gpkg = data_raw / f"{name}.gpkg"
         if shp.exists():
             paths[name] = shp
         elif gpkg.exists():
             paths[name] = gpkg
+        else:
+            missing.append(name)
+
+    if missing:
+        raise FileNotFoundError(
+            f"{len(missing)} facility layer(s) listed in {FACILITY_LAYERS_MANIFEST} "
+            f"not found in {data_raw}: {missing}"
+        )
     return paths
 
 
@@ -108,6 +91,7 @@ def load_and_snap_facilities(facility_paths, node_coords, node_list):
     facility_nodes = {}
     for name, path in facility_paths.items():
         gdf = gpd.read_file(path)
+        gdf = ensure_crs(gdf, EPSG, label=path.name)
         centroids = gdf.geometry.centroid
         xy = np.column_stack([centroids.x, centroids.y])
         nodes = snap_to_network(xy, node_coords, node_list)
@@ -159,7 +143,7 @@ def main():
     print(f"  Found {len(facility_paths)} facility layers")
     if len(facility_paths) != 86:
         print(f"  WARNING: expected 86 facility layers, found {len(facility_paths)} — "
-              "check EXCLUDE_NAMES against the current DATA_RAW contents.")
+              "check data/facility_layers.txt.")
     print()
 
     print("Building road network graph...")
@@ -170,6 +154,7 @@ def main():
 
     print("Loading municipality centroids...")
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)[["Muni_ID", "Muni_Name", "geometry"]].copy()
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_PTS)
     muni_xy = np.column_stack([munis.geometry.x, munis.geometry.y])
     muni_nodes = snap_to_network(muni_xy, node_coords, node_list)
     print(f"  Municipalities: {len(munis)}")

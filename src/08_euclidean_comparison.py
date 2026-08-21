@@ -14,7 +14,8 @@ import geopandas as gpd
 from scipy.spatial.distance import cdist
 from sklearn.metrics import cohen_kappa_score
 
-from config import DATA_RAW, TABLES, GPKG, BETA, MUNICIPALITIES_AHP, VILLAGES_FILE, SETTLEMENTS_POLY
+from config import DATA_RAW, TABLES, GPKG, BETA, EPSG, MUNICIPALITIES_AHP, VILLAGES_FILE, SETTLEMENTS_POLY
+from crs_utils import ensure_crs
 
 OBCINE_FILE = "obcine_poligoni.shp"
 TABLE_OUTPUT_PATH = TABLES / "table_euclidean_vs_network.csv"
@@ -59,11 +60,13 @@ def main():
 
     print("Loading village centroids...")
     villages = gpd.read_file(DATA_RAW / VILLAGES_FILE)
+    villages = ensure_crs(villages, EPSG, label=VILLAGES_FILE)
     villages = villages.rename(columns={"NA_MID": "Village_ID", "NA_NA_UIME": "Village_Name"})
     print(f"  Villages: {len(villages)}")
 
     print("Loading municipality centroids and GI_AHP...")
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_AHP)
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_AHP)
     print(f"  Municipalities: {len(munis)}")
     print()
 
@@ -117,6 +120,7 @@ def main():
 
     print("Classifying disagreements by region (spatial join to obcine_poligoni.shp)...")
     obc = gpd.read_file(DATA_RAW / OBCINE_FILE)
+    obc = ensure_crs(obc, EPSG, label=OBCINE_FILE)
     joined = villages[["Village_ID", "geometry"]].sjoin(
         obc[["SIFRA", "NAZIV", "geometry"]], how="left", predicate="within")
     comparison = comparison.merge(
@@ -137,6 +141,7 @@ def main():
 
     print("Building village-polygon spatial layer (NA.shp)...")
     na = gpd.read_file(DATA_RAW / SETTLEMENTS_POLY)
+    na = ensure_crs(na, EPSG, label=SETTLEMENTS_POLY)
     na = na[["NA_MID", "NA_UIME", "geometry"]].copy()
     spatial = na.merge(comparison, left_on="NA_MID", right_on="Village_ID", how="left")
     spatial.to_file(GPKG_OUTPUT_PATH, driver="GPKG")

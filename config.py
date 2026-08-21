@@ -20,7 +20,12 @@ EPSG             = 3794
 CUTOFF_M         = 300_000
 
 # Key filenames in DATA_RAW
-ROADS_FILE         = "all_roads.gpkg"
+# ROADS_FILE was "all_roads.gpkg" until 2026-08-21, when it was found to be a
+# contaminant: a fresher OSM extract dropped into DATA_RAW on 2026-08-14, after
+# the committed huff_AHP_summary.csv / huff_NW_summary.csv / accessibility_normalized.csv
+# had already been produced from gis_osm_roads_free_1.shp. Quarantined to
+# data/quarantine/all_roads.gpkg — see that commit for the full audit trail.
+ROADS_FILE         = "gis_osm_roads_free_1.shp"
 MUNICIPALITIES_AHP = "Municipalities_All_Groups_Weighted_AHP.gpkg"
 MUNICIPALITIES_NW  = "Municipalities_All_Groups_NotWeighted_Normalized.gpkg"
 MUNICIPALITIES_PTS = "Municipalities_Points_normalized.gpkg"

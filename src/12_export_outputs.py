@@ -20,7 +20,8 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from config import DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS
+from config import DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS, EPSG
+from crs_utils import ensure_crs
 
 AUDIT = OUTPUTS / "audit"
 SRC_DIR = Path(__file__).resolve().parent
@@ -174,6 +175,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 
     print("  Loading village polygons...")
     na = gpd.read_file(data_raw / "NA.shp")
+    na = ensure_crs(na, EPSG, label="NA.shp")
     na = na[["NA_MID", "NA_UIME", "POV_KM2", "geometry"]].copy()
 
     # ── Map 1: AHP vs NW ─────────────────────────────────────

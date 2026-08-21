@@ -16,9 +16,10 @@ import momepy
 from scipy.spatial import cKDTree
 
 from config import (
-    DATA_RAW, DATA_PROCESSED, TABLES, BETA, CUTOFF_M,
+    DATA_RAW, DATA_PROCESSED, TABLES, BETA, CUTOFF_M, EPSG,
     MUNICIPALITIES_NW, MUNICIPALITIES_PTS, VILLAGES_FILE,
 )
+from crs_utils import ensure_crs
 
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
 DIST_MATRIX_PATH = DATA_PROCESSED / "distance_matrix.npy"
@@ -148,12 +149,15 @@ def main():
 
     print("Loading municipality centroids and GI_Final_NotWeighted...")
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)[["Muni_ID", "Muni_Name", "geometry"]].copy()
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_PTS)
     nw = gpd.read_file(DATA_RAW / MUNICIPALITIES_NW)
+    nw = ensure_crs(nw, EPSG, label=MUNICIPALITIES_NW)
     munis = munis.merge(nw[["Muni_ID", "GI_Final_NotWeighted"]], on="Muni_ID", how="left")
     print(f"  Municipalities: {len(munis)}")
 
     print("Loading village centroids...")
     villages = gpd.read_file(DATA_RAW / VILLAGES_FILE)
+    villages = ensure_crs(villages, EPSG, label=VILLAGES_FILE)
     villages = villages.rename(columns={"NA_MID": "Village_ID", "NA_NA_UIME": "Village_Name"})
     print(f"  Villages: {len(villages)}")
     print()

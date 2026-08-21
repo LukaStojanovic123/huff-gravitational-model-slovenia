@@ -17,6 +17,7 @@ from config import (
     DATA_RAW, GPKG, TABLES, MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
     VILLAGES_FILE, SETTLEMENTS_POLY, EPSG,
 )
+from crs_utils import ensure_crs
 
 OBCINE_FILE = "obcine_poligoni.shp"
 
@@ -25,10 +26,10 @@ def build_study_area():
     print("--- 3.1 Study area layer ---")
     obcine = gpd.read_file(DATA_RAW / OBCINE_FILE)[["SIFRA", "NAZIV", "geometry"]].rename(
         columns={"SIFRA": "muni_id", "NAZIV": "muni_name"})
+    obcine = ensure_crs(obcine, EPSG, label=OBCINE_FILE)
     settlements = gpd.read_file(DATA_RAW / VILLAGES_FILE)[["NA_MID", "NA_NA_UIME", "geometry"]].rename(
         columns={"NA_MID": "settlement_id", "NA_NA_UIME": "settlement_name"})
-
-    assert obcine.crs.to_epsg() == EPSG and settlements.crs.to_epsg() == EPSG, "CRS mismatch"
+    settlements = ensure_crs(settlements, EPSG, label=VILLAGES_FILE)
 
     out_path = GPKG / "fig01_study_area.gpkg"
     obcine.to_file(out_path, layer="municipalities", driver="GPKG")
@@ -42,8 +43,10 @@ def build_gi_choropleths():
     print("--- 3.2 GI choropleth layers ---")
     obcine = gpd.read_file(DATA_RAW / OBCINE_FILE)[["SIFRA", "NAZIV", "geometry"]].rename(
         columns={"SIFRA": "muni_id", "NAZIV": "muni_name"})
+    obcine = ensure_crs(obcine, EPSG, label=OBCINE_FILE)
 
     nw = gpd.read_file(DATA_RAW / MUNICIPALITIES_NW)
+    nw = ensure_crs(nw, EPSG, label=MUNICIPALITIES_NW)
     nw_group_cols = [c for c in nw.columns if c.endswith("_Sum")]
     nw = nw[["Muni_Name", "GI_Final_NotWeighted"] + nw_group_cols].copy()
     nw["rank_GI_NW"] = nw["GI_Final_NotWeighted"].rank(ascending=False, method="min").astype(int)
@@ -54,6 +57,7 @@ def build_gi_choropleths():
     print(f"  Saved {fig03_path} ({len(nw_layer)} municipalities, {n_unmatched} unmatched by name)")
 
     ahp = gpd.read_file(DATA_RAW / MUNICIPALITIES_AHP)
+    ahp = ensure_crs(ahp, EPSG, label=MUNICIPALITIES_AHP)
     ahp_group_cols = [c for c in ahp.columns if c.endswith("_Weighted")]
     ahp = ahp[["Muni_Name", "GI_AHP"] + ahp_group_cols].copy()
     ahp["rank_GI_AHP"] = ahp["GI_AHP"].rank(ascending=False, method="min").astype(int)
@@ -88,6 +92,7 @@ def build_catchment_layer(na, dominant_series, id_col, out_path, dominant_field_
 def build_catchments():
     print("--- 3.3 Catchment layers ---")
     na = gpd.read_file(DATA_RAW / SETTLEMENTS_POLY)[["NA_MID", "NA_UIME", "geometry"]]
+    na = ensure_crs(na, EPSG, label=SETTLEMENTS_POLY)
 
     ahp_sum = pd.read_csv(TABLES / "huff_AHP_summary.csv").set_index("Village_ID")["dominant_municipality"]
     build_catchment_layer(na, ahp_sum, "NA_MID", GPKG / "fig05_catchments_AHP.gpkg", "AHP_dominant_muni")

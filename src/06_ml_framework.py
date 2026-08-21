@@ -32,6 +32,7 @@ from config import (
     MUNICIPALITIES_AHP, MUNICIPALITIES_NW, MUNICIPALITIES_PTS,
     N_MUNICIPALITIES, EPSG,
 )
+from crs_utils import ensure_crs
 
 MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 
@@ -39,7 +40,9 @@ MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matri
 def build_municipality_features(munis_pts_path, acc_path, munis_ahp_path):
     """Load and join GI indicators, accessibility, and GI_AHP."""
     munis_pts = gpd.read_file(munis_pts_path)
+    munis_pts = ensure_crs(munis_pts, EPSG, label=munis_pts_path.name)
     munis_ahp = gpd.read_file(munis_ahp_path)
+    munis_ahp = ensure_crs(munis_ahp, EPSG, label=munis_ahp_path.name)
     acc = pd.read_csv(acc_path)
 
     # GI individual indicators — exclude duplicate n_Fitness_C
@@ -64,6 +67,7 @@ def build_spatial_blocks(munis_pts_path, cache_path=None, n_blocks=5, random_sta
         return pd.read_csv(cache_path)
 
     munis_pts = gpd.read_file(munis_pts_path)
+    munis_pts = ensure_crs(munis_pts, EPSG, label=munis_pts_path.name)
     coords = np.column_stack([munis_pts.geometry.x, munis_pts.geometry.y]).astype(np.float64)
     _, blocks = kmeans2(coords, k=n_blocks, seed=random_state, minit="++")
     result = pd.DataFrame({

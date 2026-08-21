@@ -29,6 +29,7 @@ from config import (
     MUNICIPALITIES_AHP, MUNICIPALITIES_NW, MUNICIPALITIES_PTS,
     VILLAGES_FILE, SETTLEMENTS_POLY, COMMUTING_FILE,
 )
+from crs_utils import ensure_crs
 
 AUDIT_DIR = OUTPUTS / "audit"
 MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
@@ -120,8 +121,7 @@ def section_1_1(mod05):
     used_stems = set(facility_paths.keys()) | {Path(f).stem for f in CORE_FILES}
     unused = sorted(top_level - used_stems)
     log(f"{len(unused)} top-level files in DATA_RAW are neither a core input nor "
-        f"a discovered facility layer (excluded by `05_accessibility.py`'s "
-        f"`EXCLUDE_NAMES`, or otherwise unread):\n")
+        f"one of the 86 facility layers listed in `data/facility_layers.txt`:\n")
     log(", ".join(unused))
     log("")
 
@@ -175,6 +175,7 @@ def section_1_2():
     log("## 1.2 Indicator database audit\n")
 
     pts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
+    pts = ensure_crs(pts, EPSG, label=MUNICIPALITIES_PTS)
     n_cols = [c for c in pts.columns if c.startswith("n_")]
     ref = pd.read_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv", sep=";")
     ref = ref.dropna(subset=["Indicator_code"])
@@ -286,7 +287,9 @@ def section_1_3():
     log("## 1.3 Gravitational Index audit\n")
 
     nw = gpd.read_file(DATA_RAW / MUNICIPALITIES_NW)
+    nw = ensure_crs(nw, EPSG, label=MUNICIPALITIES_NW)
     ahp = gpd.read_file(DATA_RAW / MUNICIPALITIES_AHP)
+    ahp = ensure_crs(ahp, EPSG, label=MUNICIPALITIES_AHP)
 
     nw_group_cols = [c for c in nw.columns if c.endswith("_Sum")]
     ahp_group_cols = [c for c in ahp.columns if c.endswith("_Weighted")]
@@ -357,6 +360,7 @@ def section_1_4(G, node_list, node_coords, tree, noded):
     log("## 1.4 Road network audit\n")
 
     roads_raw = gpd.read_file(DATA_RAW / ROADS_FILE)
+    roads_raw = ensure_crs(roads_raw, EPSG, label=ROADS_FILE)
     from importlib import import_module
     mod02 = load_module("02_road_network")
     kept = roads_raw[roads_raw["fclass"].isin(mod02.FCLASS_KEEP)].copy()
@@ -391,7 +395,9 @@ def section_1_4(G, node_list, node_coords, tree, noded):
     log(f"- Excluded ({len(excluded_classes)}): {excluded_classes}\n")
 
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)[["Muni_ID", "Muni_Name", "geometry"]]
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_PTS)
     villages = gpd.read_file(DATA_RAW / VILLAGES_FILE)
+    villages = ensure_crs(villages, EPSG, label=VILLAGES_FILE)
 
     _, muni_dist = snap_with_dist(munis, tree, node_list)
     _, village_dist = snap_with_dist(villages, tree, node_list)
@@ -424,7 +430,9 @@ def section_1_5(G, node_list, node_coords, tree):
         "`03_huff_ahp.py::compute_distance_matrix`, to recover true pre-fill NaN counts.\n")
 
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)[["Muni_ID", "Muni_Name", "geometry"]].copy()
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_PTS)
     villages = gpd.read_file(DATA_RAW / VILLAGES_FILE)
+    villages = ensure_crs(villages, EPSG, label=VILLAGES_FILE)
     villages = villages.rename(columns={"NA_MID": "Village_ID", "NA_NA_UIME": "Village_Name"})
 
     muni_nodes, _ = snap_with_dist(munis, tree, node_list)
@@ -509,6 +517,7 @@ def section_1_6(G, node_list, node_coords, tree, mod05, facility_paths):
         log("")
 
     munis = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)[["Muni_ID", "Muni_Name", "geometry"]].copy()
+    munis = ensure_crs(munis, EPSG, label=MUNICIPALITIES_PTS)
     muni_xy = np.column_stack([munis.geometry.x, munis.geometry.y])
     muni_nodes = mod05.snap_to_network(muni_xy, node_coords, node_list)
 
@@ -592,6 +601,7 @@ def section_1_7():
     log("## 1.7 Machine learning audit\n")
 
     mpts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
+    mpts = ensure_crs(mpts, EPSG, label=MUNICIPALITIES_PTS)
     n_cols = [c for c in mpts.columns if c not in ("Muni_ID", "Muni_Name", "geometry", "n_Fitness_C")]
     acc = pd.read_csv(TABLES / "accessibility_normalized.csv")
     nacc_cols = [c for c in acc.columns if c.startswith("nacc_")]

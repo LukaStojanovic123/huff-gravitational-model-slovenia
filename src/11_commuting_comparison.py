@@ -13,7 +13,8 @@ import pandas as pd
 import geopandas as gpd
 from sklearn.metrics import cohen_kappa_score
 
-from config import DATA_RAW, TABLES, GPKG, COMMUTING_FILE, VILLAGES_FILE
+from config import DATA_RAW, TABLES, GPKG, COMMUTING_FILE, VILLAGES_FILE, EPSG
+from crs_utils import ensure_crs
 
 MATRIX_TABLES = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data\Matrix and tables")
 
@@ -79,7 +80,9 @@ def build_huff_majority(villages_path, obcine_path, huff_summary_path):
     """Spatially join villages to municipality polygons, then find the
     majority Huff dominant municipality per home municipality."""
     vp = gpd.read_file(villages_path)
+    vp = ensure_crs(vp, EPSG, label=villages_path.name)
     obc = gpd.read_file(obcine_path)
+    obc = ensure_crs(obc, EPSG, label=obcine_path.name)
     huff_sum = pd.read_csv(huff_summary_path)
 
     joined = vp.sjoin(obc[["SIFRA", "NAZIV", "geometry"]], how="left", predicate="within")
@@ -136,6 +139,7 @@ def main():
     print()
 
     obc = gpd.read_file(obcine_path)
+    obc = ensure_crs(obc, EPSG, label=obcine_path.name)
     base = obc[["SIFRA", "NAZIV", "geometry"]].copy()
 
     result = base.merge(commuting, on="SIFRA", how="left")

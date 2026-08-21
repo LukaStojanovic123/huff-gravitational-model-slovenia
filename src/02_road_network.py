@@ -15,7 +15,8 @@ import momepy
 from shapely.ops import unary_union
 from scipy.spatial import cKDTree
 
-from config import DATA_RAW, DATA_PROCESSED, ROADS_FILE
+from config import DATA_RAW, DATA_PROCESSED, ROADS_FILE, EPSG
+from crs_utils import ensure_crs
 
 FCLASS_KEEP = [
     "motorway", "motorway_link", "trunk", "trunk_link",
@@ -56,6 +57,7 @@ def main():
     print(f"Loading roads from {roads_path.name}...")
     roads = gpd.read_file(roads_path)
     print(f"  Loaded {len(roads)} features")
+    roads = ensure_crs(roads, EPSG, label=roads_path.name)
 
     print(f"Filtering to drivable fclass values...")
     roads = roads[roads["fclass"].isin(FCLASS_KEEP)].copy()
@@ -106,9 +108,13 @@ def main():
     print(f"  Indexed {len(node_list)} nodes")
     print()
 
-    print("Saving noded roads...")
+    print("Filtering to the largest connected component before saving...")
+    largest_gdf = momepy.nx_to_gdf(G_largest, points=False, lines=True)
+    print(f"  {len(largest_gdf)} edges in largest component (of {len(noded)} noded segments)")
+
+    print("Saving noded roads (largest connected component only)...")
     out_path = DATA_PROCESSED / "roads_noded.gpkg"
-    noded.to_file(out_path, driver="GPKG")
+    largest_gdf.to_file(out_path, driver="GPKG")
     print(f"  Saved {out_path}")
     print()
 
