@@ -1,0 +1,83 @@
+output_path,producing_script,newest_input,output_mtime,is_stale
+data/processed/roads_noded.gpkg,02_road_network.py,2026-08-14 10:04:39,2026-08-14 10:07:40,False
+data/processed/spatial_blocks.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-12 13:52:28,False
+outputs/audit/GI_full_212_municipalities.csv,13_data_audit.py,2026-04-29 11:00:22,2026-08-18 12:36:56,False
+outputs/audit/data_audit_report.md,13_data_audit.py,2026-08-14 10:07:40,2026-08-18 13:30:22,False
+outputs/audit/indicator_audit.csv,13_data_audit.py,2026-04-29 11:00:22,2026-08-18 12:36:56,False
+outputs/audit/manuscript_number_check.csv,13_data_audit.py,2026-08-14 10:07:40,2026-08-18 12:55:27,False
+outputs/audit/output_manifest.csv,19_output_manifest.py,2026-08-14 10:07:40,2026-08-18 13:26:27,False
+outputs/audit/raw_input_inventory.csv,13_data_audit.py,2026-08-14 10:07:40,2026-08-18 12:36:56,False
+outputs/figures/fig07_beta_sensitivity.png,07_beta_sensitivity.py / 12_export_outputs.py (early run),2026-04-29 11:00:13,2026-08-11 14:51:04,False
+outputs/figures/fig07_feature_importance.pdf,12_export_outputs.py,2026-04-29 11:00:22,2026-08-18 13:29:55,False
+outputs/figures/fig07_feature_importance.png,12_export_outputs.py,2026-04-29 11:00:22,2026-08-18 13:29:55,False
+outputs/figures/fig07_feature_importance_AHP.png,06_ml_framework.py / 12_export_outputs.py (early run),2026-04-29 11:00:22,2026-08-11 14:51:03,False
+outputs/figures/fig08_shap_bar_AHP.png,06_ml_framework.py,2026-04-29 11:00:22,2026-08-11 14:51:04,False
+outputs/figures/fig08_shap_summary_AHP.png,06_ml_framework.py,2026-04-29 11:00:22,2026-08-11 14:51:03,False
+outputs/figures/fig_beta_sensitivity.pdf,07_beta_sensitivity.py,2026-04-29 11:00:13,2026-08-14 11:09:51,False
+outputs/figures/fig_beta_sensitivity.png,07_beta_sensitivity.py,2026-04-29 11:00:13,2026-08-14 11:09:51,False
+outputs/figures/fig_feature_importance_comparison.pdf,15_ml_catchment_structure.py,2026-04-29 11:00:22,2026-08-18 12:37:25,False
+outputs/figures/fig_feature_importance_comparison.png,15_ml_catchment_structure.py,2026-04-29 11:00:22,2026-08-18 12:37:24,False
+outputs/figures/fig_shap_dependence_AHP.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:28,False
+outputs/figures/fig_shap_dependence_AHP.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:25,False
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:29,False
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:29,False
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:28,False
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:28,False
+outputs/figures/fig_shap_dependence_AHP_n_NumberDr.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:30,False
+outputs/figures/fig_shap_dependence_AHP_n_NumberDr.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:30,False
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:30,False
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:29,False
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.pdf,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:31,False
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.png,16_shap_dependence.py,2026-04-29 11:00:22,2026-08-18 13:25:31,False
+outputs/gpkg/fig01_study_area.gpkg,17_spatial_layers.py,2026-04-29 11:01:02,2026-08-18 12:56:30,False
+outputs/gpkg/fig03_GI_NW_municipalities.gpkg,17_spatial_layers.py,2026-04-29 11:00:28,2026-08-18 12:56:31,False
+outputs/gpkg/fig04_GI_AHP_municipalities.gpkg,17_spatial_layers.py,2026-04-29 11:00:28,2026-08-18 12:56:32,False
+outputs/gpkg/fig05_catchments_AHP.gpkg,17_spatial_layers.py,2026-04-29 11:00:25,2026-08-18 12:56:55,False
+outputs/gpkg/fig06_catchments_NW.gpkg,17_spatial_layers.py,2026-04-29 11:00:25,2026-08-18 12:57:17,False
+outputs/gpkg/fig10_catchments_ML.gpkg,17_spatial_layers.py,2026-04-29 11:00:25,2026-08-18 12:57:38,False
+outputs/gpkg/fig_huff_vs_commuting_municipalities.gpkg,11_commuting_comparison.py,2026-06-15 14:34:54,2026-08-14 10:19:33,False
+outputs/gpkg/map_AHP_vs_ML_villages.gpkg,12_export_outputs.py,2026-08-14 10:07:40,2026-08-18 13:29:54,False
+outputs/gpkg/map_AHP_vs_NW_villages.gpkg,12_export_outputs.py,2026-08-14 10:07:40,2026-08-18 13:29:53,False
+outputs/gpkg/map_NW_vs_ML_villages.gpkg,12_export_outputs.py,2026-08-14 10:07:40,2026-08-18 13:29:53,False
+outputs/gpkg/map_disagreement_count_villages.gpkg,14_disagreement_synthesis.py,2026-08-14 10:07:40,2026-08-18 12:36:16,False
+outputs/gpkg/map_entropy_AHP_villages.gpkg,09_entropy_uncertainty.py,2026-04-29 11:00:25,2026-08-14 11:10:08,False
+outputs/gpkg/map_entropy_NW_villages.gpkg,09_entropy_uncertainty.py,2026-04-29 11:00:25,2026-08-14 11:10:08,False
+outputs/gpkg/map_euclidean_vs_network_villages.gpkg,08_euclidean_comparison.py,2026-04-29 11:01:02,2026-08-14 11:10:00,False
+outputs/gpkg/map_lisa_AHP_vs_ML.gpkg,10_morans_i.py,,2026-08-18 12:35:17,False
+outputs/gpkg/map_lisa_AHP_vs_NW.gpkg,10_morans_i.py,,2026-08-18 12:35:15,False
+outputs/gpkg/map_lisa_NW_vs_ML.gpkg,10_morans_i.py,,2026-08-18 12:35:18,False
+outputs/supplementary/tableS1_indicators_sources.csv,12_export_outputs.py,,2026-08-18 13:29:51,False
+outputs/supplementary/tableS2_AHP_priority_weights.csv,01_gi_construction.py,2026-04-29 11:00:22,2026-08-11 14:51:00,False
+outputs/supplementary/tableS3_individual_indicator_weights.csv,01_gi_construction.py,2026-04-29 11:00:22,2026-08-11 14:51:01,False
+outputs/supplementary/tableS4_beta_sensitivity.csv,07_beta_sensitivity.py / 12_export_outputs.py,2026-04-29 11:00:13,2026-08-18 13:29:51,False
+outputs/tables/accessibility_normalized.csv,05_accessibility.py,2026-08-14 10:07:40,2026-08-11 14:51:02,True
+outputs/tables/huff_AHP_summary.csv,03_huff_ahp.py,2026-08-14 10:07:40,2026-08-11 14:51:01,True
+outputs/tables/huff_NW_summary.csv,04_huff_nonweighted.py,2026-08-14 10:07:40,2026-08-11 14:51:01,True
+outputs/tables/ml_AHP_cv_results.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-11 14:58:04,False
+outputs/tables/ml_AHP_feature_importance.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-11 14:58:04,False
+outputs/tables/ml_AHP_feature_importance_original.csv,06_ml_framework.py (pre-rerun copy),2026-04-29 11:00:22,2026-08-11 14:51:02,False
+outputs/tables/ml_AHP_vs_AHP_comparison.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-11 14:58:08,False
+outputs/tables/ml_AHP_vs_AHP_comparison_original.csv,06_ml_framework.py (pre-rerun copy),2026-04-29 11:00:22,2026-08-11 14:51:02,False
+outputs/tables/ml_NW_cv_results.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-12 14:41:39,False
+outputs/tables/ml_NW_feature_importance.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-12 14:41:39,False
+outputs/tables/ml_NW_vs_NW_comparison.csv,06_ml_framework.py,2026-04-29 11:00:22,2026-08-12 14:41:42,False
+outputs/tables/table1_AHP_group_weights.csv,01_gi_construction.py / 12_export_outputs.py,2026-04-29 11:00:13,2026-08-18 13:29:51,False
+outputs/tables/table2_top20_GI_NotWeighted.csv,01_gi_construction.py / 12_export_outputs.py,2026-04-29 11:00:22,2026-08-18 13:29:51,False
+outputs/tables/table3_top20_GI_AHP.csv,01_gi_construction.py / 12_export_outputs.py,2026-04-29 11:00:22,2026-08-18 13:29:51,False
+outputs/tables/table4_top15_catchments.csv,12_export_outputs.py,2026-08-14 10:07:40,2026-08-18 13:29:51,False
+outputs/tables/table5_beta_sensitivity.csv,12_export_outputs.py (copy of table_beta_sensitivity),2026-04-29 11:00:13,2026-08-18 13:29:51,False
+outputs/tables/table6_cv_performance.csv,12_export_outputs.py (copy of ml_AHP_cv_results),2026-04-29 11:00:22,2026-08-18 13:29:51,False
+outputs/tables/table_beta_sensitivity.csv,"07_beta_sensitivity.py (early run, pre-rename)",2026-04-29 11:00:13,2026-08-11 14:51:02,False
+outputs/tables/table_beta_sensitivity_clean.csv,07_beta_sensitivity.py,2026-04-29 11:00:13,2026-08-14 11:09:51,False
+outputs/tables/table_disagreement_destinations.csv,14_disagreement_synthesis.py,2026-08-14 10:07:40,2026-08-18 12:36:16,False
+outputs/tables/table_disagreement_synthesis.csv,14_disagreement_synthesis.py,2026-08-14 10:07:40,2026-08-18 12:36:16,False
+outputs/tables/table_entropy_summary.csv,09_entropy_uncertainty.py,2026-04-29 11:00:25,2026-08-14 11:10:08,False
+outputs/tables/table_euclidean_vs_network.csv,08_euclidean_comparison.py,2026-04-29 11:01:02,2026-08-14 11:09:59,False
+outputs/tables/table_feature_importance_comparison.csv,15_ml_catchment_structure.py,2026-04-29 11:00:22,2026-08-18 12:37:24,False
+outputs/tables/table_huff_vs_commuting.csv,11_commuting_comparison.py,2026-06-15 14:34:54,2026-08-14 10:19:33,False
+outputs/tables/table_huff_vs_commuting_summary.csv,11_commuting_comparison.py,2026-06-15 14:34:54,2026-08-14 10:19:33,False
+outputs/tables/table_join_counts.csv,10_morans_i.py,,2026-08-18 12:35:14,False
+outputs/tables/table_lisa_summary.csv,10_morans_i.py,,2026-08-18 12:35:18,False
+outputs/tables/table_ml_catchment_sizes.csv,15_ml_catchment_structure.py,2026-08-14 10:07:40,2026-08-18 12:37:24,False
+outputs/tables/table_morans_i_results.csv,10_morans_i.py,,2026-08-18 12:35:03,False
+outputs/tables/table_three_way_agreement.csv,10_morans_i.py,,2026-08-18 12:35:03,False
