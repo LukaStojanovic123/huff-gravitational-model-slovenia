@@ -59,7 +59,7 @@ def load_module(stem):
 # ══════════════════════════════════════════════════════════════
 
 CORE_FILES = [
-    "all_roads.gpkg",
+    "gis_osm_roads_free_1.shp",
     "Municipalities_All_Groups_Weighted_AHP.gpkg",
     "Municipalities_All_Groups_NotWeighted_Normalized.gpkg",
     "Municipalities_Points_normalized.gpkg",
@@ -371,6 +371,13 @@ def section_1_4(G, node_list, node_coords, tree, noded):
 
     n_before = len(kept)
     total_len_km = kept["length_m"].sum() / 1000
+
+    # `noded`/`G` here are read from the SAVED roads_noded.gpkg, which (since the
+    # Stage 2A largest-component fix in 02_road_network.py) already contains only
+    # the largest connected component — not the full pre-filter noded graph. So
+    # n_after/n_nodes below are largest-component figures, not the pre-filter
+    # 439,091/394,874 the manuscript states; those two are not the same quantity
+    # and comparing them directly would be an apples-to-oranges check.
     n_after = len(noded)
     n_nodes = G.number_of_nodes()
     n_edges = G.number_of_edges()
@@ -379,15 +386,19 @@ def section_1_4(G, node_list, node_coords, tree, noded):
     largest_pct = 100 * len(largest) / n_nodes
 
     log(f"- Segments before noding (post-filter, exploded, valid): **{n_before}**  "
-        f"(draft claims 254,252)")
-    log(f"- Total drivable length before noding: **{total_len_km:.1f} km**  (draft claims 55,062 km)")
-    log(f"- Segments after noding: **{n_after}**  (draft claims 439,091)")
-    log(f"- Graph nodes: **{n_nodes}**  (draft claims 394,874)")
+        f"(manuscript: 254,252)")
+    log(f"- Total drivable length before noding: **{total_len_km:.1f} km**  (manuscript: 55,062 km)")
+    log(f"- Segments in saved roads_noded.gpkg (largest connected component only): **{n_after}**")
+    log(f"- Graph nodes (largest connected component only): **{n_nodes}**  "
+        f"(manuscript's largest component: 390,273 nodes, 98.9% of 394,874)")
     log(f"- Graph edges: **{n_edges}**")
-    log(f"- Largest connected component: **{len(largest)} nodes ({largest_pct:.1f}%)**  "
-        f"(draft claims 390,273 nodes at 98.9%)")
-    ok = (n_before == 254252 and n_after == 439091 and n_nodes == 394874 and len(largest) == 390273)
-    log(f"\n**Draft road-network figures {'CONFIRMED' if ok else 'DO NOT MATCH — corrected values above are the ones actually produced by this repository''s pipeline (verified in an earlier run of 02_road_network.py this session: 259,689 pre-noding segments, 55,328.5 km, 447,191 post-noding segments/edges, 402,199 nodes, largest component 397,598 nodes / 98.9%)'}.**\n")
+    log(f"- Connected components in the saved file: **{len(components)}** "
+        f"({'as expected — the file is pre-filtered to one component' if len(components) == 1 else 'UNEXPECTED — should be 1'})")
+    ok = (n_before == 254252 and n_nodes == 390273 and len(components) == 1)
+    log(f"\n**Road-network figures {'CONFIRMED' if ok else 'DO NOT MATCH'}** against the manuscript's "
+        f"pre-filter segment count (254,252) and largest-component node count (390,273). "
+        f"Note the manuscript's own stated connectivity percentage (98.9%) is itself a rounding "
+        f"error: 390,273/394,874 = 98.835%, which rounds to 98.8%, not 98.9%.\n")
 
     log(f"### OSM highway classes\n")
     log(f"- Retained ({len(mod02.FCLASS_KEEP)}): {mod02.FCLASS_KEEP}")

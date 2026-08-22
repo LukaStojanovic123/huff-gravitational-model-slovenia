@@ -42,3 +42,7 @@ __pycache__/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Pre-rerun outputs snapshot (Stage 2B.1) — kept on disk for before/after
+# comparison, never committed (large GPKGs). Never delete this directory.
+outputs_archive_pre_rerun/

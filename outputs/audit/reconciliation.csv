@@ -1,0 +1,67 @@
+metric,manuscript_value,clean_rerun_value,match,notes
+Road network: filtered segments (pre-noding),"254,252","254,252",exact,
+Road network: total drivable length (pre-noding),"55,062 km","55,061.7 km",exact,rounds to same value
+Road network: noded segments (pre-largest-component-filter),"439,091","439,091",exact,
+Road network: total nodes (pre-largest-component-filter),"394,874","394,874",exact,
+Road network: largest connected component nodes,"390,273","390,273",exact,
+Road network: largest component connectivity %,98.9%,98.8%,differs (manuscript rounding error),"390,273/394,874 = 98.835%, which rounds to 98.8%, not 98.9%. The node counts are exact; only the manuscript's own arithmetic is wrong. Text needs correcting, not the pipeline."
+Road network: largest component length (this repo's own new figure),not stated in manuscript,"54,431.8 km",n/a,"No manuscript figure to compare against for this specific quantity (manuscript states only the pre-filter 55,062 km total)."
+Municipality snapping distance: mean / max,39.5 m / 297.5 m,39.5 m / 297.5 m,exact,
+Settlement snapping distance: mean / max,"58.3 m / 1,470.5 m","58.3 m / 1,470.5 m",exact,
+OD matrix: valid pairs (within 300km cutoff),99.84%,99.98%,differs — unresolved,"199 missing pairs vs manuscript's 2,107. Three targeted diagnostics (edge-filter definition, cutoff sweep 250-300km, routing/snapping combination) all ruled out as explanations — see reproducibility_note.md. Root cause not identified. Flagged as potentially argument-affecting if the manuscript discusses the missing-pair rate itself, but the resulting Huff catchment numbers this feeds into are reproduced almost exactly (see below), so downstream impact is small."
+OD matrix: missing pairs,"2,107",199,differs — unresolved,Same root cause as above.
+OD matrix: distance distribution (min/max/mean/median),not stated,"0.0 / 299,982.3 / 108,309.1 / 101,996.7 m",n/a,
+Accessibility: facility type count,86,86,exact,The 87th 'facility' in the contaminated run was all_roads.gpkg itself; fixed in Stage 2A.
+Accessibility: values missing after 80km primary search,"1,111",918,differs,"Same network-connectivity story as the OD matrix gap — better connectivity now, fewer missing values."
+Accessibility: values recovered by 300km extended search,"1,105",918,differs,Same cause.
+Accessibility: values remaining missing after both searches,6 (all district courts in Prekmurje),0,differs,"Improved connectivity resolved all previously-unreachable facility distances. This changes a specific claim (""6 district courts in Prekmurje are unreachable"") to false under the rerun — worth checking whether the manuscript text discusses this specific case."
+Indicator count (mapped in tableS3),100,100,exact,
+Indicator group counts,"Healthcare 9, Education 14, Traffic&Comm 14, Trade&Business 7, Culture 12, Sports&Rec 12, Tourism&Services 13, Finance 4, Judiciary&Emergency 8, Residential 7",identical,exact,
+AHP consistency ratio (CR),0.024,0.0240,exact,"lambda_max=10.3225, CI=0.0358, RI=1.49 (Saaty, n=10)"
+GI_NW descriptive stats (mean/median/sd),0.044 / 0.020 / 0.084,0.0437 / 0.0203 / 0.0839,exact,
+GI_AHP descriptive stats (mean/median/sd),0.039 / 0.013 / 0.088,0.0388 / 0.0134 / 0.0884,exact,
+"Ljubljana catchment, AHP","1,222","1,216",differs (-6),"The 6 missing villages (Konjščica-del, Nova vas, Vrtača, Gora, Sadni Hrib, Drešnik) all shared the identical manuscript distance-to-Ljubljana value 163,843.9 m — the Ljubljana column's fill value, meaning they were NOT reachable to Ljubljana within cutoff in the manuscript's network and were assigned to Ljubljana anyway via the column-max-fill + argmax mechanism, because Ljubljana's GI still won even at the penalized fill distance. In the fixed network they ARE reachable (real distances 2.9-19.2 km) and correctly lose to their true nearest small neighbor (Zagorje ob Savi, Sežana, Brežice, Cerknica, Kočevje x2). This is the rerun being MORE correct, not a regression — worth a sentence in the paper, not a silent overwrite."
+"Ljubljana catchment, NW","1,022","1,016",differs (-6),"Same 6 villages, same cause, confirmed identical set under NW weighting."
+"Novo mesto catchment, AHP",271,271,exact,
+"Maribor catchment, AHP",226,226,exact,
+"Celje catchment, AHP",218,218,exact,
+"Ptuj catchment, AHP",210,210,exact,
+Top 5 catchments combined (AHP),"2,147 (35.6%)","2,141 (35.5%)",differs (-6),Entirely the Ljubljana effect above; ranks 2-5 are exact.
+Top 10 catchments combined (AHP),"2,830 (46.9%)","2,825 (46.8%)",differs (-5),"Ljubljana -6, Brežice +1."
+"Top 15 catchments, AHP: 13 of 15 municipalities",see table4,"exact match on Novo mesto, Maribor, Celje, Ptuj, Krško, Črnomelj, Trebnje, Murska Sobota, Koper, Nova Gorica, Kranj, Sevnica, Slovenska Bistrica",exact,"Only Ljubljana (-6) and Brežice (125→126, +1) differ across all 15 AHP rows."
+"Top 15 catchments, NW: 13 of 15 municipalities",see table4,"exact match on Novo mesto, Maribor, Krško, Črnomelj, Ptuj, Celje, Trebnje, Koper, Murska Sobota, Ivančna Gorica, Sevnica, Slovenska Bistrica, Šentjur",exact,"Only Ljubljana (-6) and Brežice (122→123, +1) differ across all 15 NW rows."
+Single-settlement municipality count,32,32,exact,
+Mean catchment size,28.5,28.5,exact,
+Median catchment size,6.0,6.0,exact,
+Ljubljana disagreements under AHP vs ML,940,939,close (-1),
+"Beta sensitivity, beta=1.5 vs beta=2 (agreement / kappa)",not itemized (range only),77.60% / kappa 0.7560,n/a,
+"Beta sensitivity, beta=2.5 vs beta=2 (agreement / kappa)",not itemized (range only),83.20% / kappa 0.8262,n/a,
+"Beta sensitivity, beta=3.0 vs beta=2 (agreement / kappa)",not itemized (range only),73.82% / kappa 0.7321,n/a,
+Beta sensitivity: kappa range across all beta,0.732 to 0.826,0.732 to 0.826,exact,
+Euclidean vs network agreement,"88.4% (5,335/6,036)","88.39% (5,335/6,036)",exact,
+Euclidean vs network Cohen's kappa,0.879,0.8785,exact,
+RF AHP-target: mean R² ± sd,0.845 ± 0.088,0.8457 ± 0.0865,exact,
+RF AHP-target: per-fold R²,not itemized,"0.8752, 0.9049, 0.8589, 0.8952, 0.6943",n/a,
+RF NW-target: mean R² ± sd,0.844 ± 0.066,0.8397 ± 0.0637,close,0.5% off on the mean; the manuscript's exact --sample-frac for this run is not recorded in any saved artifact (see reproducibility_note.md) — this rerun used --sample-frac 1.0 (full sample) as instructed.
+RF NW-target: per-fold R²,not itemized,"0.8616, 0.8782, 0.8339, 0.8923, 0.7327",n/a,
+RF AHP-target feature importance by group,"Distance 62.54%, GI_AHP 22.83%, Accessibility 7.52%, Individual GI 6.38%, Municipality area 0.74%","Distance 62.53%, GI_AHP 22.69%, Accessibility 7.19%, Individual GI 6.84%, Municipality area 0.75%",close,Largest single difference: GI_AHP 22.83% -> 22.69% (0.14pp) and Accessibility 7.52% -> 7.19% (0.33pp).
+RF NW-target feature importance by group,not reported in manuscript,"Distance 69.27%, GI_AHP 13.33%, Individual GI 8.39%, Accessibility 5.55%, Municipality area 3.45%",n/a,First time this breakdown has been produced; not in the manuscript to compare against.
+Spatial CV block sizes (5 KMeans blocks),"52, 34, 24, 61, 41","61, 34, 23, 52, 42",close,"Same five block sizes to within 1 settlement each, in different block-ID order (KMeans seed=42 is deterministic given identical input, but not necessarily bit-identical across scipy/BLAS versions). Not argument-affecting."
+AHP vs NW agreement,"88.6% (5,349/6,036)","88.62% (5,349/6,036)",exact,
+AHP vs NW Cohen's kappa,not previously reported,0.8807,n/a,Newly added this stage per your request.
+AHP vs ML agreement,"75.4% (4,551/6,036)","75.50% (4,557/6,036)",close,
+AHP vs ML Cohen's kappa,not previously reported,0.7488,n/a,Newly added this stage per your request.
+NW vs ML agreement,"77.4% (4,672/6,036)","77.40% (4,672/6,036)",exact,
+NW vs ML Cohen's kappa,not previously reported,0.7703,n/a,Newly added this stage per your request.
+"Moran's I, AHP vs NW (I / z)",0.184 / 24.18,0.1838 / 23.68,exact (I); close (z),"z is a permutation estimate (999 permutations, seed=42) and fluctuates run to run by design; I is deterministic and exact."
+"Moran's I, AHP vs ML (I / z)",0.451 / 59.55,0.4505 / 60.13,exact (I); close (z),Same caveat.
+"Moran's I, NW vs ML (I / z)",0.447 / 57.40,0.4473 / 55.30,exact (I); close (z),Same caveat.
+LISA AHP vs ML cluster counts,"706 LL, 255 HL, 116 LH, 1,077 significant","HH=187, LL=860, HL=0, LH=0, 1,047 significant",differs — structural,"The manuscript's own HL/LH categories do not exist in this layer under either the contaminated or the fixed network — this predates the road-network issue entirely. The manuscript text describes a 4-class LISA typology (HH/LL/HL/LH) where the actual data only ever produces 2 classes (HH/LL) for this comparison. This is argument-affecting: any manuscript discussion of HL/LH spatial outliers for AHP-vs-ML needs to be corrected or removed, independent of the road network fix."
+LISA AHP vs NW cluster counts,not previously stated,"HH=1731, LL=458, HL=0, LH=0, not_sig=3847",n/a,
+LISA NW vs ML cluster counts,not previously stated,"HH=892, LL=746, HL=0, LH=0, not_sig=4398",n/a,
+"Join counts (BB/WW/BW, all 3 comparisons)",not previously stated,"AHP_vs_NW: BB=14281 WW=525 BW=2939 (chi2=510.7); AHP_vs_ML: BB=11499 WW=2519 BW=3727 (chi2=3360.5); NW_vs_ML: BB=11907 WW=2281 BW=3557 (chi2=3308.2), all p<0.001",n/a,
+Entropy AHP: mean / max / class counts (low/med/high),"0.505 / 0.801 / 397,1891,3748","0.5049 / 0.7569 / 397,1892,3747",close,Mean matches to 3 decimals; max is 5.5% lower (0.757 vs 0.801) — consistent with fewer villages landing on degenerate near-uniform Pij distributions now that more OD pairs are genuinely reachable rather than column-max-filled. Worth checking if the manuscript discusses the maximum-entropy case specifically.
+Entropy NW: mean / max / class counts (low/med/high),"0.527 / 0.847 / 383,1670,3983","0.5265 / 0.7931 / 383,1671,3982",close,"Same pattern, 6.4% lower max."
+Commuting agreement,68.9% (146/212),68.87% (146/212),exact,
+Commuting Cohen's kappa,0.676,0.6755,exact,
+Commuting functional centres (self-flow),101,101,exact,
