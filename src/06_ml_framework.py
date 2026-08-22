@@ -135,7 +135,7 @@ def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij", sample_frac=1.
         elapsed = time.time() - t_start
 
         fold_results.append({"fold": fold + 1, "r2": r2, "mae": mae,
-                              "rmse": rmse, "n_test": len(X_test)})
+                              "rmse": rmse, "n_test": len(X_test), "wall_time_s": elapsed})
         feature_importances += rf.feature_importances_
 
         print(f"    R²={r2:.4f}  MAE={mae:.6f}  RMSE={rmse:.6f}  time={elapsed:.1f}s")
@@ -145,6 +145,29 @@ def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij", sample_frac=1.
 
     feature_importances /= 5
     return pd.DataFrame(fold_results), all_preds, feature_importances
+
+
+def annotate_wall_time_anomalies(df_results, factor=3.0):
+    """Flag any fold whose wall_time_s is far outside the others' range as a
+    likely wall-clock artifact (e.g. the machine sleeping mid-fold) rather
+    than real compute time, so a reader of the CSV doesn't take a 65,000s
+    fold at face value. Does not touch r2/mae/rmse — those are unaffected by
+    how long the process was suspended.
+    """
+    df_results = df_results.copy()
+    times = df_results["wall_time_s"]
+    median_others = {
+        i: times.drop(i).median() for i in df_results.index
+    }
+    df_results["wall_time_note"] = ""
+    for i in df_results.index:
+        med = median_others[i]
+        if med > 0 and times[i] > factor * med:
+            df_results.loc[i, "wall_time_note"] = (
+                f"wall-clock artifact, not compute time (other folds median {med:.0f}s) "
+                f"— almost certainly the machine sleeping/idling mid-fold, not slower training"
+            )
+    return df_results
 
 
 def build_comparison(df_ml_cv, all_preds, huff_summary_path,
@@ -272,6 +295,7 @@ def main():
             "feature": all_feature_cols, "importance": fi_ahp
         }).sort_values("importance", ascending=False).reset_index(drop=True)
         df_importance_ahp.to_csv(TABLES / "ml_AHP_feature_importance.csv", index=False)
+        df_results_ahp = annotate_wall_time_anomalies(df_results_ahp)
         df_results_ahp.to_csv(TABLES / "ml_AHP_cv_results.csv", index=False)
 
         df_ml_ahp["Pij_predicted"] = df_ml_ahp.index.map(preds_ahp)
@@ -312,6 +336,7 @@ def main():
             "feature": all_feature_cols, "importance": fi_nw
         }).sort_values("importance", ascending=False).reset_index(drop=True)
         df_importance_nw.to_csv(TABLES / "ml_NW_feature_importance.csv", index=False)
+        df_results_nw = annotate_wall_time_anomalies(df_results_nw)
         df_results_nw.to_csv(TABLES / "ml_NW_cv_results.csv", index=False)
 
         comparison_nw = build_comparison(df_ml_nw, preds_nw, nw_sum_path)

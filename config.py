@@ -1,7 +1,63 @@
+import hashlib
+import json
 from pathlib import Path
 
 # Raw data — edit this path when moving machines
 DATA_RAW = Path(r"C:\Users\lstojano\Desktop\teza\HuffMethodPaper\Data")
+
+_REPO_ROOT = Path(__file__).parent
+_RAW_MANIFEST_PATH = _REPO_ROOT / "data" / "raw_manifest.json"
+
+
+def _check_raw_manifest():
+    """Compare every file the pipeline reads against data/raw_manifest.json
+    (SHA256 + size + mtime, frozen at the end of Stage 2B). Prints a loud
+    warning on any mismatch — this is the direct fix for how all_roads.gpkg
+    silently contaminated the analysis on 2026-08-14: DATA_RAW drifted and
+    nothing noticed for three weeks. Never raises; a missing manifest or an
+    unreachable DATA_RAW should not block running the pipeline.
+    """
+    if not _RAW_MANIFEST_PATH.exists():
+        print(f"WARNING: {_RAW_MANIFEST_PATH} not found — raw-data integrity not checked.")
+        return
+    try:
+        manifest = json.loads(_RAW_MANIFEST_PATH.read_text())
+    except Exception as e:
+        print(f"WARNING: could not read {_RAW_MANIFEST_PATH}: {e}")
+        return
+
+    mismatches = []
+    missing = []
+    for fname, meta in manifest.get("files", {}).items():
+        p = DATA_RAW / fname
+        if not p.exists():
+            missing.append(fname)
+            continue
+        st = p.stat()
+        if st.st_size != meta["size_bytes"]:
+            mismatches.append((fname, "size differs"))
+            continue
+        h = hashlib.sha256()
+        with open(p, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        if h.hexdigest() != meta["sha256"]:
+            mismatches.append((fname, "SHA256 differs"))
+
+    if missing or mismatches:
+        print("=" * 70)
+        print("WARNING: DATA_RAW has drifted from data/raw_manifest.json")
+        for fname in missing:
+            print(f"  MISSING:  {fname} (present in manifest, not found in DATA_RAW)")
+        for fname, reason in mismatches:
+            print(f"  CHANGED:  {fname} ({reason})")
+        print("This is exactly how the all_roads.gpkg contamination happened — a raw file "
+              "changed silently and every downstream number drifted with it. Investigate "
+              "before trusting any output produced against the current DATA_RAW.")
+        print("=" * 70)
+
+
+_check_raw_manifest()
 
 # Repository-relative paths
 REPO_ROOT      = Path(__file__).parent

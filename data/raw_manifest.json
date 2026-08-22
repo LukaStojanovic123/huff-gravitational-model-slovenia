@@ -1,0 +1,478 @@
+{
+  "generated": "2026-08-22T22:51:12",
+  "generated_by": "data/raw_manifest.json build (Stage 2B.6)",
+  "data_raw": "C:\\Users\\lstojano\\Desktop\\teza\\HuffMethodPaper\\Data",
+  "note": "Every file the pipeline actually reads (93 = 7 core + 86 facility layers), not all 869 files in DATA_RAW. config.py checks these hashes on import.",
+  "files": {
+    "2023tabela.xlsx": {
+      "sha256": "cd16691ee69fae6081486ccbecb836434a1d9b8352f5e5b2aca8857df73662a6",
+      "size_bytes": 2882649,
+      "mtime": "2026-06-15T14:34:54"
+    },
+    "ATMs.shp": {
+      "sha256": "2d9a216b99cbc7f43931b6c6f317d576b6519dc5866849adc1418d9b5b11da3c",
+      "size_bytes": 42744,
+      "mtime": "2026-04-29T10:59:30"
+    },
+    "All_airports.shp": {
+      "sha256": "ba4698bda070dde82a5eb19ed3a386562879d5aac0d1b13b2d6db0768b67a05f",
+      "size_bytes": 940,
+      "mtime": "2026-04-29T10:59:25"
+    },
+    "Archaeological_site.shp": {
+      "sha256": "dbfc48766170b4ea7c70adf2a790b5fecedace8eef7811fee92738abd55a88cc",
+      "size_bytes": 1780,
+      "mtime": "2026-04-29T10:59:26"
+    },
+    "Artwork.shp": {
+      "sha256": "cafdab010b84fa10e2dab37754880edc87506c106720203c81e1e2b59993c423",
+      "size_bytes": 18048,
+      "mtime": "2026-04-29T10:59:28"
+    },
+    "Bakery.shp": {
+      "sha256": "7d1504cc8b11600eb2c242f6002460f97641234d327b37b4ca7d1407182cef3c",
+      "size_bytes": 9256,
+      "mtime": "2026-04-29T10:59:31"
+    },
+    "Banks.shp": {
+      "sha256": "599313fb5e0480cd4daca662363b32682bf5f92c2de802ad68136fa54883dfd3",
+      "size_bytes": 7968,
+      "mtime": "2026-04-29T10:59:33"
+    },
+    "Bike_rental.shp": {
+      "sha256": "44c434bf940bdd8a195c47585e5ed69461754e396d797fb30727f442474f52b8",
+      "size_bytes": 6820,
+      "mtime": "2026-04-29T10:59:33"
+    },
+    "Bike_shops.shp": {
+      "sha256": "fc12db169c8550f5586631e9a44caed03dcbc2f95277580137fddd39c4645073",
+      "size_bytes": 3264,
+      "mtime": "2026-04-29T10:59:34"
+    },
+    "Book_stores.shp": {
+      "sha256": "acc49fafcc025cf777136a9dcbb22a36dae763dd0a0f87332552b6ab65798e2d",
+      "size_bytes": 1892,
+      "mtime": "2026-04-29T10:59:38"
+    },
+    "Bus_Industrial_Zones.shp": {
+      "sha256": "5cdaa8bb1b75e14ea4a54ff1a279d3e3604c73dfffd280c1270e9ebe867f24f6",
+      "size_bytes": 18384,
+      "mtime": "2026-04-29T10:59:38"
+    },
+    "Bus_stops.shp": {
+      "sha256": "5e379f7e192990002c1c625c484b61cabba6e117d4b94f3dc521978e402da668",
+      "size_bytes": 194364,
+      "mtime": "2026-04-29T10:59:38"
+    },
+    "Camp_sites.shp": {
+      "sha256": "18378a776b7cb9f5e3768b188b90643439a681b8cc9bbdabe29d8883636856fd",
+      "size_bytes": 2340,
+      "mtime": "2026-04-29T10:59:39"
+    },
+    "Car_rent.shp": {
+      "sha256": "85acd66f9a344ceef28936961a38a2875543bc7d8d30eed8dc2d96671e34f619",
+      "size_bytes": 7408,
+      "mtime": "2026-04-29T10:59:39"
+    },
+    "Car_wash.shp": {
+      "sha256": "83798566e27713e2db7857df678555ff1e84e82f57eb0f3be54721d875c08c32",
+      "size_bytes": 3236,
+      "mtime": "2026-04-29T10:59:40"
+    },
+    "Chapels.shp": {
+      "sha256": "036573c00affe12e92b9da59ee115252766127e28400307bac9876bb054c5976",
+      "size_bytes": 175408,
+      "mtime": "2026-04-29T10:59:46"
+    },
+    "Cinemas.shp": {
+      "sha256": "85766c50fd3b797aae562e10364c2ec15eb039dd4dc40ec3b17996c50e3f883d",
+      "size_bytes": 716,
+      "mtime": "2026-04-29T10:59:47"
+    },
+    "Clinics.shp": {
+      "sha256": "b29634b376f1e6b6d42e28bcb577e04b43f17de088fc1a56f422506eaf08527c",
+      "size_bytes": 996,
+      "mtime": "2026-04-29T10:59:49"
+    },
+    "Clubs_bars.shp": {
+      "sha256": "a38b059ca9e9b8b928e04437e147c7028e6ea4fc01a3da3209877d6add2709d8",
+      "size_bytes": 48512,
+      "mtime": "2026-04-29T10:59:50"
+    },
+    "Community_center.shp": {
+      "sha256": "95e168abb86655a675ac97282d332e424293c0b13a6710fb40ec5fd926362a9f",
+      "size_bytes": 2676,
+      "mtime": "2026-04-29T10:59:51"
+    },
+    "Currency_exchange.shp": {
+      "sha256": "836307561e7910f2e7a17d80e701cdaa19997f2794ecc4703673666181b4ac69",
+      "size_bytes": 240,
+      "mtime": "2026-04-29T10:59:52"
+    },
+    "Dentis_offices.shp": {
+      "sha256": "3b4433973f5c95db9731dcbbdaa7656127b03f1ff137d7342719fae7823bcfed",
+      "size_bytes": 2620,
+      "mtime": "2026-04-29T10:59:53"
+    },
+    "Doctors_offices.shp": {
+      "sha256": "3016b092cfb02b4f73daa5049271191e409455a51147c4c9f2e52969752b9356",
+      "size_bytes": 2648,
+      "mtime": "2026-04-29T10:59:56"
+    },
+    "Embasy_consul.shp": {
+      "sha256": "90360ea3702f34b5cb55f77cf2971b5db8dbd7df20cbb0b1b2ddb9d8158ccb72",
+      "size_bytes": 688,
+      "mtime": "2026-04-29T10:59:56"
+    },
+    "Faculties.shp": {
+      "sha256": "bde5c1b9862730f4dca6c266e8ed486efdb40c20eb66c4ecefdac026351a169a",
+      "size_bytes": 1024,
+      "mtime": "2026-04-29T10:59:57"
+    },
+    "Fast_food.shp": {
+      "sha256": "c1781c676bb4ae31bed28b012c426a2421bbd92e82ebf6357a5f02faa3e590d2",
+      "size_bytes": 7436,
+      "mtime": "2026-04-29T10:59:58"
+    },
+    "Fire_stations.shp": {
+      "sha256": "43c356d0d68cc2db7acdef7c0ab7589f6aac2fe06914cf9918be07db4268e683",
+      "size_bytes": 3572,
+      "mtime": "2026-04-29T10:59:58"
+    },
+    "Fitness_C.shp": {
+      "sha256": "ffd5f52b834ae7afc5c937efd22a26caf873a22f6fdfa50981c5c42ba350b0e1",
+      "size_bytes": 2256,
+      "mtime": "2026-04-29T10:59:59"
+    },
+    "Gas_stations.shp": {
+      "sha256": "10d3ef7be5dddcf4c56cc796d129c0294121d5a3ebe75ac3ecbabbf942cb19da",
+      "size_bytes": 1808,
+      "mtime": "2026-04-29T11:00:01"
+    },
+    "Gift_shops.shp": {
+      "sha256": "c8b46b3c87f9cac6341d295ae4f6df2fef158a093635be61921e63230b64a58d",
+      "size_bytes": 2368,
+      "mtime": "2026-04-29T11:00:01"
+    },
+    "Higher_Courthouses.shp": {
+      "sha256": "03103a9e53f5f19e06506d88ffe6e7b9c77034d6bdb1bd49b5731daf174e42b7",
+      "size_bytes": 268,
+      "mtime": "2026-04-29T11:00:02"
+    },
+    "Hostels_motels.shp": {
+      "sha256": "112cf4bf56619343c37c6cbd2adfe8cf526d06496740dcb7e024b7032d769298",
+      "size_bytes": 10236,
+      "mtime": "2026-04-29T11:00:02"
+    },
+    "Hotels.shp": {
+      "sha256": "3d1778d9c4409ae241d17b2393347646c31f6474eba3b62b90af15a4d8630481",
+      "size_bytes": 5756,
+      "mtime": "2026-04-29T11:00:03"
+    },
+    "Hunting_stand.shp": {
+      "sha256": "21b7e3f10b0b1656d2527558da6ad8ce7fe89a14ad193779ed2e66a4daf25de4",
+      "size_bytes": 48652,
+      "mtime": "2026-04-29T11:00:04"
+    },
+    "Kiosk.shp": {
+      "sha256": "60bbd6b0e43fcd8d60ec422660039eb3bf722eb12202110266278e4521c85f5b",
+      "size_bytes": 2116,
+      "mtime": "2026-04-29T11:00:04"
+    },
+    "Libraries.shp": {
+      "sha256": "10bf6dca707a7255007bbbdbe39028e70c751d62d797c1fdd2b25b43c6261671",
+      "size_bytes": 3208,
+      "mtime": "2026-04-29T11:00:10"
+    },
+    "Main_Courthouse.shp": {
+      "sha256": "7ec23112a6505454436b730d5165944b007ae8fee374512da38ee73f8615b52d",
+      "size_bytes": 128,
+      "mtime": "2026-04-29T11:00:10"
+    },
+    "Marketplaces.shp": {
+      "sha256": "255855932e422270c953ec80e118e28eb574d1446e2a1a83f5ca346ba598d640",
+      "size_bytes": 1836,
+      "mtime": "2026-04-29T11:00:11"
+    },
+    "Municipalities_All_Groups_NotWeighted_Normalized.gpkg": {
+      "sha256": "a7100baf9fef69cf7b80ccc65471387f76694e5b6cc7d8a3ee132531a02eb9be",
+      "size_bytes": 163840,
+      "mtime": "2026-04-29T11:00:12"
+    },
+    "Municipalities_All_Groups_Weighted_AHP.gpkg": {
+      "sha256": "7df659f044ffaebfbbf5a7c2cacc5530cbd1dd4a5a35f2049688958a9c7b7132",
+      "size_bytes": 147456,
+      "mtime": "2026-04-29T11:00:13"
+    },
+    "Municipalities_Points_normalized.gpkg": {
+      "sha256": "d496efe5a7999b91a4ab657d83e54bd4175717259dc767d94e29e33bcf7759da",
+      "size_bytes": 225280,
+      "mtime": "2026-04-29T11:00:22"
+    },
+    "Museums.shp": {
+      "sha256": "e201d3f8cdccb704ab307facbbf430222c9a091ebb74abec2dac5cde09554867",
+      "size_bytes": 4356,
+      "mtime": "2026-04-29T11:00:23"
+    },
+    "NA.shp": {
+      "sha256": "0cae74cf42d96b1c28720fd31a428ec993b3f08bbc4c8133422441e50807df90",
+      "size_bytes": 26267276,
+      "mtime": "2026-04-29T11:00:25"
+    },
+    "Nursing_home.shp": {
+      "sha256": "e79a56a11129887ce1467ef3b8ef8f78a1c9ee709535da36f9245a0eacb23fa2",
+      "size_bytes": 212,
+      "mtime": "2026-04-29T11:00:26"
+    },
+    "Outdoor_shop.shp": {
+      "sha256": "2682b26861ec0da69691884144cbefa6bfd1f146c9a3b491a1ae8042a313b41c",
+      "size_bytes": 576,
+      "mtime": "2026-04-29T11:00:32"
+    },
+    "Parkings.shp": {
+      "sha256": "b4b9a2f3c525aac9ea17b711192726075535271cbffc81e5a102a0a40740084f",
+      "size_bytes": 36472,
+      "mtime": "2026-04-29T11:00:33"
+    },
+    "Parks.shp": {
+      "sha256": "2df1a76ca03eb2493e32227274e5bed80011beef51eb75283eb4c2c2f4c2fc21",
+      "size_bytes": 15892,
+      "mtime": "2026-04-29T11:00:33"
+    },
+    "Playgrounds.shp": {
+      "sha256": "c46ebd43862408a92aa73b26ed9c37c811aa95ad9ed891d1486c3dbeabc95e83",
+      "size_bytes": 5084,
+      "mtime": "2026-04-29T11:00:34"
+    },
+    "Police_stations.shp": {
+      "sha256": "426d9a9bbf0fcebdb2ae75e104c8b0ad421ff22c8944aba01c2c861a8a93348e",
+      "size_bytes": 1192,
+      "mtime": "2026-04-29T11:00:34"
+    },
+    "Private_schools.shp": {
+      "sha256": "81bd8cca62ca3b9d09eefe4163c42461d0ad45626bd11b222b058b30498dd5b8",
+      "size_bytes": 2872,
+      "mtime": "2026-04-29T11:00:37"
+    },
+    "Public_toilet.shp": {
+      "sha256": "9661a1b8fcb74baeb2a5ba621696ba34efed5fb0ca27cbb449caed0ef3385308",
+      "size_bytes": 14968,
+      "mtime": "2026-04-29T11:00:37"
+    },
+    "Railway_Stations.shp": {
+      "sha256": "3cdfe3ccc4f574b8fcd72ede20fa82316c4ee9cd855f80690f6a96b7be953f6a",
+      "size_bytes": 7828,
+      "mtime": "2026-04-29T11:00:39"
+    },
+    "Recycle_Bins.shp": {
+      "sha256": "107f45bec540b8be1b0b6c6e4a2fd52c20cb5e5f7b2574e9b30e02397b7ef552",
+      "size_bytes": 147880,
+      "mtime": "2026-04-29T11:00:40"
+    },
+    "Religious_buildings.shp": {
+      "sha256": "feb8cd211f4dd8b228227a1fc1c8bad809f5574f7bdf6ce2160c86b0941cc53e",
+      "size_bytes": 2060,
+      "mtime": "2026-04-29T11:00:41"
+    },
+    "Restaurants.shp": {
+      "sha256": "369191c29898a76196f29cd1eca3f962bdbda944a9bcd75fe153b031d390c780",
+      "size_bytes": 49800,
+      "mtime": "2026-04-29T11:00:41"
+    },
+    "School_of_arts.shp": {
+      "sha256": "8a578c294afd6a371bee7e1fff3632624a5dc692e0710971e10ca31b4a5bc313",
+      "size_bytes": 380,
+      "mtime": "2026-04-29T11:00:45"
+    },
+    "School_of_music.shp": {
+      "sha256": "f5770c514c29c2e402ef031732f860e45a117d99787d734b2234c761a2a2e5e0",
+      "size_bytes": 380,
+      "mtime": "2026-04-29T11:00:46"
+    },
+    "Shoping_Malls.shp": {
+      "sha256": "9f5cfaf5618103da595e76be012b9a5f98e7540d29e033b8a96a60ebc6e1fa5f",
+      "size_bytes": 3936,
+      "mtime": "2026-04-29T11:00:46"
+    },
+    "Sport_shops.shp": {
+      "sha256": "c7d50fbae3c348ee904be7d48283a4279bef0113024ffb430924863990a4ff4a",
+      "size_bytes": 5756,
+      "mtime": "2026-04-29T11:00:48"
+    },
+    "Sports_hall.shp": {
+      "sha256": "dd2d845e096a3fc133fd49c3d340f0dec24c802b9e5ba5b001092cf8603eee6e",
+      "size_bytes": 1780,
+      "mtime": "2026-04-29T11:00:48"
+    },
+    "Stadiums.shp": {
+      "sha256": "28c7c74c8ded356c7add33ee4f45262ec3e75457cbaeef3d8a200dfcbf561fc8",
+      "size_bytes": 1724,
+      "mtime": "2026-04-29T11:00:50"
+    },
+    "Supermarkets.shp": {
+      "sha256": "ea6f157226e6aca0322aa2b746a54053bc1a3f1cf496734b09ea499059bc1019",
+      "size_bytes": 11188,
+      "mtime": "2026-04-29T11:00:53"
+    },
+    "Swimming_pool.shp": {
+      "sha256": "a6769b9a30633121a785d860deadb380046275a75396fa0c1d4db119d178579d",
+      "size_bytes": 548,
+      "mtime": "2026-04-29T11:00:53"
+    },
+    "Theaters.shp": {
+      "sha256": "e0488f689319370d6fa89ad6e0611c6749ebbe8228c5c3a01891f21e40c4183c",
+      "size_bytes": 744,
+      "mtime": "2026-04-29T11:00:54"
+    },
+    "Thematic_Shops.shp": {
+      "sha256": "29dbb93fdf948a23e155dcee884cc399a93a89850ff65291af0ac893c20c7b55",
+      "size_bytes": 10012,
+      "mtime": "2026-04-29T11:00:55"
+    },
+    "Tourist_info_points.shp": {
+      "sha256": "2eb42049205bfd274a524254bd449395005ee3f18f7b093316407ee148471d36",
+      "size_bytes": 241460,
+      "mtime": "2026-04-29T11:00:55"
+    },
+    "Town_hall.shp": {
+      "sha256": "f2addda295038757fc00c79b5213bf59df935e24b40e68df5bf8c48a6bf68c80",
+      "size_bytes": 2004,
+      "mtime": "2026-04-29T11:00:56"
+    },
+    "Travel_agencies.shp": {
+      "sha256": "e85896a26ab52a50288dc54043d3b3eb163c6482d4fec7f79ee1eb72b87679b5",
+      "size_bytes": 380,
+      "mtime": "2026-04-29T11:00:57"
+    },
+    "Vending_Parking.shp": {
+      "sha256": "61a9481bd8b4214c85d11435652199a436fb4dba24870a004609be98062f7cfb",
+      "size_bytes": 11384,
+      "mtime": "2026-04-29T11:00:59"
+    },
+    "Veterinarian_Offices.shp": {
+      "sha256": "4eeaf8b7b0821d3d4f8922264176768ea47f7e791f97c68d4e5f8f7e05d18ded",
+      "size_bytes": 1024,
+      "mtime": "2026-04-29T11:01:00"
+    },
+    "Villages_points_real.shp": {
+      "sha256": "b95251d192bea392e41f539868eb141816f6e4edd4bcb684b754ca0a6b24241a",
+      "size_bytes": 169108,
+      "mtime": "2026-04-29T11:01:02"
+    },
+    "arhivi.shp": {
+      "sha256": "d176141045b8e363157f5983985100fd65e852e4fe5cccbbbd077276455fe155",
+      "size_bytes": 408,
+      "mtime": "2026-04-29T10:59:27"
+    },
+    "avtosole.shp": {
+      "sha256": "aebbd10eefc68779a96455242097c1ff38b274095255ad5100d0321fd82eaa9e",
+      "size_bytes": 3852,
+      "mtime": "2026-04-29T10:59:30"
+    },
+    "bolnice_ok.shp": {
+      "sha256": "e766deb6305041a81e248220039d1675fd4f60927a6d416ed26391626b9391db",
+      "size_bytes": 604,
+      "mtime": "2026-04-29T10:59:36"
+    },
+    "dijaski_studentski_domi.shp": {
+      "sha256": "920b306a16cc1609939c6aa222a8ea2e6550411077c314eb31a147e98f831024",
+      "size_bytes": 2928,
+      "mtime": "2026-04-29T10:59:54"
+    },
+    "furs.shp": {
+      "sha256": "0ee38b21af76e8234be5b572a8e9072003214558576ff56ed6ce7f8ac7bc7a08",
+      "size_bytes": 576,
+      "mtime": "2026-04-29T11:00:00"
+    },
+    "gis_osm_roads_free_1.shp": {
+      "sha256": "674b2174dc3709cf57752b84793280a7d685bb83bd3d9ed1199fc44cd20ec13f",
+      "size_bytes": 135848868,
+      "mtime": "2026-04-29T15:45:16"
+    },
+    "klinicni_centri.shp": {
+      "sha256": "0e4a6c85fab6068d5546dd8537aa1b9487471f05f48e3f46968f65e63384efe9",
+      "size_bytes": 436,
+      "mtime": "2026-04-29T11:00:05"
+    },
+    "kulturna_dediscina.shp": {
+      "sha256": "1734870f0b981c9480e3b0c7ad24ce99d4622767007bb2c1e301a2dfed7f47ef",
+      "size_bytes": 869892,
+      "mtime": "2026-04-29T11:00:07"
+    },
+    "lekarne.shp": {
+      "sha256": "0f5e5a43a14fbc80c974459096385a963b869abbd0c702f9c4714800febf4470",
+      "size_bytes": 10768,
+      "mtime": "2026-04-29T11:00:09"
+    },
+    "obcine_poligoni.shp": {
+      "sha256": "b87116e42c5c4142e5c8e8a4e17a2f6dc22c984d1498a261f7fa09b8b5b61ab7",
+      "size_bytes": 7984020,
+      "mtime": "2026-04-29T11:00:28"
+    },
+    "okrajna_sod.shp": {
+      "sha256": "8711cf9a9f868dffb50c6a0a9c9e00e94b8bdd72f1f0d12a03e3ff2d7d9113a6",
+      "size_bytes": 1332,
+      "mtime": "2026-04-29T11:00:30"
+    },
+    "okrozna_sod.shp": {
+      "sha256": "cb218c4c8db3173a44a26c87839f9bb156123527550becb417558f41e1266b04",
+      "size_bytes": 408,
+      "mtime": "2026-04-29T11:00:30"
+    },
+    "osnovne_sole.shp": {
+      "sha256": "c32fd940e5b4eb8653a6c0befb9071f76e90627079c8ddae3974655706173ae6",
+      "size_bytes": 25048,
+      "mtime": "2026-04-29T11:00:31"
+    },
+    "poste.shp": {
+      "sha256": "8ca3aa05add90c4a13d56d5ef2b77e3d9dc0b412e562ef59b016bd4664be9af7",
+      "size_bytes": 14408,
+      "mtime": "2026-04-29T11:00:35"
+    },
+    "pristanisca.shp": {
+      "sha256": "56d8a77fd00d7ad067b3195df77727be9562a427698e87a0d0b66146893e1fff",
+      "size_bytes": 128,
+      "mtime": "2026-04-29T11:00:37"
+    },
+    "sazu.shp": {
+      "sha256": "3d3699ef2e93d984b2290dec65ddfe2ad73ee11624625502638fbf37a5d0db42",
+      "size_bytes": 128,
+      "mtime": "2026-04-29T11:00:45"
+    },
+    "sodisca_osm.shp": {
+      "sha256": "5a75e064ddf69a1aa0c8c59bd0b82a8dd67b0f7b6a87334302999cf6b909032a",
+      "size_bytes": 548,
+      "mtime": "2026-04-29T11:00:47"
+    },
+    "srednje_sole.shp": {
+      "sha256": "348a6a40d6b9ebcc88949d8dfcc65c5a785359bc0fff1785ee3ec317bac56cfd",
+      "size_bytes": 5224,
+      "mtime": "2026-04-29T11:00:49"
+    },
+    "turist_objekti.shp": {
+      "sha256": "a918fab5870dfe0f141895a1363c87a1cd667be1478f12cfd83c8b2728bf7422",
+      "size_bytes": 152840,
+      "mtime": "2026-04-29T11:00:57"
+    },
+    "univerze.shp": {
+      "sha256": "bcbd1218d99698368b9cc79b00d06a34049a1e20a7334d0be3cc07a94a0170c7",
+      "size_bytes": 240,
+      "mtime": "2026-04-29T11:00:59"
+    },
+    "vrtci.shp": {
+      "sha256": "fd588157619dc812c1d79ed2b802f7e83514ef8795b9b22e2fc9d4e7d450574b",
+      "size_bytes": 32524,
+      "mtime": "2026-04-29T11:01:02"
+    },
+    "zdrav_domovi.shp": {
+      "sha256": "dd8db5f308d39ad1ba31e90c5bccf91d09ab5144b2a59dd42a81729575f46d5b",
+      "size_bytes": 46916,
+      "mtime": "2026-04-29T11:01:04"
+    },
+    "zoo.shp": {
+      "sha256": "af765c218d5b01d49fd4a561a4276bd1d135e6bdfcb26db9111e625b8de379b3",
+      "size_bytes": 128,
+      "mtime": "2026-04-29T11:01:05"
+    }
+  }
+}

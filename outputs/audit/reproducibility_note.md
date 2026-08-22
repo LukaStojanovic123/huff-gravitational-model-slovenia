@@ -6,10 +6,10 @@ availability statement.
 
 ## What DATA_RAW the pipeline actually reads
 
-The pipeline reads exactly 93 files from `DATA_RAW`, all listed by name in version-controlled
+The pipeline reads exactly 94 files from `DATA_RAW`, all listed by name in version-controlled
 repository files — nothing is discovered by globbing a directory anymore:
 
-- **7 core files**, named as constants in `config.py` and audited in `13_data_audit.py`'s
+- **8 core files**, named as constants in `config.py` and audited in `13_data_audit.py`'s
   `CORE_FILES` list: `gis_osm_roads_free_1.shp` (road network), `Municipalities_All_Groups_
   Weighted_AHP.gpkg`, `Municipalities_All_Groups_NotWeighted_Normalized.gpkg`,
   `Municipalities_Points_normalized.gpkg`, `Villages_points_real.shp`, `NA.shp`,
@@ -18,10 +18,21 @@ repository files — nothing is discovered by globbing a directory anymore:
   resolved by `05_accessibility.py::discover_facility_layers`, which raises `FileNotFoundError`
   if any listed layer is missing rather than silently discovering a different set.
 
-`DATA_RAW` itself contains 869 files; only these 93 are ever opened by any script. A file
+`DATA_RAW` itself contains 869 files; only these 94 are ever opened by any script. A file
 dropped into `DATA_RAW` under any other name is inert until someone deliberately adds it to
 `data/facility_layers.txt` or a `config.py` constant — this is the direct fix for how
 `all_roads.gpkg` entered the analysis in the first place (see the Stage 1/2A history below).
+
+## Raw inputs are now frozen and checked
+
+`data/raw_manifest.json` records the SHA256, size, and mtime of all 94 files above, as they
+stood at the end of this remediation. `config.py` — imported by every script — checks the
+current `DATA_RAW` against this manifest on every run and prints a loud, impossible-to-miss
+warning naming exactly which file changed or went missing if anything drifts. This is the
+direct fix for how the contamination happened in the first place: `all_roads.gpkg` changed
+silently and nothing noticed for three weeks. The check costs well under a second (verified
+by direct measurement) and never raises — a missing manifest or unreachable `DATA_RAW`
+degrades to a warning, not a crash, so it can't block anyone from running the pipeline.
 
 ## No path outside the repository
 
@@ -89,10 +100,10 @@ python src/19_output_manifest.py
 
 `--force` is only meaningful for 03/04/05 (the three with skip-if-exists behavior); it's a
 no-op if passed to a script without that flag defined, so it's omitted above where it isn't
-needed. `01_gi_construction.py` was not rerun during this remediation (its inputs — the
-municipality GI layers — never changed; only the road network did), but it needs to run once
-on a genuinely clean checkout since `12_export_outputs.py` reads its supplementary-table
-outputs.
+needed. `01_gi_construction.py` has always run unconditionally (no skip-if-exists guard) and
+was confirmed live in this remediation: 100 indicators mapped, all 10 group counts correct,
+computed rarity weights matching `tableS3`'s reference values to 1e-6 — none of it is copied
+from a static file.
 
 Random seeds are fixed and printed at the point of use: `random_state=42` for the spatial
 KMeans blocks and both Random Forest models (`06_ml_framework.py`), `seed=42` for both the
@@ -100,6 +111,21 @@ global permutation test and the LISA computation in `10_morans_i.py`, `999` join
 permutations. Re-running the sequence above on unchanged inputs reproduces every value in
 this rerun's tables exactly, including the two residual discrepancies noted below (they are
 properties of the input data, not of any randomness in the pipeline).
+
+`ml_AHP_cv_results.csv` and `ml_NW_cv_results.csv` now carry a `wall_time_s` column and an
+automatic `wall_time_note` flag (added in `06_ml_framework.py::annotate_wall_time_anomalies`)
+for any fold whose wall-clock time is more than 3x the median of the other folds — Fold 1 of
+the AHP model in this run logged 65,198s against ~900-1,100s for every other fold, which is
+flagged there as a wall-clock artifact (the machine sleeping mid-fold during a long
+background wait in this session), not a real compute cost. R²/MAE/RMSE are unaffected.
+
+A separate one-off robustness check, `outputs/audit/imputation_sensitivity_check.md`, reruns
+the AHP and NW Huff assignment with unreachable OD pairs given zero probability instead of
+the pipeline's default column-max-distance fill. On the current network (199 missing pairs)
+this changes zero settlement assignments — the pipeline default is not currently
+consequential — but it is *not* a retroactive test of the manuscript's own network, which had
+roughly ten times the missing-pair rate. The pipeline's default imputation method is
+unchanged; this was a diagnostic only.
 
 ## Two residual discrepancies, honestly
 
