@@ -146,22 +146,30 @@ def compute_join_counts(y, w, label):
     }
 
 
-def classify_lisa(local_moran, y, significance):
-    """HH / LL / HL / LH quadrant labels; 'not significant' below threshold."""
-    y_mean = y.mean()
+LISA_QUAD_LABELS = {1: "HH", 2: "LH", 3: "LL", 4: "HL"}  # esda/Anselin's convention
+
+
+def classify_lisa(local_moran, significance):
+    """HH / LH / LL / HL quadrant labels, read directly from esda's own `q`
+    attribute; 'not significant' below threshold.
+
+    A previous version of this function rederived the quadrant by comparing
+    each observation's value against `local_moran.y` as if that were the
+    spatial lag. It is not — esda.Moran_Local.y is just the raw input y
+    echoed back unchanged (verified directly: np.array_equal(lisa.y, y) is
+    True). Comparing a value against itself makes the "opposite sides of the
+    mean" condition for HL/LH mathematically impossible, so every previous
+    LISA table/layer in this repository silently had HL=LH=0 for every
+    comparison — not a real absence of spatial outliers, a classification
+    bug. `local_moran.q` is esda's own already-correct quadrant code and is
+    used directly here instead of being rederived.
+    """
     labels = []
-    for value, lag, p in zip(y, local_moran.y, local_moran.p_sim):
+    for q, p in zip(local_moran.q, local_moran.p_sim):
         if p >= significance:
             labels.append("not significant")
-            continue
-        if value >= y_mean and lag >= y_mean:
-            labels.append("HH")
-        elif value < y_mean and lag < y_mean:
-            labels.append("LL")
-        elif value >= y_mean and lag < y_mean:
-            labels.append("HL")
         else:
-            labels.append("LH")
+            labels.append(LISA_QUAD_LABELS[q])
     return labels
 
 
@@ -243,7 +251,7 @@ def main():
         y = agreement_arrays[name]
         w = weights[name]
         lisa = esda.Moran_Local(y, w, seed=LISA_SEED)
-        cluster_type = classify_lisa(lisa, y, SIGNIFICANCE_LEVEL)
+        cluster_type = classify_lisa(lisa, SIGNIFICANCE_LEVEL)
 
         lisa_layer = gdf.copy()
         lisa_layer["lisa_I"] = lisa.Is
