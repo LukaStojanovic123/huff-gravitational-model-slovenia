@@ -110,14 +110,21 @@ def consolidate_tables():
 
     build_top15_catchment_table(TABLES / "table4_top15_catchments.csv", "table4_top15_catchments")
 
-    beta_src = first_existing(TABLES / "table_beta_sensitivity.csv",
-                               TABLES / "table_beta_sensitivity_clean.csv")
+    # table_beta_sensitivity_clean.csv (07_beta_sensitivity.py's actual output) must win over
+    # the unsuffixed table_beta_sensitivity.csv name. That unsuffixed name was a legacy
+    # pre-remediation artifact (quarantined to data/quarantine/ — see its README) that this
+    # first_existing() call silently preferred over the pipeline's own fresh output for the
+    # entire Stage 2B/3 rerun, meaning table5/tableS4 kept serving stale numbers even after
+    # everything upstream was fixed. Order matters here: always prefer the script's own
+    # current output; only fall back to a legacy name if the script has never been run.
+    beta_src = first_existing(TABLES / "table_beta_sensitivity_clean.csv",
+                               TABLES / "table_beta_sensitivity.csv")
     if beta_src is not None:
         safe_copy(beta_src, TABLES / "table5_beta_sensitivity.csv", "table5_beta_sensitivity")
         safe_copy(beta_src, SUPPLEMENTARY / "tableS4_beta_sensitivity.csv", "tableS4_beta_sensitivity")
     else:
         print("  SKIP  table5_beta_sensitivity / tableS4_beta_sensitivity: "
-              "no table_beta_sensitivity(.csv|_clean.csv) found — run src/07_beta_sensitivity.py first")
+              "no table_beta_sensitivity(_clean).csv found — run src/07_beta_sensitivity.py first")
 
     safe_copy(TABLES / "ml_AHP_cv_results.csv",
               TABLES / "table6_cv_performance.csv", "table6_cv_performance")

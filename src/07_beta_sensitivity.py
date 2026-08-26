@@ -110,12 +110,19 @@ def main():
         print(f"  Agreement vs beta={BETA}: {n_agree}/{n_total} ({agreement_pct:.2f}%)  "
               f"Cohen kappa={kappa:.4f}")
 
+        ljubljana_catchment = int((dominant_name == "Ljubljana").sum())
+        maribor_catchment = int((dominant_name == "Maribor").sum())
+        print(f"  Ljubljana catchment at beta={beta}: {ljubljana_catchment}  "
+              f"(Maribor: {maribor_catchment})")
+
         rows.append({
             "beta": beta,
             "n_villages": n_total,
             "n_agree": n_agree,
             "agreement_pct": agreement_pct,
             "cohen_kappa": kappa,
+            "ljubljana_catchment": ljubljana_catchment,
+            "maribor_catchment": maribor_catchment,
         })
     print()
 
