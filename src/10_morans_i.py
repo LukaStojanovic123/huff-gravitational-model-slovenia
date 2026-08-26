@@ -28,6 +28,22 @@ COMPARISONS = {
     "MLAHP_vs_MLNW": (GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg", "ML_AHP_dominant_muni", "ML_NW_dominant_muni"),
 }
 
+# Every comparison layer above is BUILT by 12_export_outputs.py from these
+# TABLES sources. This script depends on 12's output despite the lower
+# script number — a real ordering trap (confirmed the hard way: an earlier
+# run of this script, executed before 12 in that session, silently read a
+# comparison map left over from before this remediation instead of the
+# current pipeline's own output — see outputs/audit/reconciliation.csv and
+# reproducibility_note.md). Rather than renumber the whole pipeline, this
+# script now asserts each map it reads is not older than the CSVs 12 built
+# it from, and fails loudly rather than silently computing on stale input.
+MAP_SOURCES = {
+    GPKG / "map_AHP_vs_NW_villages.gpkg": [TABLES / "huff_AHP_summary.csv", TABLES / "huff_NW_summary.csv"],
+    GPKG / "map_AHP_vs_ML_villages.gpkg": [TABLES / "huff_AHP_summary.csv", TABLES / "ml_AHP_vs_AHP_comparison.csv"],
+    GPKG / "map_NW_vs_ML_villages.gpkg": [TABLES / "huff_NW_summary.csv", TABLES / "ml_NW_vs_NW_comparison.csv"],
+    GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg": [TABLES / "ml_AHP_vs_AHP_comparison.csv", TABLES / "ml_NW_vs_NW_comparison.csv"],
+}
+
 LISA_OUTPUT_PATHS = {
     "AHP_vs_NW": GPKG / "map_lisa_AHP_vs_NW.gpkg",
     "AHP_vs_ML": GPKG / "map_lisa_AHP_vs_ML.gpkg",
@@ -56,12 +72,33 @@ JOIN_COUNT_PERMUTATIONS = 999
 GLOBAL_PERMUTATION_SEED = 42
 
 
+def assert_map_is_fresh(path):
+    """Raise loudly if path is older than any CSV 12_export_outputs.py built
+    it from — the direct fix for the script-10-before-script-12 ordering
+    trap. A stale map should stop the run, not silently produce numbers from
+    a previous pipeline state."""
+    sources = MAP_SOURCES.get(path, [])
+    map_mtime = path.stat().st_mtime
+    stale = [src for src in sources if src.exists() and src.stat().st_mtime > map_mtime]
+    if stale:
+        stale_list = ", ".join(f"{s.name} ({s.stat().st_mtime:.0f} > {map_mtime:.0f})" for s in stale)
+        raise RuntimeError(
+            f"STALE INPUT: {path.name} is older than its source(s): {stale_list}. "
+            f"This means src/12_export_outputs.py has not been (re)run since those "
+            f"tables last changed — run it before this script, or you will compute "
+            f"Moran's I / LISA / kappa from a comparison map that does not match the "
+            f"current pipeline state. (This is exactly how the AHP-vs-ML/NW-vs-ML "
+            f"figures went wrong earlier in this remediation.)"
+        )
+
+
 def load_agreement_layer(path):
     if not path.exists():
         raise FileNotFoundError(
             f"{path} not found — run src/12_export_outputs.py first "
             "to build the agreement map layers."
         )
+    assert_map_is_fresh(path)
     return gpd.read_file(path)
 
 
