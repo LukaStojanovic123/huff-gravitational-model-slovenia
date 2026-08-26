@@ -284,6 +284,38 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
         print(f"  SKIP  Map 3 (AHP vs ML): {ahp_ml_path.name} not found — "
               "run src/06_ml_framework.py (Model 1 / AHP) first")
 
+    # ── Map 4: RF(AHP-target) vs RF(NW-target) ────────────────
+    # The comparison the original three never covered: do the two separately
+    # trained RF models converge on the same catchment structure? See
+    # outputs/audit/ml_model_design_note.md for why these are two distinct
+    # models, not one model compared twice.
+    if ahp_ml_path.exists() and nw_ml_path.exists():
+        print("  Building Map 4: RF(AHP-target) vs RF(NW-target)...")
+        ml_ahp4 = pd.read_csv(ahp_ml_path)[
+            ["Village_ID", "ml_dominant_muni", "ml_dominant_Pij"]].rename(
+            columns={"ml_dominant_muni": "ML_AHP_dominant_muni",
+                     "ml_dominant_Pij": "ML_AHP_dominant_Pij"})
+        ml_nw4 = pd.read_csv(nw_ml_path)[
+            ["Village_ID", "ml_dominant_muni", "ml_dominant_Pij"]].rename(
+            columns={"ml_dominant_muni": "ML_NW_dominant_muni",
+                     "ml_dominant_Pij": "ML_NW_dominant_Pij"})
+
+        map4 = na.merge(ml_ahp4, left_on="NA_MID", right_on="Village_ID", how="left")
+        map4 = map4.merge(ml_nw4, left_on="NA_MID", right_on="Village_ID", how="left",
+                           suffixes=("", "_nw"))
+        map4.drop(columns=[c for c in map4.columns if c.startswith("Village_ID")],
+                  errors="ignore", inplace=True)
+        map4["agreement"] = (map4["ML_AHP_dominant_muni"] == map4["ML_NW_dominant_muni"]).astype(int)
+        map4["agreement_label"] = map4["agreement"].map(
+            {1: "RF(AHP) and RF(NW) agree", 0: "RF(AHP) and RF(NW) disagree"})
+        map4["map_class"] = mod18.build_map_class(map4, "ML_NW_dominant_muni", 40)
+        map4["is_ljubljana_source"] = (map4["ML_AHP_dominant_muni"] == "Ljubljana")
+        map4.to_file(gpkg_path / "map_ML_AHP_vs_ML_NW_villages.gpkg", driver="GPKG")
+        agree4 = map4["agreement"].sum()
+        print(f"    Saved: {len(map4)} villages, {agree4} agree ({agree4 / len(map4) * 100:.1f}%)")
+    else:
+        print("  SKIP  Map 4 (RF-AHP vs RF-NW): both ml_*_comparison.csv files needed")
+
     print()
 
 
@@ -354,6 +386,7 @@ EXPECTED_OUTPUTS = {
         GPKG / "map_AHP_vs_NW_villages.gpkg",
         GPKG / "map_NW_vs_ML_villages.gpkg",
         GPKG / "map_AHP_vs_ML_villages.gpkg",
+        GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg",
         GPKG / "map_euclidean_vs_network_villages.gpkg",
         GPKG / "map_entropy_AHP_villages.gpkg",
         GPKG / "map_entropy_NW_villages.gpkg",

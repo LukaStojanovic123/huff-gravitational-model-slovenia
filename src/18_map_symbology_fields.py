@@ -26,6 +26,7 @@ MAPS = [
     ("Map A (AHP vs NW)", GPKG / "map_AHP_vs_NW_villages.gpkg", "NW_dominant_muni", 20, "AHP_dominant_muni"),
     ("Map B (AHP vs ML)", GPKG / "map_AHP_vs_ML_villages.gpkg", "ml_dominant_muni", 40, "AHP_dominant_muni"),
     ("Map C (NW vs ML)", GPKG / "map_NW_vs_ML_villages.gpkg", "ml_dominant_muni", 40, "NW_dominant_muni"),
+    ("Map D (RF-AHP vs RF-NW)", GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg", "ML_NW_dominant_muni", 40, "ML_AHP_dominant_muni"),
 ]
 # For Map A, the "otherwise" class is the AHP destination (the centre gaining
 # the settlement under AHP weighting), not the NW destination — see brief.

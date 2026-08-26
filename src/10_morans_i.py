@@ -25,12 +25,14 @@ COMPARISONS = {
     "AHP_vs_NW": (GPKG / "map_AHP_vs_NW_villages.gpkg", "AHP_dominant_muni", "NW_dominant_muni"),
     "AHP_vs_ML": (GPKG / "map_AHP_vs_ML_villages.gpkg", "AHP_dominant_muni", "ml_dominant_muni"),
     "NW_vs_ML": (GPKG / "map_NW_vs_ML_villages.gpkg", "NW_dominant_muni", "ml_dominant_muni"),
+    "MLAHP_vs_MLNW": (GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg", "ML_AHP_dominant_muni", "ML_NW_dominant_muni"),
 }
 
 LISA_OUTPUT_PATHS = {
     "AHP_vs_NW": GPKG / "map_lisa_AHP_vs_NW.gpkg",
     "AHP_vs_ML": GPKG / "map_lisa_AHP_vs_ML.gpkg",
     "NW_vs_ML": GPKG / "map_lisa_NW_vs_ML.gpkg",
+    "MLAHP_vs_MLNW": GPKG / "map_lisa_MLAHP_vs_MLNW.gpkg",
 }
 
 RESULTS_PATH = TABLES / "table_morans_i_results.csv"

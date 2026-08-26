@@ -20,27 +20,25 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
-# shap/__init__.py eagerly imports shap.plots, which imports
-# shap.plots.colors, which calls scipy.linalg.inv() at module import time
-# to build its custom red/blue colormap. On this machine, scipy.linalg's
-# LAPACK binding crashes with a native illegal-instruction fault on ANY
-# call (verified independently of shap: `scipy.linalg.inv(np.random.rand(3,3))`
-# crashes the interpreter outright, while `numpy.linalg.inv` on the same
-# matrix does not — this is a scipy/LAPACK build defect on this CPU, not a
-# shap bug, and it affects nothing else in this repository since no other
-# script calls scipy.linalg). Blocking matplotlib detection during `import
-# shap` makes shap skip `shap.plots` entirely (its own documented fallback
-# path for "matplotlib not installed"), which avoids the crash and still
-# leaves `shap.TreeExplainer` fully functional. Real matplotlib is imported
-# separately below, after `import shap` completes, for this script's own
-# (shap-independent) dependence-plot rendering.
-sys.modules["matplotlib"] = None
-import shap  # noqa: E402
-del sys.modules["matplotlib"]
-
+# A previous version of this script blocked matplotlib detection during
+# `import shap`, working around a documented scipy.linalg/LAPACK native
+# crash on this machine (shap.plots.colors calls scipy.linalg.inv() at
+# import time). That crash does NOT reproduce as of this environment
+# (verified directly: `scipy.linalg.inv(np.random.rand(3,3))` runs cleanly,
+# and `import shap` with matplotlib already imported does not crash either —
+# see outputs/audit/reproducibility_note.md for the verification). The
+# workaround is removed because it had a real cost: blocking matplotlib
+# detection makes `shap.summary_plot`/`shap.plots.bar` permanently think
+# matplotlib isn't installed for the rest of the process, which is exactly
+# what made 06_ml_framework.py::run_shap unusable and its two figures
+# orphaned. If this crash resurfaces on a different machine, the fix is to
+# reintroduce the blocking import *only* around `import shap` and accept
+# that `run_shap`-style plotting is unavailable in that environment — do not
+# silently re-add it without re-testing, since it disables real functionality.
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import shap
 
 from config import DATA_RAW, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_PTS, TABLES
 
@@ -113,6 +111,26 @@ def main():
     explainer = shap.TreeExplainer(rf)
     shap_values = explainer.shap_values(X_sample)
     print("  Done.")
+    print()
+
+    # fig08_shap_summary_AHP.png / fig08_shap_bar_AHP.png used to be produced by
+    # 06_ml_framework.py::run_shap, a function defined but never called from that
+    # script's main() — dead code, so no pipeline invocation actually regenerated
+    # those two committed figures. Verified run_shap itself is NOT broken (a
+    # synthetic-data test confirmed shap.summary_plot works fine here; only
+    # shap.plots.scatter, used by the dependence plots above, hits the
+    # scipy.linalg crash) — so rather than delete the figures, they're now
+    # genuinely regenerated here, reusing this script's own already-fitted
+    # model and SHAP values instead of retraining a third time.
+    print("Regenerating fig08_shap_summary_AHP.png / fig08_shap_bar_AHP.png "
+          "(previously dead code in 06_ml_framework.py::run_shap)...")
+    mod06.run_shap(rf, X_sample, all_feature_cols, FIGURES, prefix="AHP")
+    # run_shap names its own outputs fig_shap_summary_AHP.png / fig_shap_bar_AHP.png
+    # (no "08"); rename to match the fig08_* filenames the manuscript references.
+    import shutil as _shutil
+    _shutil.move(FIGURES / "fig_shap_summary_AHP.png", FIGURES / "fig08_shap_summary_AHP.png")
+    _shutil.move(FIGURES / "fig_shap_bar_AHP.png", FIGURES / "fig08_shap_bar_AHP.png")
+    print(f"  Saved {FIGURES / 'fig08_shap_summary_AHP.png'} / fig08_shap_bar_AHP.png")
     print()
 
     mean_abs_shap = np.abs(shap_values).mean(axis=0)

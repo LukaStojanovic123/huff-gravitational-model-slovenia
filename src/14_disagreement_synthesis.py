@@ -1,8 +1,8 @@
 """
-Join the three settlement-level agreement layers (AHP vs NW, AHP vs ML,
-NW vs ML) plus the AHP entropy layer, produce a three-way disagreement
-synthesis layer and summary table, and per-comparison "where do
-disagreeing settlements go" destination tables.
+Join the four settlement-level agreement layers (AHP vs NW, AHP vs ML,
+NW vs ML, RF-AHP-target vs RF-NW-target) plus the AHP entropy layer,
+produce a four-way disagreement synthesis layer and summary table, and
+per-comparison "where do disagreeing settlements go" destination tables.
 """
 
 import sys
@@ -19,6 +19,7 @@ from config import GPKG, TABLES
 AHP_VS_NW_PATH = GPKG / "map_AHP_vs_NW_villages.gpkg"
 AHP_VS_ML_PATH = GPKG / "map_AHP_vs_ML_villages.gpkg"
 NW_VS_ML_PATH = GPKG / "map_NW_vs_ML_villages.gpkg"
+MLAHP_VS_MLNW_PATH = GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg"
 ENTROPY_AHP_PATH = GPKG / "map_entropy_AHP_villages.gpkg"
 
 OUTPUT_LAYER_PATH = GPKG / "map_disagreement_count_villages.gpkg"
@@ -45,52 +46,50 @@ def main():
     nw_ml = pd.DataFrame(gpd.read_file(NW_VS_ML_PATH))[
         ["NA_MID", "agreement"]
     ].rename(columns={"agreement": "ag_NW_ML"})
+    mlahp_mlnw = pd.DataFrame(gpd.read_file(MLAHP_VS_MLNW_PATH))[
+        ["NA_MID", "ML_AHP_dominant_muni", "ML_NW_dominant_muni", "agreement"]
+    ].rename(columns={"agreement": "ag_MLAHP_MLNW"})
     entropy = pd.DataFrame(gpd.read_file(ENTROPY_AHP_PATH))[
         ["NA_MID", "entropy_AHP", "entropy_class"]
     ]
     print(f"  AHP vs NW: {len(ahp_nw)}, AHP vs ML: {len(ahp_ml)}, "
-          f"NW vs ML: {len(nw_ml)}, entropy: {len(entropy)}")
+          f"NW vs ML: {len(nw_ml)}, RF-AHP vs RF-NW: {len(mlahp_mlnw)}, entropy: {len(entropy)}")
 
     merged = (ahp_nw.merge(ahp_ml, on="NA_MID", how="left")
                      .merge(nw_ml, on="NA_MID", how="left")
+                     .merge(mlahp_mlnw, on="NA_MID", how="left")
                      .merge(entropy, on="NA_MID", how="left"))
     print(f"  Joined: {len(merged)} settlements")
     print()
 
-    merged["n_disagree"] = (3 - (merged["ag_AHP_NW"] + merged["ag_AHP_ML"]
-                                  + merged["ag_NW_ML"])).astype(int)
-    merged["all_three_same"] = merged["n_disagree"] == 0
+    merged["n_disagree"] = (4 - (merged["ag_AHP_NW"] + merged["ag_AHP_ML"]
+                                  + merged["ag_NW_ML"] + merged["ag_MLAHP_MLNW"])).astype(int)
+    merged["all_four_same"] = merged["n_disagree"] == 0
 
     n_bucket1 = int((merged["n_disagree"] == 1).sum())
     print(f"n_disagree == 1 settlements: {n_bucket1}")
-    print("  IMPORTANT: n_disagree==1 is only possible because 'ml_dominant_muni' is "
-          "NOT a single consistent classification across the three source layers. "
-          "map_AHP_vs_ML_villages.gpkg's ml_dominant_muni comes from the RF model "
-          "trained on the AHP Huff target (06_ml_framework.py Model 1), while "
-          "map_NW_vs_ML_villages.gpkg's ml_dominant_muni comes from the separately "
-          "trained RF model fit on the NW Huff target (Model 2) — two different "
-          "models, per 12_export_outputs.py::export_agreement_maps. So this join "
-          "actually compares FOUR distinct classifications pairwise (AHP, NW, "
-          "ML-on-AHP-target, ML-on-NW-target) across three of the six possible "
-          "pairs, not three mutually-transitive labels — an n_disagree of exactly "
-          "1 (e.g. AHP==NW as Huff models, but each disagrees with its own "
-          "differently-trained RF counterpart) is legitimate and common, not an "
-          "artifact. This should be stated explicitly in the paper's methods "
-          "section wherever this three-way comparison is used, since a reader "
-          "would otherwise assume a single ML model throughout.")
+    print("  IMPORTANT: this now joins FOUR distinct classifications (AHP Huff, NW Huff, "
+          "RF-on-AHP-target, RF-on-NW-target) across four of the six possible pairs "
+          "(AHP-vs-NW, AHP-vs-RF(AHP), NW-vs-RF(NW), RF(AHP)-vs-RF(NW)) — see "
+          "outputs/audit/ml_model_design_note.md for the full explanation of why two "
+          "separately trained RF models exist. n_disagree runs 0-4, not 0-3: a settlement "
+          "can, for instance, have both Huff models agree with each other and both RF "
+          "models agree with each other, while the two pairs disagree across the Huff/RF "
+          "boundary — that is a real, legitimate structure, not an artifact of the join.")
     print()
 
     out_cols = ["NA_MID", "NA_UIME", "AHP_dominant_muni", "NW_dominant_muni", "ml_dominant_muni",
-                "ag_AHP_NW", "ag_AHP_ML", "ag_NW_ML", "n_disagree", "all_three_same",
+                "ML_AHP_dominant_muni", "ML_NW_dominant_muni",
+                "ag_AHP_NW", "ag_AHP_ML", "ag_NW_ML", "ag_MLAHP_MLNW", "n_disagree", "all_four_same",
                 "entropy_AHP", "entropy_class", "geometry"]
     layer = gpd.GeoDataFrame(merged[out_cols], geometry="geometry", crs=ahp_nw.crs)
     layer.to_file(OUTPUT_LAYER_PATH, driver="GPKG")
     print(f"Saved {OUTPUT_LAYER_PATH}")
     print()
 
-    print("=== SYNTHESIS TABLE (n_disagree 0-3) ===")
+    print("=== SYNTHESIS TABLE (n_disagree 0-4) ===")
     rows = []
-    for k in [0, 1, 2, 3]:
+    for k in [0, 1, 2, 3, 4]:
         sub = merged[merged["n_disagree"] == k]
         n = len(sub)
         rows.append({
@@ -108,17 +107,14 @@ def main():
     print(synth_df.to_string(index=False))
     print(f"\nSaved {SYNTHESIS_TABLE_PATH}")
     print()
-    print("Brief's expected distribution (0/1/2/3): 3897 / 792 / 1303 / 44, "
-          "mean entropy 0.452 / 0.578 / 0.615 / 0.649 — compare against the "
-          "table above; bucket 1 is expected to differ (see note above).")
+    print("Previous (three-comparison) brief's expected distribution (0/1/2/3): "
+          "3897 / 792 / 1303 / 44, mean entropy 0.452 / 0.578 / 0.615 / 0.649 — not directly "
+          "comparable to the table above, which now has a 5th (0-4) bucket structure from "
+          "the added RF-AHP-vs-RF-NW comparison.")
     print()
 
-    n_identical = int(merged["all_three_same"].sum())
-    print(f"Settlements with identical dominant centre from all three models: {n_identical}")
-    print("  ('all_three_same' is by definition the same quantity as the n_disagree==0 "
-          "bucket above, i.e. 3,897 — matching the brief's own ~3,897 estimate for "
-          "that bucket exactly. The brief's separate ~4,260 estimate for 'identical "
-          "across all three' does not match; trust the 3,897 figure computed here.)")
+    n_identical = int(merged["all_four_same"].sum())
+    print(f"Settlements with identical dominant centre from all four models: {n_identical}")
     print()
 
     print("=== DISAGREEMENT DESTINATION TABLES (>= 5 settlements) ===")
@@ -127,6 +123,8 @@ def main():
         ("AHP_vs_NW", "AHP", "AHP_dominant_muni", "NW", "NW_dominant_muni", "ag_AHP_NW"),
         ("AHP_vs_ML", "AHP", "AHP_dominant_muni", "ML", "ml_dominant_muni", "ag_AHP_ML"),
         ("NW_vs_ML", "NW", "NW_dominant_muni", "ML", "ml_dominant_muni", "ag_NW_ML"),
+        ("MLAHP_vs_MLNW", "ML(AHP-target)", "ML_AHP_dominant_muni",
+         "ML(NW-target)", "ML_NW_dominant_muni", "ag_MLAHP_MLNW"),
     ]
     for comp_name, src_model, src_col, tgt_model, tgt_col, ag_col in comparisons:
         disagreeing = merged[merged[ag_col] == 0]
