@@ -718,11 +718,6 @@ def section_1_8():
     log("## 1.8 Manuscript number verification\n")
     rows = []
 
-    def check(claim, draft_value, repo_value, source_file, tol=None):
-        status = "PENDING"
-        rows.append({"claim": claim, "draft_value": draft_value, "repository_value": repo_value,
-                     "status": status, "source_file": source_file})
-
     # AHP vs NW
     n_agree, n_total = _agreement_from_gpkg(GPKG / "map_AHP_vs_NW_villages.gpkg")
     pct = 100 * n_agree / n_total
@@ -746,21 +741,29 @@ def section_1_8():
                  "source_file": "outputs/gpkg/map_NW_vs_ML_villages.gpkg"})
 
     euc = pd.read_csv(TABLES / "table_euclidean_vs_network.csv")
-    n_agree = int(euc["agreement"].sum()) if "agreement" in euc.columns else None
+    n_agree = int(euc["agreement"].sum())
+    n_total_euc = len(euc)
+    pct_euc = 100.0 * n_agree / n_total_euc
+    kappa_euc = cohen_kappa_score(euc["network_dominant_muni"], euc["euclidean_dominant_muni"])
     rows.append({"claim": "Euclidean vs network agreement", "draft_value": "88.4%, 5335/6036, kappa 0.879",
-                 "repository_value": f"88.39%, 5335/6036, kappa 0.8785 (see table_euclidean_vs_network.csv)",
-                 "status": "CONFIRMED",
+                 "repository_value": f"{pct_euc:.2f}%, {n_agree}/{n_total_euc}, kappa {kappa_euc:.4f}",
+                 "status": "CONFIRMED" if n_agree == 5335 else "DIFFERS",
                  "source_file": "outputs/tables/table_euclidean_vs_network.csv"})
 
     mi = pd.read_csv(TABLES / "table_morans_i_results.csv")
-    for label, draft in [("AHP_vs_NW", "0.184, z 24.18"), ("AHP_vs_ML", "0.451, z 59.55"),
-                          ("NW_vs_ML", "0.447, z 57.40")]:
+    for label, draft, draft_I in [("AHP_vs_NW", "0.184, z 24.31", 0.184),
+                                   ("AHP_vs_ML", "0.451, z 59.55", 0.451),
+                                   ("NW_vs_ML", "0.447, z 57.40", 0.447)]:
         r = mi[mi["layer"] == label]
         if len(r):
             I, z = r.iloc[0]["morans_I"], r.iloc[0]["z_score"]
+            i_matches = abs(I - draft_I) < 0.002
             rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
                          "repository_value": f"I={I:.4f}, z={z:.2f}",
-                         "status": "CONFIRMED (I; z is a permutation estimate and fluctuates run to run)",
+                         "status": ("CONFIRMED (I; z is a permutation estimate and fluctuates run to run)"
+                                    if i_matches else
+                                    f"DIFFERS (I) — draft {draft_I}, repository {I:.4f}; "
+                                    "z is a permutation estimate and fluctuates run to run"),
                          "source_file": "outputs/tables/table_morans_i_results.csv"})
         else:
             rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
@@ -775,12 +778,16 @@ def section_1_8():
         if len(r):
             r = r.iloc[0]
             n_sig = int(r["HH"] + r["LL"] + r["HL"] + r["LH"])
+            draft_ll, draft_hl, draft_lh, draft_sig = 706, 255, 116, 1077
+            counts_match = (r["LL"] == draft_ll and r["HL"] == draft_hl
+                             and r["LH"] == draft_lh and n_sig == draft_sig)
             rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
                          "repository_value": f"HH={r['HH']}, LL={r['LL']}, HL={r['HL']}, LH={r['LH']}, "
                                               f"significant={n_sig}",
-                         "status": "DIFFERS — draft assumed HL/LH categories exist; the actual "
-                                    "AHP-vs-ML LISA layer (map_lisa_AHP_vs_ML.gpkg, built in "
-                                    "src/10_morans_i.py) has none, same pattern as AHP-vs-NW",
+                         "status": ("CONFIRMED" if counts_match else
+                                    f"DIFFERS — draft LL={draft_ll}/HL={draft_hl}/LH={draft_lh}/"
+                                    f"sig={draft_sig} vs repository LL={r['LL']}/HL={r['HL']}/"
+                                    f"LH={r['LH']}/sig={n_sig}"),
                          "source_file": "outputs/gpkg/map_lisa_AHP_vs_ML.gpkg"})
         else:
             rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
@@ -845,10 +852,29 @@ def section_1_8():
                  "source_file": "outputs/gpkg/map_AHP_vs_ML_villages.gpkg"})
 
     ent = pd.read_csv(TABLES / "table_entropy_summary.csv")
-    rows.append({"claim": "Entropy AHP/NW", "draft_value": "AHP mean 0.505 max 0.801 (3748/1891/397); "
-                                                            "NW mean 0.527 max 0.847 (3983/1670/383)",
-                 "repository_value": ent.to_dict(orient="records"),
-                 "status": "CONFIRMED (see table_entropy_summary.csv)",
+    ent_ahp = ent[ent["GI_scenario"] == "AHP"].iloc[0]
+    ent_nw = ent[ent["GI_scenario"] == "NW"].iloc[0]
+    draft_mean_ahp, draft_mean_nw = 0.51, 0.53
+    means_match = (abs(ent_ahp["mean"] - draft_mean_ahp) < 0.01
+                   and abs(ent_nw["mean"] - draft_mean_nw) < 0.01)
+    # Manuscript (Section 4.5 prose) states only "mean ~0.51 (AHP) / ~0.53 (NW), range near 0 to
+    # ~0.80" — it gives no precise max or low/medium/high class-count breakdown for either
+    # scenario. The 0.801/0.847 max and exact class counts previously hardcoded here as the
+    # "draft" target were fabricated by an earlier version of this check, not read from the
+    # manuscript (see outputs/audit/reconciliation.csv rows 63-64).
+    rows.append({"claim": "Entropy AHP/NW", "draft_value": "AHP mean ~0.51, NW mean ~0.53 "
+                                                            "(Section 4.5 prose only; no manuscript "
+                                                            "max or class-count breakdown exists)",
+                 "repository_value": f"AHP mean={ent_ahp['mean']:.4f} max={ent_ahp['max']:.4f} "
+                                      f"(low={ent_ahp['n_low']}/med={ent_ahp['n_medium']}/"
+                                      f"high={ent_ahp['n_high']}); "
+                                      f"NW mean={ent_nw['mean']:.4f} max={ent_nw['max']:.4f} "
+                                      f"(low={ent_nw['n_low']}/med={ent_nw['n_medium']}/"
+                                      f"high={ent_nw['n_high']})",
+                 "status": ("CONFIRMED (means only; no manuscript value exists for max or class counts)"
+                            if means_match else
+                            f"DIFFERS — mean AHP {ent_ahp['mean']:.4f} vs draft ~{draft_mean_ahp}, "
+                            f"mean NW {ent_nw['mean']:.4f} vs draft ~{draft_mean_nw}"),
                  "source_file": "outputs/tables/table_entropy_summary.csv"})
 
     ahp_cv = pd.read_csv(TABLES / "ml_AHP_cv_results.csv")
@@ -863,11 +889,14 @@ def section_1_8():
                  "source_file": "outputs/tables/ml_NW_cv_results.csv"})
 
     commute = pd.read_csv(TABLES / "table_huff_vs_commuting_summary.csv")
+    n_agree_com = int(commute['n_agree'].iloc[0])
+    n_muni_com = int(commute['n_municipalities'].iloc[0])
+    kappa_com = commute['cohen_kappa'].iloc[0]
+    commute_matches = (n_agree_com == 146 and n_muni_com == 212 and abs(kappa_com - 0.676) < 0.002)
     rows.append({"claim": "Commuting agreement", "draft_value": "68.9%, 146/212, kappa 0.676",
                  "repository_value": f"{commute['agreement_pct'].iloc[0]:.2f}%, "
-                                      f"{commute['n_agree'].iloc[0]}/{commute['n_municipalities'].iloc[0]}, "
-                                      f"kappa {commute['cohen_kappa'].iloc[0]:.4f}",
-                 "status": "CONFIRMED",
+                                      f"{n_agree_com}/{n_muni_com}, kappa {kappa_com:.4f}",
+                 "status": "CONFIRMED" if commute_matches else "DIFFERS",
                  "source_file": "outputs/tables/table_huff_vs_commuting_summary.csv"})
 
     commute_full = pd.read_csv(TABLES / "table_huff_vs_commuting.csv")
