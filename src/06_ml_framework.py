@@ -35,12 +35,23 @@ from config import (
 from crs_utils import ensure_crs
 
 
-def build_municipality_features(munis_pts_path, acc_path, munis_ahp_path):
-    """Load and join GI indicators, accessibility, and GI_AHP."""
+def build_municipality_features(munis_pts_path, acc_path, composite_path,
+                                 composite_col, output_col):
+    """Load and join GI indicators, accessibility, and a model-specific
+    composite GI score.
+
+    composite_col is the column read from composite_path (e.g. "GI_AHP" from
+    MUNICIPALITIES_AHP, or "GI_Final_NotWeighted" from MUNICIPALITIES_NW);
+    output_col is the name it's given in the returned feature table, so each
+    model's own composite score is distinguishable downstream (feature
+    importance CSVs, the AHP-vs-NW comparison figure) instead of both models
+    training on a column literally named "GI_AHP". See
+    outputs/audit/ml_model_design_note.md for why this must differ per model.
+    """
     munis_pts = gpd.read_file(munis_pts_path)
     munis_pts = ensure_crs(munis_pts, EPSG, label=munis_pts_path.name)
-    munis_ahp = gpd.read_file(munis_ahp_path)
-    munis_ahp = ensure_crs(munis_ahp, EPSG, label=munis_ahp_path.name)
+    composite = gpd.read_file(composite_path)
+    composite = ensure_crs(composite, EPSG, label=composite_path.name)
     acc = pd.read_csv(acc_path)
 
     # GI individual indicators — exclude duplicate n_Fitness_C
@@ -50,7 +61,9 @@ def build_municipality_features(munis_pts_path, acc_path, munis_ahp_path):
 
     munis_features = pd.DataFrame(munis_pts[["Muni_ID", "Muni_Name"] + gi_cols])
     munis_features = munis_features.merge(acc[["Muni_ID"] + nacc_cols], on="Muni_ID", how="left")
-    munis_features = munis_features.merge(munis_ahp[["Muni_ID", "GI_AHP"]], on="Muni_ID", how="left")
+    composite_slim = composite[["Muni_ID", composite_col]].rename(
+        columns={composite_col: output_col})
+    munis_features = munis_features.merge(composite_slim, on="Muni_ID", how="left")
     return munis_features
 
 
@@ -236,6 +249,7 @@ def main():
     # while a script depends on a path only one machine has).
     munis_pts_path = DATA_RAW / MUNICIPALITIES_PTS
     munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
+    munis_nw_path = DATA_RAW / MUNICIPALITIES_NW
     acc_path = TABLES / "accessibility_normalized.csv"
     ahp_od_path = TABLES / "huff_od_matrix.csv"
     nw_od_path = TABLES / "huff_NW_od_matrix.csv"
@@ -247,23 +261,16 @@ def main():
     FIGURES.mkdir(parents=True, exist_ok=True)
 
     # ── Shared setup ─────────────────────────────────────────
-    print("Building municipality features...")
-    munis_features = build_municipality_features(
-        munis_pts_path, acc_path, munis_ahp_path)
-    print(f"  Feature table: {munis_features.shape}")
-
+    # Spatial blocks depend only on municipality centroids, so they're
+    # genuinely shared. Municipality *features* are NOT shared: each model
+    # gets its own composite GI score (GI_AHP for Model 1, GI_Final_NotWeighted
+    # -- renamed GI_NW here -- for Model 2), matching which Huff weighting
+    # scheme it's actually predicting. Building one shared munis_features
+    # table (as before) meant Model 2 trained on GI_AHP too, which is exactly
+    # the bug this refit corrects — see outputs/audit/ml_model_design_note.md.
     print("Building spatial blocks...")
     blocks_df = build_spatial_blocks(munis_pts_path, cache_path=blocks_cache_path)
     print(f"  Blocks: {blocks_df['spatial_block'].value_counts().sort_index().to_dict()}")
-
-    feature_cols = [c for c in munis_features.columns
-                    if c not in ["Muni_ID", "Muni_Name"]]
-    print(f"  Features per municipality: {len(feature_cols)}")
-
-    # dist_to_muni comes from the OD melt (identical for both AHP/NW od
-    # matrices), so this list is valid regardless of which model(s) run.
-    all_feature_cols = feature_cols + ["dist_to_muni"]
-    print(f"  Total features: {len(all_feature_cols)}")
     print()
 
     # ════════════════════════════════════════════════════════
@@ -271,18 +278,28 @@ def main():
     # ════════════════════════════════════════════════════════
     if args.model in ["AHP", "both"]:
         print("=== MODEL 1: AHP Huff target ===")
+        print("Building municipality features (composite: GI_AHP from MUNICIPALITIES_AHP)...")
+        munis_features_ahp = build_municipality_features(
+            munis_pts_path, acc_path, munis_ahp_path,
+            composite_col="GI_AHP", output_col="GI_AHP")
+        feature_cols_ahp = [c for c in munis_features_ahp.columns
+                             if c not in ["Muni_ID", "Muni_Name"]]
+        all_feature_cols_ahp = feature_cols_ahp + ["dist_to_muni"]
+        print(f"  Feature table: {munis_features_ahp.shape}  "
+              f"Total features: {len(all_feature_cols_ahp)}")
+
         print("Melting AHP OD matrix...")
         df_pairs_ahp = melt_od_matrix(ahp_od_path)
         print(f"  Pairs: {df_pairs_ahp.shape}")
 
-        df_ml_ahp = df_pairs_ahp.merge(munis_features, on="Muni_Name", how="left")
+        df_ml_ahp = df_pairs_ahp.merge(munis_features_ahp, on="Muni_Name", how="left")
         df_ml_ahp = df_ml_ahp.merge(blocks_df, on="Muni_ID", how="left")
         print(f"  ML table: {df_ml_ahp.shape}")
         print()
 
         print("Training AHP Random Forest (spatial 5-fold CV)...")
         df_results_ahp, preds_ahp, fi_ahp = train_rf_spatial_cv(
-            df_ml_ahp, all_feature_cols, target_col="Pij",
+            df_ml_ahp, all_feature_cols_ahp, target_col="Pij",
             sample_frac=args.sample_frac)
         print()
         print("AHP CV Summary:")
@@ -292,7 +309,7 @@ def main():
 
         # Save AHP outputs
         df_importance_ahp = pd.DataFrame({
-            "feature": all_feature_cols, "importance": fi_ahp
+            "feature": all_feature_cols_ahp, "importance": fi_ahp
         }).sort_values("importance", ascending=False).reset_index(drop=True)
         df_importance_ahp.to_csv(TABLES / "ml_AHP_feature_importance.csv", index=False)
         df_results_ahp = annotate_wall_time_anomalies(df_results_ahp)
@@ -312,18 +329,29 @@ def main():
     # ════════════════════════════════════════════════════════
     if args.model in ["NW", "both"]:
         print("=== MODEL 2: NW Huff target ===")
+        print("Building municipality features (composite: GI_Final_NotWeighted "
+              "from MUNICIPALITIES_NW, stored as GI_NW)...")
+        munis_features_nw = build_municipality_features(
+            munis_pts_path, acc_path, munis_nw_path,
+            composite_col="GI_Final_NotWeighted", output_col="GI_NW")
+        feature_cols_nw = [c for c in munis_features_nw.columns
+                            if c not in ["Muni_ID", "Muni_Name"]]
+        all_feature_cols_nw = feature_cols_nw + ["dist_to_muni"]
+        print(f"  Feature table: {munis_features_nw.shape}  "
+              f"Total features: {len(all_feature_cols_nw)}")
+
         print("Melting NW OD matrix...")
         df_pairs_nw = melt_od_matrix(nw_od_path)
         print(f"  Pairs: {df_pairs_nw.shape}")
 
-        df_ml_nw = df_pairs_nw.merge(munis_features, on="Muni_Name", how="left")
+        df_ml_nw = df_pairs_nw.merge(munis_features_nw, on="Muni_Name", how="left")
         df_ml_nw = df_ml_nw.merge(blocks_df, on="Muni_ID", how="left")
         print(f"  ML table: {df_ml_nw.shape}")
         print()
 
         print("Training NW Random Forest (spatial 5-fold CV)...")
         df_results_nw, preds_nw, fi_nw = train_rf_spatial_cv(
-            df_ml_nw, all_feature_cols, target_col="Pij",
+            df_ml_nw, all_feature_cols_nw, target_col="Pij",
             sample_frac=args.sample_frac)
         print()
         print("NW CV Summary:")
@@ -333,7 +361,7 @@ def main():
 
         # Save NW outputs
         df_importance_nw = pd.DataFrame({
-            "feature": all_feature_cols, "importance": fi_nw
+            "feature": all_feature_cols_nw, "importance": fi_nw
         }).sort_values("importance", ascending=False).reset_index(drop=True)
         df_importance_nw.to_csv(TABLES / "ml_NW_feature_importance.csv", index=False)
         df_results_nw = annotate_wall_time_anomalies(df_results_nw)

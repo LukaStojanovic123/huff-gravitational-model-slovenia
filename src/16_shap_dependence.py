@@ -1,9 +1,11 @@
 """
-Regenerate SHAP dependence plots for the AHP-target Random Forest.
-06_ml_framework.py never persists a trained model, so this script retrains
-one RF (identical hyperparameters, full training data) purely for SHAP
-explanation purposes, then computes SHAP values on a fixed 5,000-pair
-sample and plots dependence for the five highest mean-|SHAP| features.
+Regenerate SHAP dependence plots for both Random Forests (AHP-target and
+NW-target). 06_ml_framework.py never persists a trained model, so this
+script retrains one RF per model (identical hyperparameters, full training
+data) purely for SHAP explanation purposes, then computes SHAP values on a
+fixed 5,000-pair sample and plots dependence for the five highest
+mean-|SHAP| features. Each model uses its own composite GI feature
+(GI_AHP or GI_NW) — see outputs/audit/ml_model_design_note.md.
 """
 
 import sys
@@ -40,7 +42,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import shap
 
-from config import DATA_RAW, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_PTS, TABLES
+from config import (DATA_RAW, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
+                     MUNICIPALITIES_PTS, TABLES)
 
 SRC_DIR = Path(__file__).resolve().parent
 
@@ -48,8 +51,6 @@ RF_SEED = 42
 SHAP_SAMPLE_SEED = 42
 SHAP_SAMPLE_SIZE = 5000
 N_DEPENDENCE_FEATURES = 5
-
-OUTPUT_PREFIX = FIGURES / "fig_shap_dependence_AHP"
 
 
 def load_module(stem):
@@ -60,29 +61,26 @@ def load_module(stem):
     return mod
 
 
-def main():
-    print("=== SHAP DEPENDENCE (AHP model) ===")
+def run(mod06, model_name, prefix, composite_path, composite_col, output_col, od_path):
+    print(f"=== SHAP DEPENDENCE ({model_name} model) ===")
     print(f"(RF seed = {RF_SEED}, SHAP sample seed = {SHAP_SAMPLE_SEED}, "
           f"sample size = {SHAP_SAMPLE_SIZE})")
     print()
 
-    FIGURES.mkdir(parents=True, exist_ok=True)
-
-    mod06 = load_module("06_ml_framework")
+    output_prefix = FIGURES / f"fig_shap_dependence_{prefix}"
 
     munis_pts_path = DATA_RAW / MUNICIPALITIES_PTS
-    munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
     acc_path = TABLES / "accessibility_normalized.csv"
-    ahp_od_path = TABLES / "huff_od_matrix.csv"
 
-    print("Building municipality features...")
-    munis_features = mod06.build_municipality_features(munis_pts_path, acc_path, munis_ahp_path)
+    print(f"Building municipality features (composite: {composite_col} -> {output_col})...")
+    munis_features = mod06.build_municipality_features(
+        munis_pts_path, acc_path, composite_path, composite_col, output_col)
     feature_cols = [c for c in munis_features.columns if c not in ["Muni_ID", "Muni_Name"]]
     all_feature_cols = feature_cols + ["dist_to_muni"]
     print(f"  Features: {len(all_feature_cols)}")
 
-    print("Melting AHP OD matrix...")
-    df_pairs = mod06.melt_od_matrix(ahp_od_path)
+    print(f"Melting {model_name} OD matrix...")
+    df_pairs = mod06.melt_od_matrix(od_path)
     df_ml = df_pairs.merge(munis_features, on="Muni_Name", how="left")
     print(f"  Training table: {df_ml.shape}")
     print()
@@ -92,7 +90,7 @@ def main():
 
     print(f"Training one RandomForestRegressor(n_estimators=100, max_depth=15, "
           f"min_samples_leaf=10, n_jobs=-1, random_state={RF_SEED}) on the full "
-          f"{len(X):,}-row AHP table (same hyperparameters as 06_ml_framework.py's "
+          f"{len(X):,}-row {model_name} table (same hyperparameters as 06_ml_framework.py's "
           f"spatial-CV folds, but a single fit on all data — SHAP here is a "
           f"post-hoc explanation exercise, not a held-out performance claim)...")
     rf = RandomForestRegressor(n_estimators=100, max_depth=15, min_samples_leaf=10,
@@ -122,15 +120,15 @@ def main():
     # scipy.linalg crash) — so rather than delete the figures, they're now
     # genuinely regenerated here, reusing this script's own already-fitted
     # model and SHAP values instead of retraining a third time.
-    print("Regenerating fig08_shap_summary_AHP.png / fig08_shap_bar_AHP.png "
+    print(f"Regenerating fig08_shap_summary_{prefix}.png / fig08_shap_bar_{prefix}.png "
           "(previously dead code in 06_ml_framework.py::run_shap)...")
-    mod06.run_shap(rf, X_sample, all_feature_cols, FIGURES, prefix="AHP")
-    # run_shap names its own outputs fig_shap_summary_AHP.png / fig_shap_bar_AHP.png
+    mod06.run_shap(rf, X_sample, all_feature_cols, FIGURES, prefix=prefix)
+    # run_shap names its own outputs fig_shap_summary_{prefix}.png / fig_shap_bar_{prefix}.png
     # (no "08"); rename to match the fig08_* filenames the manuscript references.
     import shutil as _shutil
-    _shutil.move(FIGURES / "fig_shap_summary_AHP.png", FIGURES / "fig08_shap_summary_AHP.png")
-    _shutil.move(FIGURES / "fig_shap_bar_AHP.png", FIGURES / "fig08_shap_bar_AHP.png")
-    print(f"  Saved {FIGURES / 'fig08_shap_summary_AHP.png'} / fig08_shap_bar_AHP.png")
+    _shutil.move(FIGURES / f"fig_shap_summary_{prefix}.png", FIGURES / f"fig08_shap_summary_{prefix}.png")
+    _shutil.move(FIGURES / f"fig_shap_bar_{prefix}.png", FIGURES / f"fig08_shap_bar_{prefix}.png")
+    print(f"  Saved {FIGURES / f'fig08_shap_summary_{prefix}.png'} / fig08_shap_bar_{prefix}.png")
     print()
 
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
@@ -173,12 +171,12 @@ def main():
     for ax, i in zip(axes, order[:N_DEPENDENCE_FEATURES]):
         plot_dependence(ax, i)
         ax.set_title(all_feature_cols[i], fontsize=10)
-    fig.suptitle("SHAP dependence — top 5 features, AHP model (5,000-pair sample, seed=42)")
+    fig.suptitle(f"SHAP dependence — top 5 features, {model_name} model (5,000-pair sample, seed=42)")
     fig.tight_layout()
-    fig.savefig(f"{OUTPUT_PREFIX}.png", dpi=300, bbox_inches="tight")
-    fig.savefig(f"{OUTPUT_PREFIX}.pdf", bbox_inches="tight")
+    fig.savefig(f"{output_prefix}.png", dpi=300, bbox_inches="tight")
+    fig.savefig(f"{output_prefix}.pdf", bbox_inches="tight")
     plt.close(fig)
-    print(f"  Saved {OUTPUT_PREFIX}.png / .pdf")
+    print(f"  Saved {output_prefix}.png / .pdf")
     print()
 
     print("Rendering individual panels...")
@@ -189,13 +187,28 @@ def main():
         ax.set_title(feat)
         fig.tight_layout()
         safe_name = feat.replace("/", "_")
-        out_path = f"{OUTPUT_PREFIX}_{safe_name}"
+        out_path = f"{output_prefix}_{safe_name}"
         fig.savefig(f"{out_path}.png", dpi=300, bbox_inches="tight")
         fig.savefig(f"{out_path}.pdf", bbox_inches="tight")
         plt.close(fig)
         print(f"  Saved {out_path}.png / .pdf")
 
     print()
+    print(f"Done ({model_name}).")
+    print()
+
+
+def main():
+    FIGURES.mkdir(parents=True, exist_ok=True)
+    mod06 = load_module("06_ml_framework")
+
+    run(mod06, "AHP", "AHP",
+        DATA_RAW / MUNICIPALITIES_AHP, "GI_AHP", "GI_AHP",
+        TABLES / "huff_od_matrix.csv")
+    run(mod06, "NW", "NW",
+        DATA_RAW / MUNICIPALITIES_NW, "GI_Final_NotWeighted", "GI_NW",
+        TABLES / "huff_NW_od_matrix.csv")
+
     print("Done.")
 
 

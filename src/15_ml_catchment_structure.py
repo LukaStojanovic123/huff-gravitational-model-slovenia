@@ -32,6 +32,8 @@ def _feature_group(feature):
         return "Distance"
     if feature == "GI_AHP":
         return "GI_AHP"
+    if feature == "GI_NW":
+        return "GI_NW"
     if feature.startswith("nacc_"):
         return "Accessibility"
     if feature == "n_Area_km2":

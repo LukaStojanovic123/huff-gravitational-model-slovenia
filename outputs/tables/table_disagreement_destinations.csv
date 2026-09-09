@@ -111,141 +111,136 @@ AHP_vs_ML,AHP,Ptuj,ML,Dornava,5
 AHP_vs_ML,AHP,Sveti Jurij ob Ščavnici,ML,Murska Sobota,5
 AHP_vs_ML,AHP,Ptuj,ML,Podlehnik,5
 AHP_vs_ML,AHP,Radeče,ML,Sevnica,5
-NW_vs_ML,NW,Ljubljana,ML,Kamnik,122
-NW_vs_ML,NW,Ljubljana,ML,Ljubljana,118
-NW_vs_ML,NW,Ljubljana,ML,Litija,80
-NW_vs_ML,NW,Ljubljana,ML,Kranj,77
-NW_vs_ML,NW,Ljubljana,ML,Kočevje,38
+NW_vs_ML,NW,Ljubljana,ML,Kamnik,118
+NW_vs_ML,NW,Ljubljana,ML,Litija,76
+NW_vs_ML,NW,Ljubljana,ML,Ljubljana,73
+NW_vs_ML,NW,Ljubljana,ML,Kranj,73
 NW_vs_ML,NW,Ljubljana,ML,Trebnje,38
-NW_vs_ML,NW,Novo mesto,ML,Novo mesto,38
-NW_vs_ML,NW,Ljubljana,ML,Cerknica,33
-NW_vs_ML,NW,Maribor,ML,Maribor,32
+NW_vs_ML,NW,Maribor,ML,Maribor,37
+NW_vs_ML,NW,Celje,ML,Celje,36
+NW_vs_ML,NW,Ljubljana,ML,Kočevje,31
 NW_vs_ML,NW,Ljubljana,ML,Ivančna Gorica,29
-NW_vs_ML,NW,Ptuj,ML,Maribor,23
-NW_vs_ML,NW,Sežana,ML,Sežana,23
-NW_vs_ML,NW,Ljubljana,ML,Domžale,22
+NW_vs_ML,NW,Ljubljana,ML,Cerknica,26
 NW_vs_ML,NW,Ljubljana,ML,Ribnica,21
+NW_vs_ML,NW,Sežana,ML,Sežana,20
 NW_vs_ML,NW,Ljubljana,ML,Idrija,20
-NW_vs_ML,NW,Celje,ML,Celje,20
 NW_vs_ML,NW,Ljubljana,ML,Žužemberk,19
-NW_vs_ML,NW,Ljubljana,ML,Celje,18
 NW_vs_ML,NW,Ljubljana,ML,Velike Lašče,18
+NW_vs_ML,NW,Ptuj,ML,Maribor,18
+NW_vs_ML,NW,Ljubljana,ML,Celje,18
 NW_vs_ML,NW,Ljubljana,ML,Vrhnika,17
 NW_vs_ML,NW,Ljubljana,ML,Novo mesto,16
-NW_vs_ML,NW,Ljubljana,ML,Medvode,16
-NW_vs_ML,NW,Lenart,ML,Maribor,15
-NW_vs_ML,NW,Ljubljana,ML,Sodražica,15
-NW_vs_ML,NW,Šentjur,ML,Šentjur,15
-NW_vs_ML,NW,Zreče,ML,Slovenske Konjice,15
 NW_vs_ML,NW,Ljubljana,ML,Osilnica,15
+NW_vs_ML,NW,Ljubljana,ML,Domžale,15
 NW_vs_ML,NW,Ljubljana,ML,Cerkno,15
-NW_vs_ML,NW,Ptuj,ML,Ptuj,13
-NW_vs_ML,NW,Krško,ML,Novo mesto,12
-NW_vs_ML,NW,Podčetrtek,ML,Podčetrtek,12
-NW_vs_ML,NW,Ljubljana,ML,Trbovlje,11
-NW_vs_ML,NW,Celje,ML,Slovenske Konjice,11
+NW_vs_ML,NW,Ljubljana,ML,Sodražica,15
 NW_vs_ML,NW,Ljubljana,ML,Kostel,11
-NW_vs_ML,NW,Črnomelj,ML,Novo mesto,11
-NW_vs_ML,NW,Sevnica,ML,Novo mesto,10
-NW_vs_ML,NW,Laško,ML,Celje,10
+NW_vs_ML,NW,Ljubljana,ML,Trbovlje,11
 NW_vs_ML,NW,Ljubljana,ML,Grosuplje,10
-NW_vs_ML,NW,Ivančna Gorica,ML,Ivančna Gorica,9
-NW_vs_ML,NW,Slovenska Bistrica,ML,Slovenske Konjice,9
+NW_vs_ML,NW,Zreče,ML,Slovenske Konjice,10
+NW_vs_ML,NW,Črnomelj,ML,Novo mesto,10
+NW_vs_ML,NW,Novo mesto,ML,Novo mesto,9
+NW_vs_ML,NW,Ljubljana,ML,Medvode,9
+NW_vs_ML,NW,Šmarje pri Jelšah,ML,Rogaška Slatina,9
 NW_vs_ML,NW,Sveti Jurij ob Ščavnici,ML,Murska Sobota,9
-NW_vs_ML,NW,Murska Sobota,ML,Murska Sobota,8
-NW_vs_ML,NW,Črnomelj,ML,Metlika,8
-NW_vs_ML,NW,Ljubljana,ML,Škofljica,7
-NW_vs_ML,NW,Hrastnik,ML,Trbovlje,7
-NW_vs_ML,NW,Kočevje,ML,Kočevje,7
-NW_vs_ML,NW,Šmarje pri Jelšah,ML,Rogaška Slatina,7
-NW_vs_ML,NW,Slovenska Bistrica,ML,Maribor,7
+NW_vs_ML,NW,Zreče,ML,Zreče,8
+NW_vs_ML,NW,Metlika,ML,Metlika,8
+NW_vs_ML,NW,Hrastnik,ML,Trbovlje,8
+NW_vs_ML,NW,Slovenske Konjice,ML,Slovenske Konjice,8
+NW_vs_ML,NW,Šentjur,ML,Šentjur,7
+NW_vs_ML,NW,Sevnica,ML,Novo mesto,7
 NW_vs_ML,NW,Ljubljana,ML,Tolmin,7
+NW_vs_ML,NW,Lenart,ML,Maribor,7
 NW_vs_ML,NW,Ljubljana,ML,Gorenja vas-Poljane,7
 NW_vs_ML,NW,Cerknica,ML,Cerknica,6
 NW_vs_ML,NW,Ravne na Koroškem,ML,Ravne na Koroškem,6
-NW_vs_ML,NW,Zagorje ob Savi,ML,Trbovlje,6
-NW_vs_ML,NW,Ormož,ML,Ormož,6
-NW_vs_ML,NW,Dravograd,ML,Dravograd,6
+NW_vs_ML,NW,Šmarješke Toplice,ML,Novo mesto,6
+NW_vs_ML,NW,Oplotnica,ML,Slovenske Konjice,6
+NW_vs_ML,NW,Kočevje,ML,Kočevje,6
 NW_vs_ML,NW,Ljubljana,ML,Bloke,6
-NW_vs_ML,NW,Brežice,ML,Brežice,5
-NW_vs_ML,NW,Krško,ML,Krško,5
-NW_vs_ML,NW,Kranj,ML,Kranj,5
-NW_vs_ML,NW,Kozje,ML,Celje,5
-NW_vs_ML,NW,Laško,ML,Trbovlje,5
-NW_vs_ML,NW,Oplotnica,ML,Slovenske Konjice,5
-NW_vs_ML,NW,Trebnje,ML,Trebnje,5
+NW_vs_ML,NW,Mirna Peč,ML,Novo mesto,6
+NW_vs_ML,NW,Ormož,ML,Ormož,6
+NW_vs_ML,NW,Litija,ML,Litija,5
+NW_vs_ML,NW,Cerkvenjak,ML,Cerkvenjak,5
+NW_vs_ML,NW,Celje,ML,Šentjur,5
+NW_vs_ML,NW,Nova Gorica,ML,Nova Gorica,5
+NW_vs_ML,NW,Muta,ML,Muta,5
 NW_vs_ML,NW,Radenci,ML,Murska Sobota,5
-NW_vs_ML,NW,Zreče,ML,Zreče,5
-NW_vs_ML,NW,Šmarješke Toplice,ML,Novo mesto,5
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Šentjernej,43
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Škocjan,29
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Velike Lašče,28
-MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Šentjur,26
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Semič,25
-MLAHP_vs_MLNW,ML(AHP-target),Kranj,ML(NW-target),Škofja Loka,24
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Mokronog-Trebelno,23
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Žužemberk,22
+NW_vs_ML,NW,Radeče,ML,Sevnica,5
+NW_vs_ML,NW,Velenje,ML,Velenje,5
+NW_vs_ML,NW,Šmarje pri Jelšah,ML,Šentjur,5
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Šentjernej,36
+MLAHP_vs_MLNW,ML(AHP-target),Slovenske Konjice,ML(NW-target),Slovenska Bistrica,33
+MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Laško,26
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Škocjan,25
+MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Ptuj,24
+MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Šentjur,24
+MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Grosuplje,23
 MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Trebnje,21
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Grosuplje,18
-MLAHP_vs_MLNW,ML(AHP-target),Kranj,ML(NW-target),Železniki,18
-MLAHP_vs_MLNW,ML(AHP-target),Rogaška Slatina,ML(NW-target),Šmarje pri Jelšah,16
-MLAHP_vs_MLNW,ML(AHP-target),Kranj,ML(NW-target),Gorenja vas-Poljane,16
-MLAHP_vs_MLNW,ML(AHP-target),Sežana,ML(NW-target),Ajdovščina,16
+MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Ivančna Gorica,20
+MLAHP_vs_MLNW,ML(AHP-target),Ormož,ML(NW-target),Ptuj,18
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Mokronog-Trebelno,18
+MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Trbovlje,17
+MLAHP_vs_MLNW,ML(AHP-target),Sežana,ML(NW-target),Ajdovščina,17
+MLAHP_vs_MLNW,ML(AHP-target),Trbovlje,ML(NW-target),Zagorje ob Savi,17
+MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Ljubljana,17
+MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Trbovlje,17
+MLAHP_vs_MLNW,ML(AHP-target),Slovenske Konjice,ML(NW-target),Celje,16
 MLAHP_vs_MLNW,ML(AHP-target),Kočevje,ML(NW-target),Kostel,15
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Zagorje ob Savi,15
-MLAHP_vs_MLNW,ML(AHP-target),Ormož,ML(NW-target),Ptuj,15
-MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Moravče,14
-MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Trbovlje,14
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Semič,14
+MLAHP_vs_MLNW,ML(AHP-target),Rogaška Slatina,ML(NW-target),Šmarje pri Jelšah,14
+MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Moravče,13
 MLAHP_vs_MLNW,ML(AHP-target),Murska Sobota,ML(NW-target),Ptuj,13
-MLAHP_vs_MLNW,ML(AHP-target),Ivančna Gorica,ML(NW-target),Žužemberk,13
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Ljubljana,13
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Dolenjske Toplice,12
-MLAHP_vs_MLNW,ML(AHP-target),Podčetrtek,ML(NW-target),Rogaška Slatina,12
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Bloke,12
-MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Ptuj,12
-MLAHP_vs_MLNW,ML(AHP-target),Šentjur,ML(NW-target),Šmarje pri Jelšah,12
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Moravče,11
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Ivančna Gorica,11
-MLAHP_vs_MLNW,ML(AHP-target),Trbovlje,ML(NW-target),Zagorje ob Savi,11
-MLAHP_vs_MLNW,ML(AHP-target),Šentjur,ML(NW-target),Celje,10
-MLAHP_vs_MLNW,ML(AHP-target),Cerknica,ML(NW-target),Bloke,10
-MLAHP_vs_MLNW,ML(AHP-target),Ivančna Gorica,ML(NW-target),Trebnje,10
-MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Laško,9
-MLAHP_vs_MLNW,ML(AHP-target),Ribnica,ML(NW-target),Sodražica,9
-MLAHP_vs_MLNW,ML(AHP-target),Slovenske Konjice,ML(NW-target),Slovenska Bistrica,9
-MLAHP_vs_MLNW,ML(AHP-target),Trebnje,ML(NW-target),Trbovlje,8
-MLAHP_vs_MLNW,ML(AHP-target),Ormož,ML(NW-target),Ljutomer,8
-MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Hoče-Slivnica,8
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Kostanjevica na Krki,7
-MLAHP_vs_MLNW,ML(AHP-target),Ravne na Koroškem,ML(NW-target),Slovenj Gradec,7
-MLAHP_vs_MLNW,ML(AHP-target),Žalec,ML(NW-target),Celje,7
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Škofljica,7
-MLAHP_vs_MLNW,ML(AHP-target),Ribnica,ML(NW-target),Velike Lašče,7
-MLAHP_vs_MLNW,ML(AHP-target),Trebnje,ML(NW-target),Žužemberk,6
-MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Mirna Peč,6
-MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Trbovlje,6
-MLAHP_vs_MLNW,ML(AHP-target),Dravograd,ML(NW-target),Slovenj Gradec,6
-MLAHP_vs_MLNW,ML(AHP-target),Krško,ML(NW-target),Kostanjevica na Krki,6
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Trbovlje,6
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Loški Potok,6
-MLAHP_vs_MLNW,ML(AHP-target),Kočevje,ML(NW-target),Črnomelj,6
+MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Bloke,11
+MLAHP_vs_MLNW,ML(AHP-target),Trebnje,ML(NW-target),Trbovlje,11
+MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Velike Lašče,11
+MLAHP_vs_MLNW,ML(AHP-target),Metlika,ML(NW-target),Črnomelj,11
+MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Vojnik,11
+MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Zagorje ob Savi,11
+MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Lenart,11
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Krško,11
+MLAHP_vs_MLNW,ML(AHP-target),Kranj,ML(NW-target),Bohinj,10
+MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Trbovlje,10
+MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Slovenska Bistrica,10
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Kostanjevica na Krki,9
+MLAHP_vs_MLNW,ML(AHP-target),Juršinci,ML(NW-target),Ptuj,8
+MLAHP_vs_MLNW,ML(AHP-target),Zreče,ML(NW-target),Slovenske Konjice,8
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Dolenjske Toplice,8
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Žužemberk,8
+MLAHP_vs_MLNW,ML(AHP-target),Škofljica,ML(NW-target),Ljubljana,7
+MLAHP_vs_MLNW,ML(AHP-target),Cerknica,ML(NW-target),Ljubljana,7
+MLAHP_vs_MLNW,ML(AHP-target),Cerknica,ML(NW-target),Bloke,7
+MLAHP_vs_MLNW,ML(AHP-target),Celje,ML(NW-target),Kozje,7
+MLAHP_vs_MLNW,ML(AHP-target),Domžale,ML(NW-target),Ljubljana,7
+MLAHP_vs_MLNW,ML(AHP-target),Medvode,ML(NW-target),Ljubljana,7
+MLAHP_vs_MLNW,ML(AHP-target),Kočevje,ML(NW-target),Ljubljana,7
+MLAHP_vs_MLNW,ML(AHP-target),Ribnica,ML(NW-target),Sodražica,7
+MLAHP_vs_MLNW,ML(AHP-target),Dornava,ML(NW-target),Ptuj,6
 MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Sveta Ana,6
+MLAHP_vs_MLNW,ML(AHP-target),Velenje,ML(NW-target),Slovenj Gradec,6
+MLAHP_vs_MLNW,ML(AHP-target),Novo mesto,ML(NW-target),Sevnica,6
+MLAHP_vs_MLNW,ML(AHP-target),Šentjur,ML(NW-target),Dobje,6
+MLAHP_vs_MLNW,ML(AHP-target),Ravne na Koroškem,ML(NW-target),Prevalje,6
+MLAHP_vs_MLNW,ML(AHP-target),Ormož,ML(NW-target),Ljutomer,6
 MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Apače,6
-MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Trebnje,6
-MLAHP_vs_MLNW,ML(AHP-target),Domžale,ML(NW-target),Moravče,5
-MLAHP_vs_MLNW,ML(AHP-target),Idrija,ML(NW-target),Žiri,5
+MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Hoče-Slivnica,6
+MLAHP_vs_MLNW,ML(AHP-target),Cerknica,ML(NW-target),Loška dolina,5
+MLAHP_vs_MLNW,ML(AHP-target),Cerkvenjak,ML(NW-target),Ptuj,5
+MLAHP_vs_MLNW,ML(AHP-target),Koper,ML(NW-target),Izola,5
+MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Ljubljana,5
+MLAHP_vs_MLNW,ML(AHP-target),Muta,ML(NW-target),Dravograd,5
+MLAHP_vs_MLNW,ML(AHP-target),Metlika,ML(NW-target),Semič,5
+MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Loški Potok,5
+MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Ivančna Gorica,5
 MLAHP_vs_MLNW,ML(AHP-target),Idrija,ML(NW-target),Ajdovščina,5
-MLAHP_vs_MLNW,ML(AHP-target),Murska Sobota,ML(NW-target),Moravske Toplice,5
-MLAHP_vs_MLNW,ML(AHP-target),Maribor,ML(NW-target),Slovenska Bistrica,5
-MLAHP_vs_MLNW,ML(AHP-target),Kranj,ML(NW-target),Cerklje na Gorenjskem,5
 MLAHP_vs_MLNW,ML(AHP-target),Kamnik,ML(NW-target),Luče,5
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Dobrepolje,5
-MLAHP_vs_MLNW,ML(AHP-target),Ljubljana,ML(NW-target),Ig,5
-MLAHP_vs_MLNW,ML(AHP-target),Ptuj,ML(NW-target),Videm,5
+MLAHP_vs_MLNW,ML(AHP-target),Idrija,ML(NW-target),Žiri,5
+MLAHP_vs_MLNW,ML(AHP-target),Litija,ML(NW-target),Trebnje,5
+MLAHP_vs_MLNW,ML(AHP-target),Rogaška Slatina,ML(NW-target),Ptuj,5
+MLAHP_vs_MLNW,ML(AHP-target),Ravne na Koroškem,ML(NW-target),Slovenj Gradec,5
+MLAHP_vs_MLNW,ML(AHP-target),Slovenska Bistrica,ML(NW-target),Poljčane,5
+MLAHP_vs_MLNW,ML(AHP-target),Slovenske Konjice,ML(NW-target),Zreče,5
+MLAHP_vs_MLNW,ML(AHP-target),Trbovlje,ML(NW-target),Laško,5
 MLAHP_vs_MLNW,ML(AHP-target),Trebnje,ML(NW-target),Šentrupert,5
-MLAHP_vs_MLNW,ML(AHP-target),Sežana,ML(NW-target),Divača,5
-MLAHP_vs_MLNW,ML(AHP-target),Tolmin,ML(NW-target),Cerkno,5
-MLAHP_vs_MLNW,ML(AHP-target),Črnomelj,ML(NW-target),Semič,5
-MLAHP_vs_MLNW,ML(AHP-target),Zreče,ML(NW-target),Slovenske Konjice,5
-MLAHP_vs_MLNW,ML(AHP-target),Velenje,ML(NW-target),Slovenj Gradec,5
-MLAHP_vs_MLNW,ML(AHP-target),Šentjur,ML(NW-target),Dobje,5
+MLAHP_vs_MLNW,ML(AHP-target),Velenje,ML(NW-target),Šmartno ob Paki,5
+MLAHP_vs_MLNW,ML(AHP-target),Žužemberk,ML(NW-target),Trebnje,5
