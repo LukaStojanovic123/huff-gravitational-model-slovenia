@@ -224,12 +224,12 @@ The AHP model (`--model AHP`) uses the default `sample_frac=1.0` — i.e. the fu
 
 **AHP** (`ml_AHP_cv_results.csv`):
 
- fold       r2      mae     rmse  n_test  wall_time_s                                                                                                                               wall_time_note
-    1 0.875190 0.001286 0.009212  368196      65198.4 wall-clock artifact, not compute time (other folds median 958s) — almost certainly the machine sleeping/idling mid-fold, not slower training
-    2 0.904896 0.002397 0.012575  205224        966.0                                                                                                                                          NaN
-    3 0.858893 0.002616 0.014433  138828       1099.3                                                                                                                                          NaN
-    4 0.895174 0.001716 0.009069  313872        912.8                                                                                                                                          NaN
-    5 0.694319 0.003868 0.020473  253512        950.8                                                                                                                                          NaN
+ fold       r2      mae     rmse  n_test  wall_time_s  wall_time_note
+    1 0.875190 0.001286 0.009212  368196  1118.730299             NaN
+    2 0.904896 0.002397 0.012575  205224  1223.214449             NaN
+    3 0.858893 0.002616 0.014433  138828  1364.072709             NaN
+    4 0.895174 0.001716 0.009069  313872  1217.738719             NaN
+    5 0.694319 0.003868 0.020473  253512  1150.771788             NaN
 
 - Mean R² = 0.8457 ± 0.0865  (README claims 0.845 ± 0.088)
 - Mean MAE = 0.002377, Mean RMSE = 0.013152
@@ -237,14 +237,14 @@ The AHP model (`--model AHP`) uses the default `sample_frac=1.0` — i.e. the fu
 **NW** (`ml_NW_cv_results.csv`):
 
  fold       r2      mae     rmse  n_test  wall_time_s  wall_time_note
-    1 0.861609 0.001301 0.009164  368196        872.2             NaN
-    2 0.878183 0.002877 0.014376  205224       1055.6             NaN
-    3 0.833858 0.002637 0.015706  138828       1133.2             NaN
-    4 0.892263 0.001779 0.009205  313872        926.4             NaN
-    5 0.732679 0.003781 0.018310  253512        956.1             NaN
+    1 0.860807 0.001241 0.009190  368196  1095.762547             NaN
+    2 0.919218 0.002412 0.011707  205224  1263.298856             NaN
+    3 0.843397 0.002621 0.015248  138828  1341.114135             NaN
+    4 0.889484 0.001872 0.009323  313872  1223.765278             NaN
+    5 0.760439 0.003602 0.017334  253512  1139.795619             NaN
 
-- Mean R² = 0.8397 ± 0.0637  (README claims 0.844 ± 0.066)
-- Mean MAE = 0.002475, Mean RMSE = 0.013352
+- Mean R² = 0.8547 ± 0.0600  (README claims 0.844 ± 0.066)
+- Mean MAE = 0.002349, Mean RMSE = 0.012560
 
 ### Feature importance by group
 
@@ -260,11 +260,11 @@ The AHP model (`--model AHP`) uses the default `sample_frac=1.0` — i.e. the fu
 
 **NW** feature importance by group (of total 1.0000):
 
-- Distance: 69.27%
-- GI_AHP: 13.33%
-- Individual GI indicators: 8.39%
-- Accessibility: 5.55%
-- Municipality area: 3.45%
+- Distance: 69.16%
+- Other: 17.99%
+- Accessibility: 5.46%
+- Individual GI indicators: 5.00%
+- Municipality area: 2.39%
 
 Note: NW-target feature importance breakdown above is not reported anywhere in the current manuscript draft; it is produced here for the first time.
 
@@ -275,11 +275,11 @@ Saved `manuscript_number_check.csv` (21 rows).
                                   claim                                                                                               draft_value                                                                                                repository_value                                                                                              status                                        source_file
                     AHP vs NW agreement                                                                                          88.6%, 5349/6036                                                                                               88.62%, 5349/6036                                                                                           CONFIRMED           outputs/gpkg/map_AHP_vs_NW_villages.gpkg
                     AHP vs ML agreement                                                                                          75.4%, 4551/6036                                                                                               75.31%, 4546/6036                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg
-                     NW vs ML agreement                                                                                          77.4%, 4672/6036                                                                                               75.51%, 4558/6036                                                                                             DIFFERS            outputs/gpkg/map_NW_vs_ML_villages.gpkg
+                     NW vs ML agreement                                                                                          77.4%, 4672/6036                                                                                               78.98%, 4767/6036                                                                                             DIFFERS            outputs/gpkg/map_NW_vs_ML_villages.gpkg
          Euclidean vs network agreement                                                                             88.4%, 5335/6036, kappa 0.879                                                                                 88.49%, 5341/6036, kappa 0.8795                                                                                             DIFFERS      outputs/tables/table_euclidean_vs_network.csv
                     Moran's I AHP vs NW                                                                                            0.184, z 24.31                                                                                               I=0.1838, z=23.68                                CONFIRMED (I; z is a permutation estimate and fluctuates run to run)          outputs/tables/table_morans_i_results.csv
                     Moran's I AHP vs ML                                                                                            0.451, z 59.55                                                                                               I=0.4725, z=63.71 DIFFERS (I) — draft 0.451, repository 0.4725; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv
-                     Moran's I NW vs ML                                                                                            0.447, z 57.40                                                                                               I=0.4452, z=55.78                                CONFIRMED (I; z is a permutation estimate and fluctuates run to run)          outputs/tables/table_morans_i_results.csv
+                     Moran's I NW vs ML                                                                                            0.447, z 57.40                                                                                               I=0.4403, z=57.18 DIFFERS (I) — draft 0.447, repository 0.4403; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv
                          LISA AHP vs ML                                                                  706 LL, 255 HL, 116 LH, 1077 significant                                                                 HH=338, LL=820, HL=304, LH=87, significant=1549            DIFFERS — draft LL=706/HL=255/LH=116/sig=1077 vs repository LL=820/HL=304/LH=87/sig=1549               outputs/gpkg/map_lisa_AHP_vs_ML.gpkg
                 Ljubljana catchment AHP                                                                                          1222 settlements                                                                                                1216 settlements                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv
                  Ljubljana catchment NW                                                                                          1022 settlements                                                                                                1016 settlements                                                                                             DIFFERS                 outputs/tables/huff_NW_summary.csv
@@ -290,7 +290,7 @@ Saved `manuscript_number_check.csv` (21 rows).
 Ljubljana disagreements under AHP vs ML                                                                                           940 settlements                                                                                                 939 settlements                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg
                          Entropy AHP/NW AHP mean ~0.51, NW mean ~0.53 (Section 4.5 prose only; no manuscript max or class-count breakdown exists) AHP mean=0.5049 max=0.7569 (low=397/med=1892/high=3747); NW mean=0.5265 max=0.7931 (low=383/med=1671/high=3982)                          CONFIRMED (means only; no manuscript value exists for max or class counts)           outputs/tables/table_entropy_summary.csv
                   RF AHP mean R squared                                                                                           0.845 +/- 0.088                                                                                                 0.846 +/- 0.086                                                                                           CONFIRMED               outputs/tables/ml_AHP_cv_results.csv
-                   RF NW mean R squared                                                                                           0.844 +/- 0.066                                                                                                 0.840 +/- 0.064                                                                                  DIFFERS (rounding)                outputs/tables/ml_NW_cv_results.csv
+                   RF NW mean R squared                                                                                           0.844 +/- 0.066                                                                                                 0.855 +/- 0.060                                                                                  DIFFERS (rounding)                outputs/tables/ml_NW_cv_results.csv
                     Commuting agreement                                                                               68.9%, 146/212, kappa 0.676                                                                                   68.87%, 146/212, kappa 0.6755                                                                                           CONFIRMED outputs/tables/table_huff_vs_commuting_summary.csv
            Commuting functional centres                                                                                                       101                                                                                                             101                                                                                           CONFIRMED         outputs/tables/table_huff_vs_commuting.csv
            Beta sensitivity kappa range                                                                                            0.732 to 0.826                                                                                                  0.732 to 0.826                                                                                           CONFIRMED    outputs/tables/table_beta_sensitivity_clean.csv

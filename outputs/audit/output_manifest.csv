@@ -5,11 +5,14 @@ outputs/audit/imputation_sensitivity_check.md,unknown,UNMAPPED — update this m
 outputs/audit/indicator_audit.csv,audit,13_data_audit.py,False,"Per-indicator audit: group, nonzero counts, rarity score, weights"
 outputs/audit/manuscript_number_check.csv,audit,13_data_audit.py,False,Every manuscript-draft numeric claim vs the repository-computed value
 outputs/audit/ml_model_design_note.md,unknown,UNMAPPED — update this manifest script,False,
+outputs/audit/nw_refit_absolute_numbers.csv,unknown,UNMAPPED — update this manifest script,False,
+outputs/audit/nw_refit_comparison.csv,unknown,UNMAPPED — update this manifest script,False,
 outputs/audit/output_manifest.csv,audit,19_output_manifest.py,False,This manifest
 outputs/audit/raw_data_manifest.csv,unknown,UNMAPPED — update this manifest script,False,
 outputs/audit/raw_input_inventory.csv,audit,13_data_audit.py,False,Inventory (size/CRS/features/columns) of the 8 core DATA_RAW files
 outputs/audit/reconciliation.csv,unknown,UNMAPPED — update this manifest script,False,
 outputs/audit/remediation_summary.md,unknown,UNMAPPED — update this manifest script,False,
+outputs/audit/repository_inventory.md,unknown,UNMAPPED — update this manifest script,False,
 outputs/audit/reproducibility_note.md,unknown,UNMAPPED — update this manifest script,False,
 outputs/audit/staleness_report.csv,unknown,UNMAPPED — update this manifest script,False,
 outputs/figures/fig07_beta_sensitivity.png,figure,ORPHAN — no current script,False,Legacy beta-sensitivity figure; superseded by fig_beta_sensitivity.png/.pdf (07_beta_sensitivity.py)
@@ -17,7 +20,9 @@ outputs/figures/fig07_feature_importance.pdf,figure,12_export_outputs.py,True,To
 outputs/figures/fig07_feature_importance.png,figure,12_export_outputs.py,True,"Top-30 AHP feature importance bar chart, coloured by thematic group"
 outputs/figures/fig07_feature_importance_AHP.png,figure,ORPHAN — no current script,False,Legacy feature-importance figure; no current script writes this filename
 outputs/figures/fig08_shap_bar_AHP.png,figure,"06_ml_framework.py (run_shap, unreachable — see note)",True,"SHAP bar plot, AHP model — produced by a dead-code function (run_shap) never called from main()"
+outputs/figures/fig08_shap_bar_NW.png,unknown,UNMAPPED — update this manifest script,False,
 outputs/figures/fig08_shap_summary_AHP.png,figure,"06_ml_framework.py (run_shap, unreachable — see note)",True,"SHAP summary/beeswarm plot, AHP model — same dead-code caveat as fig08_shap_bar_AHP.png"
+outputs/figures/fig08_shap_summary_NW.png,unknown,UNMAPPED — update this manifest script,False,
 outputs/figures/fig_beta_sensitivity.pdf,figure,07_beta_sensitivity.py,True,"Agreement and Cohen's kappa vs beta, current beta-sensitivity figure (PDF)"
 outputs/figures/fig_beta_sensitivity.png,figure,07_beta_sensitivity.py,True,"Agreement and Cohen's kappa vs beta, current beta-sensitivity figure"
 outputs/figures/fig_feature_importance_comparison.pdf,figure,15_ml_catchment_structure.py,False,"Paired bar chart: AHP-target vs NW-target RF feature-group importance (Task 2.7, PDF)"
@@ -36,6 +41,18 @@ outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.pdf,figure,16_shap_dep
 outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Recycle_Bins (rank 3, mean |SHAP|=0.000247)"
 outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.pdf,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Theaters (rank 5, mean |SHAP|=0.000096)"
 outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.png,figure,16_shap_dependence.py,False,"Individual SHAP dependence panel: nacc_Theaters (rank 5, mean |SHAP|=0.000096)"
+outputs/figures/fig_shap_dependence_NW.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW.png,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_GI_NW.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_GI_NW.png,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_dist_to_muni.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_dist_to_muni.png,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_n_Area_km2.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_n_Area_km2.png,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_n_Employ.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_n_Employ.png,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.pdf,unknown,UNMAPPED — update this manifest script,False,
+outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.png,unknown,UNMAPPED — update this manifest script,False,
 outputs/gpkg/fig01_study_area.gpkg,gpkg,17_spatial_layers.py,True,"Study area: municipalities (212 polygons) + settlements (6,036 points) layers"
 outputs/gpkg/fig03_GI_NW_municipalities.gpkg,gpkg,17_spatial_layers.py,True,"GI_Final_NotWeighted choropleth layer: 212 municipality polygons, GI value, rank, 10 group scores"
 outputs/gpkg/fig04_GI_AHP_municipalities.gpkg,gpkg,17_spatial_layers.py,True,"GI_AHP choropleth layer: 212 municipality polygons, GI value, rank, 10 group scores"
