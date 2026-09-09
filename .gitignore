@@ -51,3 +51,10 @@ outputs_archive_pre_rerun/
 # of the GI_Final_NotWeighted feature-swap retrain, never committed (large
 # GPKGs). Never delete this directory.
 outputs_archive_pre_nw_refit/
+
+# Pre-full-pipeline-OpenBLAS-rerun outputs snapshot — the entire Stage 2B/3
+# pipeline ran under a since-fixed MKL environment (see the scipy/BLAS crash
+# fix commit); this snapshot preserves those MKL-era outputs for before/
+# after comparison against openblas_reconciliation.csv. Never committed
+# (large GPKGs). Never delete this directory.
+outputs_archive_pre_openblas_rerun/
