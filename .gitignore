@@ -46,3 +46,8 @@ Thumbs.db
 # Pre-rerun outputs snapshot (Stage 2B.1) — kept on disk for before/after
 # comparison, never committed (large GPKGs). Never delete this directory.
 outputs_archive_pre_rerun/
+
+# Pre-NW-refit outputs snapshot — kept on disk for before/after comparison
+# of the GI_Final_NotWeighted feature-swap retrain, never committed (large
+# GPKGs). Never delete this directory.
+outputs_archive_pre_nw_refit/
