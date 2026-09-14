@@ -187,6 +187,14 @@ def consolidate_tables():
               TABLES / "table6_cv_performance.csv", "table6_cv_performance")
 
     # tableS1: indicator source citations — reference metadata, not a computed result.
+    # This is a plain copy, not a regeneration: a correction ever applied to
+    # tableS1 must be made in data/external/tableS1_indicators_sources.csv
+    # itself, not just in the outputs/supplementary/ copy — a delimiter and
+    # group-name fix was once made only to the outputs/ copy, and the very
+    # next pipeline run silently overwrote it back to the old, wrong
+    # version from data/external/, since that is what this call actually
+    # reads from. Found and fixed during this remediation's own Stage 2.4
+    # pipeline verification.
     safe_copy(DATA_EXTERNAL / "tableS1_indicators_sources.csv",
               SUPPLEMENTARY / "tableS1_indicators_sources.csv", "tableS1_indicators_sources")
 

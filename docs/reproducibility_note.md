@@ -127,14 +127,28 @@ permutations. Re-running the sequence above on unchanged inputs reproduces every
 this rerun's tables exactly, including the two residual discrepancies noted below (they are
 properties of the input data, not of any randomness in the pipeline).
 
-`ml_AHP_cv_results.csv` and `ml_NW_cv_results.csv` now carry a `wall_time_s` column and an
-automatic `wall_time_note` flag (added in `06_ml_framework.py::annotate_wall_time_anomalies`)
-for any fold whose wall-clock time is more than 3x the median of the other folds — Fold 1 of
-the AHP model in this run logged 65,198s against ~900-1,100s for every other fold, which is
-flagged there as a wall-clock artifact (the machine sleeping mid-fold during a long
-background wait in this session), not a real compute cost. R²/MAE/RMSE are unaffected.
+`RandomForestRegressor(..., n_jobs=-1)`'s individual predicted `Pij` values (in
+`ml_AHP_vs_AHP_comparison.csv` / `ml_NW_vs_NW_comparison.csv`) are not bit-for-bit
+reproducible run to run, even with `random_state=42` fixed — parallel tree averaging across
+however many CPU cores are available sums each tree's contribution in a thread-completion
+order that varies between runs, which can flip the last one or two digits of a float64 value
+(confirmed directly: re-running produced differences no larger than 2e-17 in individual
+`ml_dominant_Pij` values). This never changes which municipality wins the argmax, and every
+aggregate statistic derived from these predictions (R², MAE, RMSE, agreement counts, kappa)
+reproduced exactly across repeated reruns in this remediation. Only the raw per-settlement
+probability column itself carries this harmless noise.
 
-A separate one-off robustness check, `outputs/audit/imputation_sensitivity_check.md`, reruns
+`ml_AHP_cv_results.csv` and `ml_NW_cv_results.csv` carry a `wall_time_s` column and an
+automatic `wall_time_note` flag (added in `06_ml_framework.py::annotate_wall_time_anomalies`)
+for any fold whose wall-clock time is more than 3x the median of the other folds — this has
+caught a real wall-clock artifact before (one fold logging tens of thousands of seconds
+because the machine slept mid-fold during a long background wait), not a real compute cost.
+Whether any given rerun's `wall_time_note` column is empty (typical fold times around
+900-1,200s each in this repository's own testing) or flags an outlier says something about
+that machine's conditions during that run, not about the pipeline itself — R²/MAE/RMSE are
+never affected by wall-clock artifacts either way.
+
+A separate one-off robustness check, `docs/audit-history/imputation_sensitivity_check.md`, reruns
 the AHP and NW Huff assignment with unreachable OD pairs given zero probability instead of
 the pipeline's default column-max-distance fill. On the current network (199 missing pairs)
 this changes zero settlement assignments — the pipeline default is not currently
