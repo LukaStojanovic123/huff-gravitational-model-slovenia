@@ -12,8 +12,18 @@ dependencies:
   - pandas
   - numpy==2.2.6
   - matplotlib==3.11.1
-  - jupyterlab
   - openpyxl
   - shap
   - esda
   - libpysal
+  - psutil
+  # Force the OpenBLAS build of BLAS/LAPACK, not the Intel MKL build that
+  # conda-forge picks by default. On a CPU without AVX-512 (e.g. Kaby Lake
+  # i7-7700K), MKL's own dispatcher crashes natively — no Python traceback —
+  # the first time any scipy.linalg call resolves through the environment's
+  # shared libblas/liblapack (this is also what esda, sklearn's KMeans, and
+  # shap's colormap init rely on). numpy is unaffected, since its wheel
+  # bundles its own self-contained OpenBLAS build and never touches this
+  # environment's libblas/liblapack. See docs/reproducibility_note.md.
+  - libblas=*=*openblas
+  - liblapack=*=*openblas

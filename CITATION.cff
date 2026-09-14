@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+type: software
+title: "Functional Gravitational Modelling of Service Catchments in Slovenia"
+authors:
+  - family-names: Stojanović
+    given-names: Luka
+  # README.md's author line only gives initials for the co-authors below
+  # (S. Drobne, A. Lisec) — fill in their full given names before publishing.
+  - family-names: Drobne
+    given-names: S.
+  - family-names: Lisec
+    given-names: A.
+repository-code: "https://github.com/LukaStojanovic123/huff-gravitational-model-slovenia"
+license: MIT
+preferred-citation:
+  type: article
+  title: "Functional gravitational modelling of service catchments in Slovenia: a modified Huff approach with explainable machine learning assessment"
+  authors:
+    - family-names: Stojanović
+      given-names: Luka
+    - family-names: Drobne
+      given-names: S.
+    - family-names: Lisec
+      given-names: A.
+  journal: "Applied Geography"
+  status: "in-review"
+  # DOI, volume, issue and page numbers to be added on publication.

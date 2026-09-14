@@ -101,7 +101,7 @@ now genuinely fits the target it's supposed to.
 
 ## Which comparison layer each model feeds
 
-`12_export_outputs.py::export_agreement_maps` builds three headline comparison layers:
+`11_export_outputs.py::export_agreement_maps` builds three headline comparison layers:
 
 | Layer | Compares | ML model used |
 |---|---|---|

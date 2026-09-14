@@ -6,8 +6,8 @@ scikit-learn
 pandas
 numpy
 matplotlib
-jupyterlab
 openpyxl
 shap
 esda
 libpysal
+psutil

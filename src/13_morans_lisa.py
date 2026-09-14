@@ -1,8 +1,31 @@
 """
-Compute Moran's I, Cohen's kappa, LISA, and a binary join-count robustness
-check for the three headline settlement-level agreement comparisons
-(AHP vs NW, AHP vs ML, NW vs ML), save autocorrelation and three-way
-agreement results.
+Step 13 of the pipeline: do settlements that disagree between two models
+cluster together geographically, or are they scattered at random?
+
+What this script does: for each of the four headline village-level
+comparisons (AHP Huff vs NW Huff, AHP Huff vs its Random Forest, NW Huff
+vs its Random Forest, and the two Random Forest models against each
+other), tests whether "agreement" and "disagreement" settlements are
+spatially clustered rather than randomly scattered across the map. It
+does this three ways: global Moran's I (one number summarising how much
+spatial clustering exists overall), Local Moran's I / LISA (which
+specific settlements sit inside a significant cluster, and what kind —
+see classify_lisa below), and a binary join-count statistic as an
+independent cross-check on the same question using a simpler, more
+easily verified method. Cohen's kappa (chance-corrected agreement) is
+also computed for each comparison here, alongside the spatial statistics,
+since both describe the same underlying agreement layers.
+
+Reads: the four agreement map GPKGs built by 11_export_outputs.py.
+
+Writes: table_morans_i_results.csv, table_three_way_agreement.csv,
+table_join_counts.csv, table_lisa_summary.csv, and one map_lisa_*.gpkg
+layer per comparison.
+
+Runs after 11_export_outputs.py, not simply "script 13" in numeric
+sequence for its own sake — it depends on the maps 11 builds, and running
+it before 11 has actually happened once in this repository's history (see
+assert_map_is_fresh below for the guard that was added because of it).
 """
 
 import sys
@@ -20,6 +43,17 @@ from sklearn.metrics import cohen_kappa_score
 
 from config import GPKG, TABLES
 
+OUTPUT_FILES = [
+    "tables/table_morans_i_results.csv",
+    "tables/table_three_way_agreement.csv",
+    "tables/table_join_counts.csv",
+    "tables/table_lisa_summary.csv",
+    "gpkg/map_lisa_AHP_vs_NW.gpkg",
+    "gpkg/map_lisa_AHP_vs_ML.gpkg",
+    "gpkg/map_lisa_NW_vs_ML.gpkg",
+    "gpkg/map_lisa_MLAHP_vs_MLNW.gpkg",
+]
+
 # comparison -> (agreement layer path, dominant-muni column for model A, for model B)
 COMPARISONS = {
     "AHP_vs_NW": (GPKG / "map_AHP_vs_NW_villages.gpkg", "AHP_dominant_muni", "NW_dominant_muni"),
@@ -28,15 +62,20 @@ COMPARISONS = {
     "MLAHP_vs_MLNW": (GPKG / "map_ML_AHP_vs_ML_NW_villages.gpkg", "ML_AHP_dominant_muni", "ML_NW_dominant_muni"),
 }
 
-# Every comparison layer above is BUILT by 12_export_outputs.py from these
-# TABLES sources. This script depends on 12's output despite the lower
-# script number — a real ordering trap (confirmed the hard way: an earlier
-# run of this script, executed before 12 in that session, silently read a
-# comparison map left over from before this remediation instead of the
-# current pipeline's own output — see outputs/audit/reconciliation.csv and
-# reproducibility_note.md). Rather than renumber the whole pipeline, this
-# script now asserts each map it reads is not older than the CSVs 12 built
-# it from, and fails loudly rather than silently computing on stale input.
+# Every comparison layer above is built by 11_export_outputs.py from these
+# TABLES sources, so this script must always run after 11_export_outputs.py.
+# The scripts are numbered so that running them in numeric order gets this
+# right automatically now, but that was not always true: under an earlier
+# numbering scheme this script had a lower number than the export script
+# it depends on, and running scripts in plain numeric order silently
+# computed these statistics from a leftover comparison map instead of the
+# pipeline's current output (see docs/reproducibility_note.md and
+# docs/audit-history/reconciliation.csv for how that was found). The
+# scripts were renumbered specifically to prevent that, but the check
+# below is kept anyway as a safety net for anyone running scripts
+# individually rather than through the full sequence — it fails loudly if
+# a map is older than the tables it should have been built from, rather
+# than silently computing on stale input.
 MAP_SOURCES = {
     GPKG / "map_AHP_vs_NW_villages.gpkg": [TABLES / "huff_AHP_summary.csv", TABLES / "huff_NW_summary.csv"],
     GPKG / "map_AHP_vs_ML_villages.gpkg": [TABLES / "huff_AHP_summary.csv", TABLES / "ml_AHP_vs_AHP_comparison.csv"],
@@ -73,10 +112,12 @@ GLOBAL_PERMUTATION_SEED = 42
 
 
 def assert_map_is_fresh(path):
-    """Raise loudly if path is older than any CSV 12_export_outputs.py built
-    it from — the direct fix for the script-10-before-script-12 ordering
-    trap. A stale map should stop the run, not silently produce numbers from
-    a previous pipeline state."""
+    """Stop the run if a comparison map is older than the tables it should have been built from.
+
+    Guards against silently computing Moran's I / LISA / kappa from a
+    leftover map from a previous pipeline run instead of the current one —
+    see the note above MAP_SOURCES for the incident that motivated this.
+    """
     sources = MAP_SOURCES.get(path, [])
     map_mtime = path.stat().st_mtime
     stale = [src for src in sources if src.exists() and src.stat().st_mtime > map_mtime]
@@ -84,7 +125,7 @@ def assert_map_is_fresh(path):
         stale_list = ", ".join(f"{s.name} ({s.stat().st_mtime:.0f} > {map_mtime:.0f})" for s in stale)
         raise RuntimeError(
             f"STALE INPUT: {path.name} is older than its source(s): {stale_list}. "
-            f"This means src/12_export_outputs.py has not been (re)run since those "
+            f"This means src/11_export_outputs.py has not been (re)run since those "
             f"tables last changed — run it before this script, or you will compute "
             f"Moran's I / LISA / kappa from a comparison map that does not match the "
             f"current pipeline state. (This is exactly how the AHP-vs-ML/NW-vs-ML "
@@ -93,9 +134,10 @@ def assert_map_is_fresh(path):
 
 
 def load_agreement_layer(path):
+    """Load one comparison map, after checking it exists and is not stale."""
     if not path.exists():
         raise FileNotFoundError(
-            f"{path} not found — run src/12_export_outputs.py first "
+            f"{path} not found — run src/11_export_outputs.py first "
             "to build the agreement map layers."
         )
     assert_map_is_fresh(path)
@@ -103,13 +145,23 @@ def load_agreement_layer(path):
 
 
 def build_queen_weights(gdf):
-    """Queen contiguity spatial weights, row-standardised."""
+    """Define which settlements count as each other's spatial neighbours.
+
+    Uses Queen contiguity: two settlement polygons are neighbours if they
+    share so much as a single boundary point, not only a full edge (the
+    stricter "Rook" contiguity rule). Queen is the more common default for
+    irregular polygons like settlement boundaries, where a shared corner
+    still represents genuine adjacency. The weights are row-standardised
+    (each settlement's neighbour weights sum to 1), which is what Moran's I
+    and LISA expect.
+    """
     w = Queen.from_dataframe(gdf, use_index=False)
     w.transform = "r"
     return w
 
 
 def global_morans_i(gdf, field, label):
+    """Compute one global Moran's I statistic for a 0/1 agreement field across all settlements."""
     w = build_queen_weights(gdf)
     y = gdf[field].astype(float).values
     mi = esda.Moran(y, w)

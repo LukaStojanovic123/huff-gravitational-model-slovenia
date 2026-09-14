@@ -133,7 +133,7 @@ for that. One number per line, source file in parentheses.
 
 ## LISA (Local Moran's I)
 
-Permutations: 999 (seed=42), significance threshold p < 0.05 (`10_morans_i.py` / `table_lisa_summary.csv`)
+Permutations: 999 (seed=42), significance threshold p < 0.05 (`13_morans_lisa.py` / `table_lisa_summary.csv`)
 
 - AHP vs NW: HH 246, LL 296, HL 626, LH 162, not significant 4,706 (`table_lisa_summary.csv`)
 - AHP vs ML: HH 338, LL 820, HL 304, LH 87, not significant 4,487 (`table_lisa_summary.csv`)

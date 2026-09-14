@@ -1,7 +1,30 @@
 """
-Load 2023 SURS commuting matrix, derive functional centres by
-dominant flow, compare with Huff assignments, classify three
-disagreement patterns.
+Step 10 of the pipeline: does the Huff model's catchment structure agree
+with how people actually commute?
+
+What this script does: an independent, real-world check on the Huff
+model's catchments, using Statistics Slovenia's (SURS) 2023 inter-
+municipality commuting matrix instead of anything the Huff model itself
+produces. For each municipality, it compares how many residents commute
+to jobs within their own municipality against how many commute to any
+single other municipality, and calls a municipality "self-contained" if
+staying home wins. A municipality that is not self-contained is chained
+forward through its own dominant external destination, repeatedly, until
+it reaches a municipality that is self-contained — its real-world
+"functional centre." That is then compared against the municipality most
+of its own settlements are Huff-assigned to (the "Huff majority centre"),
+and every municipality is classified into one of three disagreement
+patterns, or "Agree" (see classify_pattern below for the exact rule).
+
+Reads: 2023tabela.xlsx (the SURS commuting matrix, config.py's
+COMMUTING_FILE), obcine_poligoni.shp (municipality polygons),
+Villages_points_real.shp, and huff_AHP_summary.csv (already computed by
+03_huff_ahp.py — this comparison uses the AHP Huff model only, not NW).
+
+Writes: table_huff_vs_commuting.csv, table_huff_vs_commuting_summary.csv,
+fig_huff_vs_commuting_municipalities.gpkg.
+
+Runs tenth. Needs 03_huff_ahp.py's output.
 """
 
 import sys
@@ -16,13 +39,26 @@ from sklearn.metrics import cohen_kappa_score
 from config import DATA_RAW, TABLES, GPKG, COMMUTING_FILE, VILLAGES_FILE, EPSG
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "tables/table_huff_vs_commuting.csv",
+    "tables/table_huff_vs_commuting_summary.csv",
+    "gpkg/fig_huff_vs_commuting_municipalities.gpkg",
+]
+
 OBCINE_FILE = "obcine_poligoni.shp"
 
 
 def build_commuting_centres(commuting_path):
-    """For each municipality, find self-flow vs dominant external destination,
-    determine centre status, and follow dominant-flow chains to the
-    ultimate functional centre."""
+    """Derive each municipality's real-world functional centre from commuting flows.
+
+    A municipality "is a centre" if at least as many of its residents work
+    within the municipality itself as commute out to any single other
+    municipality. A municipality that is not a centre is chased forward
+    through its own largest outbound commuting flow, one hop at a time,
+    until it reaches a municipality that is a centre — that is its
+    "ultimate centre." The chase stops early (rather than looping forever)
+    if it revisits a municipality it has already passed through.
+    """
     xl = pd.read_excel(commuting_path)
 
     self_flow = {}
@@ -75,8 +111,15 @@ def build_commuting_centres(commuting_path):
 
 
 def build_huff_majority(villages_path, obcine_path, huff_summary_path):
-    """Spatially join villages to municipality polygons, then find the
-    majority Huff dominant municipality per home municipality."""
+    """Find each municipality's most common Huff-assigned destination among its own settlements.
+
+    Every settlement already has a Huff dominant municipality
+    (huff_AHP_summary.csv). This groups settlements by which municipality
+    they physically sit in (a spatial join to the municipality polygons)
+    and takes the most frequent Huff destination within each group — the
+    municipality-level analogue of the commuting comparison above, so the
+    two can be compared on equal footing.
+    """
     vp = gpd.read_file(villages_path)
     vp = ensure_crs(vp, EPSG, label=villages_path.name)
     obc = gpd.read_file(obcine_path)
@@ -102,6 +145,19 @@ def build_huff_majority(villages_path, obcine_path, huff_summary_path):
 
 
 def classify_pattern(row):
+    """Classify one municipality's disagreement type between Huff and commuting.
+
+    Pattern 1 ("Huff self, Commuting external"): the Huff model treats this
+    municipality as its own centre, but commuting data shows most of its
+    workers actually leave for another municipality.
+    Pattern 2 ("Commuting self, Huff external"): the reverse — residents
+    are mostly self-contained by commuting, but the Huff model sends most
+    of the municipality's settlements elsewhere.
+    Pattern 3 ("both external, different centre"): neither source treats
+    the municipality as self-contained, and they disagree on which outside
+    municipality it belongs to.
+    Anything else, by elimination, is "Agree."
+    """
     huff_self = row["huff_majority_centre"] == row["SIFRA"]
     commuting_self = row["commuting_is_centre"]
 

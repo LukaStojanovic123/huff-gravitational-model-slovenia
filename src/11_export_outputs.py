@@ -1,14 +1,35 @@
 """
-Export all paper-ready outputs — 6 tables, 3 supplementary tables,
-9 figures as PNG and PDF, all GPKG layers for QGIS. The completeness
-checklist also covers the audit and Task 2-4 outputs added by
-src/13-18 (three-way agreement, LISA on all comparisons, disagreement
-synthesis, RF catchment structure, SHAP dependence, study-area/GI/
-catchment spatial layers, and the data audit report).
+Step 11 of the pipeline: assemble every paper-ready table, figure and map
+layer into outputs/, and report which of them are actually present.
+
+What this script does: three things. First, it builds or copies the six
+main manuscript tables and four supplementary tables into
+outputs/tables/ and outputs/supplementary/, computing the ones that are
+pure derivations directly from other outputs rather than trusting a
+possibly stale pre-existing copy (see consolidate_tables below). Second,
+it builds the four headline village-level agreement maps (AHP vs NW Huff,
+AHP Huff vs its Random Forest, NW Huff vs its Random Forest, and the two
+Random Forest models against each other) as GPKG layers for QGIS, adding
+the map_class/is_ljubljana_source fields QGIS needs for consistent
+styling. Third, it draws the feature-importance bar chart for the AHP
+Random Forest and prints a checklist of every file the full pipeline is
+expected to have produced by this point, so a missing upstream step is
+obvious rather than silently absent.
+
+Reads: whichever upstream outputs each table/map needs — see the specific
+functions below and the EXPECTED_OUTPUTS checklist for the full list.
+
+Writes: table1-6, tableS1-S4, the four agreement map GPKGs, and
+fig07_feature_importance.png/.pdf, listed in full in OUTPUT_FILES below.
+
+Runs eleventh, after every other numbered table- or map-producing script
+it depends on (03, 04, 06, 07). 13_morans_lisa.py in turn depends on the
+maps this script builds — it must always run after this script, never
+before (see 13_morans_lisa.py's own staleness check for what happens if
+that order is violated).
 """
 
 import sys
-import importlib.util
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -30,14 +51,44 @@ AUDIT = OUTPUTS / "audit"
 SRC_DIR = Path(__file__).resolve().parent
 DATA_EXTERNAL = REPO_ROOT / "data" / "external"
 
+OUTPUT_FILES = [
+    "tables/table1_AHP_group_weights.csv",
+    "tables/table2_top20_GI_NotWeighted.csv",
+    "tables/table3_top20_GI_AHP.csv",
+    "tables/table4_top15_catchments.csv",
+    "tables/table5_beta_sensitivity.csv",
+    "tables/table6_cv_performance.csv",
+    "supplementary/tableS1_indicators_sources.csv",
+    "supplementary/tableS4_beta_sensitivity.csv",
+    "figures/fig07_feature_importance.png",
+    "figures/fig07_feature_importance.pdf",
+    "gpkg/map_AHP_vs_NW_villages.gpkg",
+    "gpkg/map_NW_vs_ML_villages.gpkg",
+    "gpkg/map_AHP_vs_ML_villages.gpkg",
+    "gpkg/map_ML_AHP_vs_ML_NW_villages.gpkg",
+]
 
-def load_module(stem):
-    """Import src/NN_name.py by path (filenames start with a digit)."""
-    path = SRC_DIR / f"{stem}.py"
-    spec = importlib.util.spec_from_file_location(stem, path)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+
+def build_map_class(gdf, destination_col, threshold):
+    """Classify each disagreeing settlement by which municipality gains it.
+
+    A settlement keeps the label "agree" if both models assigned it to the
+    same municipality. Otherwise it is labelled with the name of the
+    municipality gaining it under `destination_col`, but only if that
+    municipality gains at least `threshold` settlements overall in this
+    comparison — below that, it is grouped into "other centre" so the map
+    legend does not end up with dozens of one- or two-settlement colours.
+    """
+    disagreeing = gdf["agreement"] == 0
+    dest_counts = gdf.loc[disagreeing, destination_col].value_counts()
+    big_centres = set(dest_counts[dest_counts >= threshold].index)
+
+    map_class = pd.Series("agree", index=gdf.index)
+    is_big = gdf[destination_col].isin(big_centres)
+    map_class = map_class.mask(disagreeing & is_big, gdf[destination_col])
+    map_class = map_class.mask(disagreeing & ~is_big, "other centre")
+    return map_class
+
 
 def safe_copy(src, dst, label):
     """Copy src to dst if src exists; report status either way."""
@@ -58,8 +109,12 @@ def first_existing(*paths):
 
 
 def build_top20_gi_table(gpkg_path, gi_col, out_path, label):
-    """Rank all municipalities by a GI column, save the top 20. Computed
-    directly from the raw municipality layer — no external table needed."""
+    """Rank all 212 municipalities by a GI column and save the top 20.
+
+    Computed directly from the raw municipality layer each time this runs
+    (not copied from a pre-existing file), so this table can never go
+    stale relative to the actual GI data.
+    """
     gdf = gpd.read_file(gpkg_path)
     gdf = ensure_crs(gdf, EPSG, label=gpkg_path.name)
     ranked = gdf[["Muni_Name", gi_col]].sort_values(gi_col, ascending=False).reset_index(drop=True)
@@ -70,9 +125,11 @@ def build_top20_gi_table(gpkg_path, gi_col, out_path, label):
 
 
 def build_top15_catchment_table(out_path, label):
-    """Top 15 combined catchment sizes under AHP and NW, side by side.
-    Computed directly from huff_AHP_summary.csv / huff_NW_summary.csv —
-    no external table needed."""
+    """Build the top-15 catchment size table, AHP and NW side by side.
+
+    Computed directly from huff_AHP_summary.csv / huff_NW_summary.csv each
+    time this runs, so it always reflects the current Huff results.
+    """
     ahp = pd.read_csv(TABLES / "huff_AHP_summary.csv")
     nw = pd.read_csv(TABLES / "huff_NW_summary.csv")
     ahp_counts = ahp["dominant_municipality"].value_counts().head(15).reset_index()
@@ -141,17 +198,21 @@ def consolidate_tables():
 
 
 def load_indicator_group_map():
-    """Indicator_code -> Thematic_group, from tableS3 (see src/01_gi_construction.py)."""
+    """Map each indicator code to its thematic group, read from tableS3 (see 01_gi_construction.py)."""
     ref_path = SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv"
     if not ref_path.exists():
         return {}
-    ref = pd.read_csv(ref_path, sep=";")
+    # No sep= argument: tableS3 is comma-delimited. See the matching note
+    # in 01_gi_construction.py::load_indicator_group_map for why this
+    # matters — a stale sep=";" here previously made this call fail.
+    ref = pd.read_csv(ref_path)
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
     return dict(zip(ref["Indicator_code"], ref["Thematic_group"]))
 
 
 def classify_feature(feature, group_map):
+    """Label one ML feature name for the feature-importance chart's colour legend."""
     if feature.startswith("nacc_"):
         return "Accessibility"
     if feature == "GI_AHP":
@@ -164,7 +225,7 @@ def classify_feature(feature, group_map):
 
 
 def plot_feature_importance():
-    """Top 30 features bar chart, coloured by thematic group."""
+    """Draw the AHP Random Forest's top-30 feature importance bar chart, coloured by thematic group."""
     fi_path = TABLES / "ml_AHP_feature_importance.csv"
     if not fi_path.exists():
         print("  SKIP  fig07_feature_importance: "
@@ -201,14 +262,13 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
     """Export three village-polygon agreement GPKG layers.
 
     Also adds the map_class / is_ljubljana_source QGIS symbology fields
-    (Task 4) inline, right before each layer is saved, so a plain rerun of
-    this script can never regenerate Maps A/B/C without them — those fields
-    used to only get added by a separate script (18_map_symbology_fields.py)
-    that had to run *after* this one, and a subsequent rerun of this script
-    would silently wipe them again.
+    inline, right before each layer is saved, using build_map_class() above,
+    so a plain rerun of this script can never regenerate Maps A/B/C without
+    them. These fields used to be added by a separate script that had to run
+    *after* this one — any rerun of this script would silently wipe them
+    again, which is why that logic now lives here instead.
     """
     print("Exporting agreement maps...")
-    mod18 = load_module("18_map_symbology_fields")
 
     ahp_path = tables_path / "huff_AHP_summary.csv"
     nw_path = tables_path / "huff_NW_summary.csv"
@@ -239,7 +299,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
     map1["agreement_label"] = map1["agreement"].map(
         {1: "AHP and NW agree", 0: "AHP and NW disagree"})
     map1.drop(columns=["Village_ID_x", "Village_ID_y"], errors="ignore", inplace=True)
-    map1["map_class"] = mod18.build_map_class(map1, "AHP_dominant_muni", 20)
+    map1["map_class"] = build_map_class(map1, "AHP_dominant_muni", 20)
     map1["is_ljubljana_source"] = (map1["AHP_dominant_muni"] == "Ljubljana")
     map1.to_file(gpkg_path / "map_AHP_vs_NW_villages.gpkg", driver="GPKG")
     agree1 = map1["agreement"].sum()
@@ -259,7 +319,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 
         map2 = na.merge(ml_nw, left_on="NA_MID", right_on="Village_ID", how="left")
         map2.drop(columns=["Village_ID"], errors="ignore", inplace=True)
-        map2["map_class"] = mod18.build_map_class(map2, "ml_dominant_muni", 40)
+        map2["map_class"] = build_map_class(map2, "ml_dominant_muni", 40)
         map2["is_ljubljana_source"] = (map2["NW_dominant_muni"] == "Ljubljana")
         map2.to_file(gpkg_path / "map_NW_vs_ML_villages.gpkg", driver="GPKG")
         agree2 = map2["agreement"].sum()
@@ -282,7 +342,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 
         map3 = na.merge(ml_ahp, left_on="NA_MID", right_on="Village_ID", how="left")
         map3.drop(columns=["Village_ID"], errors="ignore", inplace=True)
-        map3["map_class"] = mod18.build_map_class(map3, "ml_dominant_muni", 40)
+        map3["map_class"] = build_map_class(map3, "ml_dominant_muni", 40)
         map3["is_ljubljana_source"] = (map3["AHP_dominant_muni"] == "Ljubljana")
         map3.to_file(gpkg_path / "map_AHP_vs_ML_villages.gpkg", driver="GPKG")
         agree3 = map3["agreement"].sum()
@@ -294,7 +354,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
     # ── Map 4: RF(AHP-target) vs RF(NW-target) ────────────────
     # The comparison the original three never covered: do the two separately
     # trained RF models converge on the same catchment structure? See
-    # outputs/audit/ml_model_design_note.md for why these are two distinct
+    # docs/ml_model_design_note.md for why these are two distinct
     # models, not one model compared twice.
     if ahp_ml_path.exists() and nw_ml_path.exists():
         print("  Building Map 4: RF(AHP-target) vs RF(NW-target)...")
@@ -315,7 +375,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
         map4["agreement"] = (map4["ML_AHP_dominant_muni"] == map4["ML_NW_dominant_muni"]).astype(int)
         map4["agreement_label"] = map4["agreement"].map(
             {1: "RF(AHP) and RF(NW) agree", 0: "RF(AHP) and RF(NW) disagree"})
-        map4["map_class"] = mod18.build_map_class(map4, "ML_NW_dominant_muni", 40)
+        map4["map_class"] = build_map_class(map4, "ML_NW_dominant_muni", 40)
         map4["is_ljubljana_source"] = (map4["ML_AHP_dominant_muni"] == "Ljubljana")
         map4.to_file(gpkg_path / "map_ML_AHP_vs_ML_NW_villages.gpkg", driver="GPKG")
         agree4 = map4["agreement"].sum()
@@ -326,8 +386,12 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
     print()
 
 
-# Every output the full pipeline (01-12) is expected to produce, for the
-# final completeness checklist. Grouped by output directory.
+# Every output the full pipeline (all 18 numbered scripts) is expected to
+# produce, for the final completeness checklist below. Grouped by output
+# directory. This list is separate from each script's own OUTPUT_FILES
+# declaration (used by 19_output_manifest.py to check which script wrote
+# which file) — this one exists purely to answer "is everything here,"
+# not "who made it."
 EXPECTED_OUTPUTS = {
     "data/processed": [
         DATA_PROCESSED / "roads_noded.gpkg",
@@ -359,8 +423,8 @@ EXPECTED_OUTPUTS = {
         TABLES / "table4_top15_catchments.csv",
         TABLES / "table5_beta_sensitivity.csv",
         TABLES / "table6_cv_performance.csv",
-        # Task 2 (src/10, 14, 15) — three-way agreement, LISA, disagreement
-        # synthesis, RF catchment structure, feature importance comparison.
+        # Three-way agreement, LISA, disagreement synthesis, RF catchment
+        # structure, feature importance comparison (src/13, 14, 15).
         TABLES / "table_three_way_agreement.csv",
         TABLES / "table_join_counts.csv",
         TABLES / "table_lisa_summary.csv",
@@ -382,8 +446,7 @@ EXPECTED_OUTPUTS = {
         FIGURES / "fig07_feature_importance.pdf",
         FIGURES / "fig08_shap_bar_AHP.png",
         FIGURES / "fig08_shap_summary_AHP.png",
-        # Task 2.6/2.7 — SHAP dependence (src/16) and feature importance
-        # comparison (src/15).
+        # SHAP dependence (src/16) and feature importance comparison (src/15).
         FIGURES / "fig_shap_dependence_AHP.png",
         FIGURES / "fig_shap_dependence_AHP.pdf",
         FIGURES / "fig_feature_importance_comparison.png",
@@ -399,12 +462,12 @@ EXPECTED_OUTPUTS = {
         GPKG / "map_entropy_NW_villages.gpkg",
         GPKG / "map_lisa_AHP_vs_NW.gpkg",
         GPKG / "fig_huff_vs_commuting_municipalities.gpkg",
-        # Task 2.2 — LISA for all three comparisons (src/10).
+        # LISA for all three comparisons (src/13).
         GPKG / "map_lisa_AHP_vs_ML.gpkg",
         GPKG / "map_lisa_NW_vs_ML.gpkg",
-        # Task 2.3 — three-way disagreement synthesis (src/14).
+        # Three-way disagreement synthesis (src/14).
         GPKG / "map_disagreement_count_villages.gpkg",
-        # Task 3 — study area, GI choropleths, catchment layers (src/17).
+        # Study area, GI choropleths, catchment layers (src/17).
         GPKG / "fig01_study_area.gpkg",
         GPKG / "fig03_GI_NW_municipalities.gpkg",
         GPKG / "fig04_GI_AHP_municipalities.gpkg",
@@ -424,6 +487,7 @@ EXPECTED_OUTPUTS = {
 
 
 def print_checklist():
+    """Print, for every file in EXPECTED_OUTPUTS, whether it currently exists on disk."""
     print("=== OUTPUT CHECKLIST ===")
     total = 0
     present = 0

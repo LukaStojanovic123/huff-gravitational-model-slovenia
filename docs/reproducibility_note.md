@@ -9,7 +9,7 @@ availability statement.
 The pipeline reads exactly 94 files from `DATA_RAW`, all listed by name in version-controlled
 repository files — nothing is discovered by globbing a directory anymore:
 
-- **8 core files**, named as constants in `config.py` and audited in `13_data_audit.py`'s
+- **8 core files**, named as constants in `config.py` and audited in `18_data_audit.py`'s
   `CORE_FILES` list: `gis_osm_roads_free_1.shp` (road network), `Municipalities_All_Groups_
   Weighted_AHP.gpkg`, `Municipalities_All_Groups_NotWeighted_Normalized.gpkg`,
   `Municipalities_Points_normalized.gpkg`, `Villages_points_real.shp`, `NA.shp`,
@@ -45,14 +45,14 @@ dependency.
 Three other absolute-path dependencies were found and removed during Stage 2A:
 
 1. `06_ml_framework.py`, `07_beta_sensitivity.py`, `09_entropy_uncertainty.py`,
-   `11_commuting_comparison.py`, `13_data_audit.py`, `16_shap_dependence.py` all read
+   `10_commuting_comparison.py`, `18_data_audit.py`, `16_shap_dependence.py` all read
    `accessibility_normalized.csv`, `huff_od_matrix.csv`, `huff_NW_od_matrix.csv`,
    `huff_summary.csv` and `huff_NW_summary.csv` from an external `Matrix and tables`
    directory that no script in the repository produced. `03_huff_ahp.py` and
    `04_huff_nonweighted.py` now also save the full OD probability matrix
    (`huff_od_matrix.csv` / `huff_NW_od_matrix.csv`) to `outputs/tables/`, and all six
    scripts above were repointed at the repository's own `outputs/tables/`.
-2. `12_export_outputs.py` copied `table1`–`table4` in from a second external directory
+2. `11_export_outputs.py` copied `table1`–`table4` in from a second external directory
    (`Data/tables and charts`) instead of computing them. `table2`/`table3` (top-20 GI
    ranking) and `table4` (top-15 catchment sizes) are pure derivations with no ambiguity —
    now computed directly from the municipality GI layers and the fresh Huff summaries.
@@ -82,19 +82,20 @@ python src/02_road_network.py
 python src/03_huff_ahp.py --force
 python src/04_huff_nonweighted.py --force
 python src/05_accessibility.py --force
-python src/06_ml_framework.py --model both --sample-frac 1.0
+python src/06_ml_framework.py --model AHP --sample-frac 1.0
+python src/06_ml_framework.py --model NW --sample-frac 1.0
 python src/07_beta_sensitivity.py
 python src/08_euclidean_comparison.py
 python src/09_entropy_uncertainty.py
-python src/10_morans_i.py
-python src/11_commuting_comparison.py
-python src/12_export_outputs.py
-python src/13_data_audit.py
+python src/10_commuting_comparison.py
+python src/11_export_outputs.py
+python src/13_morans_lisa.py
 python src/14_disagreement_synthesis.py
 python src/15_ml_catchment_structure.py
-python src/16_shap_dependence.py
+python src/16_shap_dependence.py --model AHP
+python src/16_shap_dependence.py --model NW
 python src/17_spatial_layers.py
-python src/18_map_symbology_fields.py
+python src/18_data_audit.py
 python src/19_output_manifest.py
 ```
 
@@ -105,9 +106,23 @@ was confirmed live in this remediation: 100 indicators mapped, all 10 group coun
 computed rarity weights matching `tableS3`'s reference values to 1e-6 — none of it is copied
 from a static file.
 
+`06_ml_framework.py` and `16_shap_dependence.py` are both run above as two separate
+invocations (`--model AHP` then `--model NW`), not the single `--model both` each script also
+supports. Confirmed by direct incident, twice, during this remediation's own Stage 2.4
+pipeline verification: `--model both` on a 16 GB machine holds two 1,279,632-row feature
+tables and two 100-tree Random Forests in memory across the same process, which exhausted
+available RAM and got the process killed by the operating system mid-run, with no Python
+traceback at all — the failure was silent enough that it looked at first like the script had
+simply hung. It happened first in `06_ml_framework.py`, and then again in
+`16_shap_dependence.py` once that script's turn in the pipeline came around, since it
+retrains its own pair of models independently of `06`'s and was never covered by `06`'s fix.
+Both scripts now refuse to start a second instance of themselves while one is already running
+(separate lock files in `data/processed/`) and report each model's own peak memory at the end
+of its run.
+
 Random seeds are fixed and printed at the point of use: `random_state=42` for the spatial
 KMeans blocks and both Random Forest models (`06_ml_framework.py`), `seed=42` for both the
-global permutation test and the LISA computation in `10_morans_i.py`, `999` join-count
+global permutation test and the LISA computation in `13_morans_lisa.py`, `999` join-count
 permutations. Re-running the sequence above on unchanged inputs reproduces every value in
 this rerun's tables exactly, including the two residual discrepancies noted below (they are
 properties of the input data, not of any randomness in the pipeline).
@@ -126,6 +141,37 @@ this changes zero settlement assignments — the pipeline default is not current
 consequential — but it is *not* a retroactive test of the manuscript's own network, which had
 roughly ten times the missing-pair rate. The pipeline's default imputation method is
 unchanged; this was a diagnostic only.
+
+## Environment: a BLAS backend crash, and why OpenBLAS is required
+
+Later in the remediation, `13_morans_lisa.py` and several other scripts began crashing
+natively (no Python traceback) partway through a run. The cause was `libblas`/`liblapack`:
+conda-forge's default is Intel's MKL build, and MKL's own CPU-dispatch logic crashes on this
+machine's CPU (an i7-7700K, which has no AVX-512) the first time any code path reaches
+`scipy.linalg` — even though the AVX-512 codepath's DLL (`mkl_avx512.2.dll`) is physically
+present in the environment, MKL's dispatcher still fails to route around it safely. `numpy`
+itself is never affected, because its wheel bundles its own self-contained OpenBLAS build and
+never touches the conda environment's shared `libblas`/`liblapack` — only packages that call
+`scipy.linalg` directly, or are built on top of it (`esda`'s permutation statistics,
+`sklearn.cluster.KMeans`, and `shap`'s colormap initialisation), were ever exposed.
+
+The fix is to force the OpenBLAS build variant instead of MKL, which `environment.yml` now
+pins explicitly:
+
+```
+conda install "libblas=*=*openblas" "liblapack=*=*openblas"
+```
+
+`docs/audit-history/openblas_reconciliation.csv` reruns the full pipeline under the fixed
+environment and compares every published number against the MKL-era run. All of them match
+except Local Moran's I / LISA classification counts, which turned out not to be reproducible
+under MKL at all: ten different seeds under OpenBLAS all gave the identical result
+(HH=246, zero variance), while attempting to reproduce the original MKL-era number now
+crashes outright on this machine. The MKL-era figure was written to disk before MKL started
+failing completely, but it cannot be independently re-derived or verified — only the
+OpenBLAS value should be cited. Every other statistic checked, including the join-count
+statistics (same `esda` permutation family as LISA), reproduced identically across the BLAS
+swap, so this is specific to Local Moran's I, not a general warning about `esda`.
 
 ## Two residual discrepancies, honestly
 

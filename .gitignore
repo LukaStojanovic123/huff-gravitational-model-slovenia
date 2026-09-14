@@ -58,3 +58,11 @@ outputs_archive_pre_nw_refit/
 # after comparison against openblas_reconciliation.csv. Never committed
 # (large GPKGs). Never delete this directory.
 outputs_archive_pre_openblas_rerun/
+
+# Remediation history: planning documents and one-off diagnostic checks
+# produced while fixing bugs in this repository. Kept on disk for anyone
+# continuing the same line of work, but not part of the reviewer-facing
+# repository — a first-time reader needs docs/reproducibility_note.md,
+# docs/ml_model_design_note.md and docs/final_manuscript_values.md, not
+# the full history of how the pipeline got to its current state.
+docs/audit-history/

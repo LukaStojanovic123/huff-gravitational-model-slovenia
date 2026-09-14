@@ -1,7 +1,36 @@
 """
-Full data audit: raw input inventory, indicator/GI/road/OD/accessibility/ML
-verification, and manuscript number cross-check. Every figure in the report
-is computed here, not copied from the README or the manuscript draft.
+Step 18 of the pipeline: independently recompute a large sample of the
+pipeline's own numbers from source and check them against each other and
+against the manuscript, as a final self-check before publication.
+
+What this script does: everything else in the pipeline computes a result
+once and writes it to a file. This script is different — it is the
+pipeline checking its own work. Section 1.1 inventories exactly which raw
+files were used. Section 1.2 rebuilds the indicator rarity weights from
+first principles, the same check 01_gi_construction.py already runs, but
+repeated here as part of one consolidated audit. Section 1.3 re-derives
+GI descriptive statistics directly from the raw municipality layers.
+Sections 1.4-1.6 rebuild the road network, the settlement-to-municipality
+distance matrix, and the accessibility scores from scratch — using a
+freshly rebuilt graph, not any cached intermediate — and compare the
+result to what 02_road_network.py, 03_huff_ahp.py and 05_accessibility.py
+actually produced. Section 1.7 checks the ML training table's shape and
+the spatial cross-validation results. Section 1.8 is the one section that
+does not recompute anything: it holds a fixed list of specific numbers
+quoted in the manuscript draft, written directly into this script, and
+checks each one against the pipeline's actual current output, reporting a
+plain CONFIRMED / DIFFERS per claim.
+Every number quoted anywhere in this report is computed in this script,
+not copied from the README, the manuscript, or any other document.
+
+Reads: nearly everything — the raw data files directly, and the outputs
+of 01 through 17.
+
+Writes: data_audit_report.md, raw_input_inventory.csv, indicator_audit.csv,
+GI_full_212_municipalities.csv, manuscript_number_check.csv.
+
+Runs eighteenth, second to last — after every script whose numbers it
+checks, before only 19_output_manifest.py.
 """
 
 import sys
@@ -33,6 +62,14 @@ from crs_utils import ensure_crs
 
 AUDIT_DIR = OUTPUTS / "audit"
 OBCINE_FILE = "obcine_poligoni.shp"
+
+OUTPUT_FILES = [
+    "audit/raw_input_inventory.csv",
+    "audit/indicator_audit.csv",
+    "audit/GI_full_212_municipalities.csv",
+    "audit/manuscript_number_check.csv",
+    "audit/data_audit_report.md",
+]
 SRC_DIR = Path(__file__).resolve().parent
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
 PRIMARY_ACC_CUTOFF_M = 80_000
@@ -71,6 +108,7 @@ CORE_FILES = [
 
 
 def section_1_1(mod05):
+    """List every raw file the pipeline actually reads, and flag any file in DATA_RAW that is not one of them."""
     log("## 1.1 Raw input inventory\n")
     rows = []
     for name in CORE_FILES:
@@ -150,8 +188,20 @@ def section_1_1(mod05):
 
 def compute_ahp_consistency_ratio():
     """Parse the 10x10 pairwise matrix from tableS2 and recompute lambda_max, CI, RI, CR."""
-    raw = pd.read_csv(SUPPLEMENTARY / "tableS2_AHP_priority_weights.csv", sep=";", header=None)
-    # Row 0 is header; rows 1-10 are the pairwise matrix; row 11 is "Total".
+    # No sep= argument: tableS2 is comma-delimited, like tableS1, S3 and S4.
+    # A stale sep=";" here (left over from before all four supplementary
+    # tables were standardised to commas) made this call read the entire
+    # header as one unsplit column instead of ten.
+    #
+    # nrows=11 stops reading after the pairwise matrix (row 0 is its
+    # header, rows 1-10 are the matrix itself) — this file also contains a
+    # second, differently-shaped table further down (the derived priority
+    # weights, with an extra "PRIORITY WEIGHTS PER GROUP" column this
+    # function does not need), and pandas' default parser refuses to read
+    # past a row with a different column count than the rows before it.
+    raw = pd.read_csv(SUPPLEMENTARY / "tableS2_AHP_priority_weights.csv",
+                       header=None, nrows=11)
+    # Row 0 is header; rows 1-10 are the pairwise matrix.
     groups = raw.iloc[1:11, 0].tolist()
     matrix_str = raw.iloc[1:11, 1:11].values
     matrix = np.array([[float(str(v).replace(",", ".")) for v in row] for row in matrix_str])
@@ -171,12 +221,15 @@ def compute_ahp_consistency_ratio():
 
 
 def section_1_2():
+    """Recompute each indicator's rarity weight from raw data and check it against tableS3, plus recheck the AHP consistency ratio."""
     log("## 1.2 Indicator database audit\n")
 
     pts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
     pts = ensure_crs(pts, EPSG, label=MUNICIPALITIES_PTS)
     n_cols = [c for c in pts.columns if c.startswith("n_")]
-    ref = pd.read_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv", sep=";")
+    # No sep= argument: tableS3 is comma-delimited — see the same note in
+    # compute_ahp_consistency_ratio above and in 01_gi_construction.py.
+    ref = pd.read_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv")
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
 
@@ -275,6 +328,7 @@ _GROUP_NAME_MAP = {
 
 
 def _map_group_name(short_name):
+    """Expand a thematic group's short column-name abbreviation to its full display name."""
     return _GROUP_NAME_MAP.get(short_name, short_name)
 
 
@@ -283,6 +337,7 @@ def _map_group_name(short_name):
 # ══════════════════════════════════════════════════════════════
 
 def section_1_3():
+    """Re-derive GI descriptive statistics and rankings straight from the raw municipality layers."""
     log("## 1.3 Gravitational Index audit\n")
 
     nw = gpd.read_file(DATA_RAW / MUNICIPALITIES_NW)
@@ -337,6 +392,7 @@ def section_1_3():
 # ══════════════════════════════════════════════════════════════
 
 def build_graph_and_index():
+    """Rebuild the road network graph and its spatial index, shared by sections 1.4-1.6."""
     noded = gpd.read_file(NODED_ROADS_PATH)
     G = momepy.gdf_to_nx(noded, approach="primal", length="length_m")
     node_list = list(G.nodes)
@@ -346,6 +402,7 @@ def build_graph_and_index():
 
 
 def snap_with_dist(points_gdf, tree, node_list):
+    """Attach points to their nearest road-network node, also returning the snapping distance."""
     xy = np.column_stack([points_gdf.geometry.x, points_gdf.geometry.y])
     dist, idx = tree.query(xy)
     return [node_list[i] for i in idx], dist
@@ -356,6 +413,7 @@ def snap_with_dist(points_gdf, tree, node_list):
 # ══════════════════════════════════════════════════════════════
 
 def section_1_4(G, node_list, node_coords, tree, noded):
+    """Compare the freshly rebuilt road graph's segment, node and length counts against 02_road_network.py's own output."""
     log("## 1.4 Road network audit\n")
 
     roads_raw = gpd.read_file(DATA_RAW / ROADS_FILE)
@@ -434,6 +492,7 @@ def section_1_4(G, node_list, node_coords, tree, noded):
 # ══════════════════════════════════════════════════════════════
 
 def section_1_5(G, node_list, node_coords, tree):
+    """Recompute the settlement-to-municipality distance matrix via Dijkstra and check it against 03_huff_ahp.py's summary."""
     log("## 1.5 Origin-destination matrix audit\n")
     log("`data/processed/distance_matrix.npy` is absent (see 1.1), so this matrix is "
         "reconstructed directly here via the identical Dijkstra procedure used by "
@@ -504,6 +563,7 @@ def section_1_5(G, node_list, node_coords, tree):
 # ══════════════════════════════════════════════════════════════
 
 def section_1_6(G, node_list, node_coords, tree, mod05, facility_paths):
+    """Recompute the accessibility scores via the same two-stage Dijkstra as 05_accessibility.py and check them against its output."""
     log("## 1.6 Accessibility indicator audit\n")
     log("Recomputed directly via the two-stage Dijkstra in "
         "`05_accessibility.py::nearest_facility_distances` to recover missing/recovered "
@@ -594,6 +654,7 @@ def section_1_6(G, node_list, node_coords, tree, mod05, facility_paths):
 # ══════════════════════════════════════════════════════════════
 
 def _feature_group(feature, indicator_group_map):
+    """Sort one ML feature name into a thematic category, for the ML audit's feature breakdown."""
     if feature == "dist_to_muni":
         return "Distance"
     if feature == "GI_AHP":
@@ -608,6 +669,7 @@ def _feature_group(feature, indicator_group_map):
 
 
 def section_1_7():
+    """Check the ML training table's row/feature counts and the spatial cross-validation results against 06_ml_framework.py's own output."""
     log("## 1.7 Machine learning audit\n")
 
     mpts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
@@ -650,22 +712,16 @@ def section_1_7():
         "`train_rf_spatial_cv` subsamples the **training** rows only "
         "(`train_df.sample(frac=sample_frac, random_state=42)`) — the held-out test "
         "fold and therefore every settlement's out-of-fold prediction is unaffected. "
-        "The repository's README states explicitly that the NW model "
-        "(`src/06_ml_framework.py --model NW`) was run with the default full sample "
-        "for training in this repo's saved run, while an *alternate* 30%-sample "
-        "invocation is documented as an option for machines with tighter memory "
-        "(`--sample-frac 0.3`). **The exact `--sample-frac` value used to produce the "
-        "specific `ml_NW_cv_results.csv` currently in this repository is not recorded "
-        "in any saved artifact** (sample_frac only affects the training subset, not "
-        "the test fold or the out-of-fold predictions used to build "
-        "`ml_NW_vs_NW_comparison.csv`, so it cannot be inferred from row counts). "
-        "This should be disclosed in the paper's methods section as: the run "
-        "parameters are documented in the README but not independently reproducible "
-        "from saved outputs alone — re-running `06_ml_framework.py --model NW` end "
-        "to end is the only way to pin this down exactly.\n")
-    log("The AHP model (`--model AHP`) uses the default `sample_frac=1.0` — i.e. the "
-        "full training sample in every fold — since no alternate invocation is "
-        "documented anywhere in the repository for it.\n")
+        "The documented reproduction commands "
+        "(`06_ml_framework.py --model AHP --sample-frac 1.0`, then separately "
+        "`--model NW --sample-frac 1.0` — run as two invocations, not `--model both`, "
+        "to avoid holding both models' feature tables in memory at once; see "
+        "`docs/reproducibility_note.md`) run both models on the full training sample "
+        "in every fold. An earlier version of this repository ran the NW model on a "
+        "30% sample for memory reasons; that is no longer the documented or "
+        "recommended way to reproduce this repository's saved results, and should not "
+        "be assumed for whichever `ml_NW_cv_results.csv` is currently on disk unless "
+        "it was regenerated with the commands above.\n")
 
     log("### Cross-validation performance\n")
     for label, path in [("AHP", TABLES / "ml_AHP_cv_results.csv"), ("NW", TABLES / "ml_NW_cv_results.csv")]:
@@ -673,12 +729,12 @@ def section_1_7():
         log(f"**{label}** (`{path.name}`):\n")
         log(cv.to_string(index=False))
         log(f"\n- Mean R² = {cv['r2'].mean():.4f} ± {cv['r2'].std():.4f}  "
-            f"(README claims {'0.845 ± 0.088' if label == 'AHP' else '0.844 ± 0.066'})")
+            f"(see `docs/final_manuscript_values.md` for the currently published figure)")
         log(f"- Mean MAE = {cv['mae'].mean():.6f}, Mean RMSE = {cv['rmse'].mean():.6f}\n")
 
     log("### Feature importance by group\n")
     group_map = {}
-    ref = pd.read_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv", sep=";")
+    ref = pd.read_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv")
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
 
@@ -708,13 +764,15 @@ def section_1_7():
 # ══════════════════════════════════════════════════════════════
 
 def _agreement_from_gpkg(path, col="agreement"):
-    gdf = gpd.read_file(path, columns=[col]) if False else gpd.read_file(path)
+    """Read one comparison map and return how many of its settlements agree, out of the total."""
+    gdf = gpd.read_file(path)
     n_agree = int(gdf[col].sum())
     n_total = len(gdf)
     return n_agree, n_total
 
 
 def section_1_8():
+    """Check a fixed list of specific numbers quoted in the manuscript draft against the pipeline's current output."""
     log("## 1.8 Manuscript number verification\n")
     rows = []
 
@@ -768,7 +826,7 @@ def section_1_8():
         else:
             rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
                          "repository_value": "NOT YET COMPUTED",
-                         "status": "PENDING (see Task 2.2)",
+                         "status": "PENDING — run src/13_morans_lisa.py first",
                          "source_file": "outputs/tables/table_morans_i_results.csv"})
 
     lisa_summary_path = TABLES / "table_lisa_summary.csv"
@@ -800,7 +858,7 @@ def section_1_8():
                                           "repository is map_lisa_AHP_vs_NW.gpkg (a different comparison), "
                                           "and its cluster_type has no HL/LH categories at all "
                                           "(counts: HH=4024, LL=361, not significant=1651). "
-                                          "Run src/10_morans_i.py to compute it.",
+                                          "Run src/13_morans_lisa.py to compute it.",
                      "status": "FLAGGED — cannot be checked from current outputs",
                      "source_file": "outputs/gpkg/map_lisa_AHP_vs_NW.gpkg (wrong comparison)"})
 
@@ -861,7 +919,7 @@ def section_1_8():
     # ~0.80" — it gives no precise max or low/medium/high class-count breakdown for either
     # scenario. The 0.801/0.847 max and exact class counts previously hardcoded here as the
     # "draft" target were fabricated by an earlier version of this check, not read from the
-    # manuscript (see outputs/audit/reconciliation.csv rows 63-64).
+    # manuscript (see docs/audit-history/reconciliation.csv rows 63-64).
     rows.append({"claim": "Entropy AHP/NW", "draft_value": "AHP mean ~0.51, NW mean ~0.53 "
                                                             "(Section 4.5 prose only; no manuscript "
                                                             "max or class-count breakdown exists)",
@@ -926,7 +984,7 @@ def main():
     AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     log(f"# Data Audit Report\n")
-    log(f"Generated by `src/13_data_audit.py`. Every figure below is computed directly "
+    log(f"Generated by `src/18_data_audit.py`. Every figure below is computed directly "
         f"from the files in `DATA_RAW` ({DATA_RAW}) or from this repository's own "
         f"pipeline outputs — nothing here is copied from the README or the manuscript "
         f"draft.\n")
