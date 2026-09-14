@@ -1,6 +1,27 @@
 """
-Rerun AHP Huff with Euclidean distances, compare dominant assignments
-vs road network, save agreement table and spatial layer.
+Step 8 of the pipeline: does using the road network actually matter, or
+would straight-line distance give the same catchment map?
+
+What this script does: recomputes the AHP Huff model a second time, using
+straight-line ("as the crow flies") distance between each settlement and
+each municipal seat instead of the road-network driving distance from
+03_huff_ahp.py, keeping everything else — GI_AHP, BETA — identical. It
+then compares the two sets of dominant-municipality assignments directly,
+reports the overall agreement rate and Cohen's kappa, and breaks the
+disagreement rate down by region (Slovenia's terrain means road distance
+and straight-line distance diverge more in some regions, e.g. mountainous
+ones, than others).
+
+Reads: Villages_points_real.shp, Municipalities_All_Groups_Weighted_AHP.gpkg
+(GI_AHP), obcine_poligoni.shp (region boundaries, for the by-region
+breakdown), NA.shp (settlement polygons, for the spatial layer), and
+huff_AHP_summary.csv (the road-network assignments to compare against,
+already computed by 03_huff_ahp.py).
+
+Writes: table_euclidean_vs_network.csv, map_euclidean_vs_network_villages.gpkg.
+
+Runs eighth. Needs 03_huff_ahp.py's output as the road-network baseline to
+compare against; otherwise independent of every other script.
 """
 
 import sys
@@ -21,12 +42,20 @@ OBCINE_FILE = "obcine_poligoni.shp"
 TABLE_OUTPUT_PATH = TABLES / "table_euclidean_vs_network.csv"
 GPKG_OUTPUT_PATH = GPKG / "map_euclidean_vs_network_villages.gpkg"
 
+OUTPUT_FILES = [
+    "tables/table_euclidean_vs_network.csv",
+    "gpkg/map_euclidean_vs_network_villages.gpkg",
+]
+
 
 def compute_huff(gi_values, dist_matrix):
-    """attract = GI / dist**BETA, pij = attract / sum(attract) per village.
+    """Apply the modified Huff formula to turn GI and distance into assignment probabilities.
 
-    Villages with a zero-distance municipality (village at the municipal
-    seat) are assigned Pij=1 to that municipality directly.
+    Identical formula to compute_huff() in 03_huff_ahp.py — only the
+    distance matrix passed in differs (straight-line here, road-network
+    there). A settlement that sits exactly at a municipal seat (distance 0)
+    is assigned to that municipality with probability 1 directly, since the
+    formula is undefined at zero distance.
     """
     zero_mask = dist_matrix == 0
     row_has_zero = zero_mask.any(axis=1)

@@ -1,6 +1,29 @@
 """
-Load OSM roads, filter to drivable classes, unary_union noding,
-build NetworkX graph, save largest connected component.
+Step 2 of the pipeline: build the road network used for every distance
+calculation in this study.
+
+What this script does: loads the raw OpenStreetMap road layer, keeps only
+road classes a car can actually drive on, splits every line at the points
+where roads actually cross each other (OSM lines can overlap or cross
+without sharing an endpoint, which would silently break routing), turns
+the result into a graph of intersections and road segments, and keeps only
+the largest connected piece of that graph. A road segment that isn't
+connected to the main network has no valid driving route to anywhere, so
+distances to or from it would be undefined; keeping only the largest
+connected component guarantees every later distance calculation has a real
+path to follow.
+
+Reads: gis_osm_roads_free_1.shp (the raw OSM road layer, from config.py's
+ROADS_FILE — see config.py for the note on why this specific file, not
+the also-present all_roads.gpkg, is the correct one to use).
+
+Writes: data/processed/roads_noded.gpkg (the cleaned, connected road
+network; a cached intermediate, not a published output).
+
+Runs second, right after the GI check. Everything from src/03 onward that
+needs a road distance (the Huff models, accessibility, the ML framework)
+depends on this script having been run at least once — but it does not
+need to be rerun on every pipeline run, since its output is cached.
 """
 
 import sys
@@ -18,6 +41,13 @@ from scipy.spatial import cKDTree
 from config import DATA_RAW, DATA_PROCESSED, ROADS_FILE, EPSG
 from crs_utils import ensure_crs
 
+# Writes only to data/processed/ (a gitignored cache), nothing under
+# outputs/ — nothing for 19_output_manifest.py to track here.
+OUTPUT_FILES = []
+
+# The OSM road classes ("fclass") a car can actually be driven on. This
+# excludes foot/cycle paths, steps, tracks and similar classes that OSM
+# tags separately from the drivable road network.
 FCLASS_KEEP = [
     "motorway", "motorway_link", "trunk", "trunk_link",
     "primary", "primary_link", "secondary", "secondary_link",
@@ -27,13 +57,22 @@ FCLASS_KEEP = [
 
 
 def _is_valid_line(geom):
-    """A usable LineString: non-null, non-empty, at least 2 coordinates."""
+    """A usable road segment: not missing, not empty, has at least two points."""
     return (geom is not None and not geom.is_empty
             and geom.geom_type == "LineString" and len(geom.coords) >= 2)
 
 
 def node_topology(gdf):
-    """unary_union the geometries to split segments at every crossing point."""
+    """Split every road line at the points where it crosses another road.
+
+    Two OSM lines that physically cross on the map are not automatically
+    split at that crossing point — a routing graph built directly from them
+    would treat the crossing as two separate, unconnected lines passing
+    through the same space rather than as a real intersection where a
+    vehicle could turn. Merging all geometries with unary_union forces a
+    split at every such crossing, so the graph built afterwards has a real
+    node wherever roads actually meet.
+    """
     merged = unary_union(gdf.geometry.tolist())
     if merged.geom_type == "LineString":
         lines = [merged]

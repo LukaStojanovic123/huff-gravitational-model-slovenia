@@ -1,6 +1,28 @@
 """
-Reuse distance matrix, swap GI to non-weighted, compute NW Huff
-probabilities, save huff_NW_od_matrix.csv and huff_NW_summary.csv.
+Step 4 of the pipeline: the non-weighted (NW) Huff model.
+
+What this script does: the same modified Huff calculation as
+03_huff_ahp.py, but using GI_Final_NotWeighted (the Gravitational Index
+computed without AHP group weighting) instead of GI_AHP. This gives the
+study a second, independent catchment assignment to compare the AHP-based
+one against — how much difference the AHP group weighting actually makes
+to which municipality each settlement is assigned to. The two scripts
+share the same distance matrix (whichever one runs first computes and
+caches it in data/processed/; the other reuses it) and the same Huff
+formula, differing only in which GI column feeds it.
+
+Reads: Municipalities_Points_normalized.gpkg (municipality locations),
+Municipalities_All_Groups_NotWeighted_Normalized.gpkg (GI_Final_NotWeighted),
+Villages_points_real.shp (settlement locations), and the road network
+cached by 02_road_network.py.
+
+Writes: huff_NW_summary.csv (one row per settlement: its assigned
+municipality and the winning probability) and huff_NW_od_matrix.csv (the
+full distance and probability matrix).
+
+Runs fourth, independently of 03_huff_ahp.py — order between the two does
+not matter, but both must run before anything that compares AHP against
+NW results.
 """
 
 import argparse
@@ -29,12 +51,18 @@ DIST_MUNI_IDS_PATH = DATA_PROCESSED / "distance_matrix_muni_ids.npy"
 OUTPUT_PATH = TABLES / "huff_NW_summary.csv"
 OD_MATRIX_PATH = TABLES / "huff_NW_od_matrix.csv"
 
+OUTPUT_FILES = [
+    "tables/huff_NW_summary.csv",
+    "tables/huff_NW_od_matrix.csv",
+]
+
 
 def load_graph():
-    """Rebuild the NetworkX graph from the noded roads saved by 02_road_network.py.
+    """Rebuild the road network graph saved by 02_road_network.py.
 
-    A graph object can't be persisted to GPKG directly, so 02 saves the noded
-    line geometries and this rebuilds the identical graph via momepy.
+    A graph object cannot be saved directly into a GPKG file, so 02 instead
+    saves the road segments and intersection points as plain geometry, and
+    this function reconstructs the exact same graph from that geometry.
     """
     if not NODED_ROADS_PATH.exists():
         raise FileNotFoundError(
@@ -46,7 +74,12 @@ def load_graph():
 
 
 def snap_to_network(points_gdf, node_coords, node_list):
-    """Snap each point to its nearest graph node via cKDTree."""
+    """Attach each settlement or municipality point to its nearest road-network node.
+
+    Points such as settlement centroids rarely fall exactly on a mapped
+    road, so each one is matched to the closest point in the road network
+    graph before any distance can be measured from it.
+    """
     tree = cKDTree(node_coords)
     xy = np.column_stack([points_gdf.geometry.x, points_gdf.geometry.y])
     _, idx = tree.query(xy)
@@ -54,9 +87,18 @@ def snap_to_network(points_gdf, node_coords, node_list):
 
 
 def compute_distance_matrix(G, munis, villages):
-    """Dijkstra from each municipality node outward (cutoff CUTOFF_M),
-    recording distance to every village node. NaN distances (unreached
-    within cutoff) are filled with the column (municipality) maximum."""
+    """Compute the shortest road-network distance from every municipality to every settlement.
+
+    Runs one Dijkstra search per municipality (much faster than one per
+    settlement, since there are only 212 municipalities against 6,036
+    settlements), stopping each search at CUTOFF_M. A (settlement,
+    municipality) pair with no path within that cutoff is left as a
+    missing value here and filled in below. In practice this script reuses
+    the distance matrix 03_huff_ahp.py already computed rather than
+    recomputing it — see load_cached_distance_matrix below — since the
+    road network and the settlement/municipality locations are identical
+    between the two models; only the GI values differ.
+    """
     node_list = list(G.nodes)
     node_coords = np.array(node_list, dtype=np.float64)
 
@@ -78,6 +120,12 @@ def compute_distance_matrix(G, munis, villages):
             if node in lengths:
                 dist_matrix[rows, col_idx] = lengths[node]
 
+    # A settlement with no path to a given municipality within CUTOFF_M gets
+    # that municipality's own worst (maximum) observed distance to any
+    # settlement, instead of being left undefined. This makes that
+    # municipality maximally unattractive to the settlement in the Huff
+    # formula below without needing to special-case a missing distance —
+    # the settlement can still, correctly, end up assigned elsewhere.
     col_max = np.nanmax(dist_matrix, axis=0)
     global_max = np.nanmax(dist_matrix)
     col_max = np.where(np.isnan(col_max), global_max, col_max)
@@ -88,9 +136,16 @@ def compute_distance_matrix(G, munis, villages):
 
 
 def load_cached_distance_matrix(village_ids, muni_ids):
-    """Load data/processed/distance_matrix.npy if present and its village/muni
-    order matches the current data (e.g. already computed by 03_huff_ahp.py).
-    Returns None if unavailable or mismatched."""
+    """Reuse a previously computed distance matrix if one exists and still matches.
+
+    Computing the full distance matrix from the road network is the slowest
+    step in this script, so the result is cached to disk (typically by
+    03_huff_ahp.py, since the two Huff scripts share the same distance
+    matrix). The cache is only reused if the settlement and municipality ID
+    lists are in exactly the same order as when it was saved — otherwise a
+    stale or mismatched cache could silently attach the wrong distances to
+    the wrong settlements.
+    """
     if not (DIST_MATRIX_PATH.exists() and DIST_VILLAGE_IDS_PATH.exists()
             and DIST_MUNI_IDS_PATH.exists()):
         return None
@@ -107,10 +162,17 @@ def load_cached_distance_matrix(village_ids, muni_ids):
 
 
 def compute_huff(gi_values, dist_matrix):
-    """attract = GI / dist**BETA, pij = attract / sum(attract) per village.
+    """Apply the modified Huff formula to turn GI and distance into assignment probabilities.
 
-    Villages with a zero-distance municipality (village at the municipal
-    seat) are assigned Pij=1 to that municipality directly.
+    Each municipality's pull on a settlement is its GI divided by its
+    distance raised to the power BETA (the standard gravity-model
+    distance-decay term — pull falls off quickly with distance). Dividing
+    each settlement's row of pull values by their own sum turns them into
+    probabilities that sum to 1, i.e. each settlement's likelihood of being
+    served by each municipality. A settlement that sits exactly at a
+    municipal seat (distance 0) is assigned to that municipality with
+    probability 1 directly, since the pull formula is undefined at zero
+    distance (division by zero).
     """
     zero_mask = dist_matrix == 0
     row_has_zero = zero_mask.any(axis=1)

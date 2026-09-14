@@ -1,10 +1,56 @@
 """
-Build 1.28M row ML input table, spatial 5-fold CV, Random Forest
-189 features, SHAP values, save feature importance and predictions.
+Step 6 of the pipeline: can a Random Forest learn the same catchment
+pattern the Huff model produces, from the same underlying features?
+
+What this script does: trains two separate Random Forest models — Model 1
+learns to predict the AHP Huff model's settlement-to-municipality
+probabilities (Pij) from municipality features (GI, accessibility) and
+distance; Model 2 does the same for the non-weighted (NW) Huff model. Each
+model is trained on all 1,279,632 (settlement, municipality) pairs
+(6,036 settlements times 212 municipalities) using 189 features. The two
+models are deliberately independent — see build_municipality_features
+below for why each one must be given its own model-specific GI column, not
+a shared one. Evaluation uses 5-fold spatial cross-validation: municipalities
+are grouped into 5 geographic blocks (see build_spatial_blocks) and each
+fold holds out one whole block, so the model is tested on municipalities it
+never saw during training, not just on held-out settlement rows within
+municipalities it did see. This is a check on whether the pattern the Huff
+formula produces is learnable from these features at all — it is not a
+validation of the Huff model's correctness, since both models are trained
+to reproduce Huff's own output, not any ground truth (see
+docs/ml_model_design_note.md).
+
+Reads: Municipalities_Points_normalized.gpkg, accessibility_normalized.csv,
+huff_od_matrix.csv and huff_AHP_summary.csv (Model 1), huff_NW_od_matrix.csv
+and huff_NW_summary.csv (Model 2), plus the corresponding GI layers.
+
+Writes, per model: ml_{AHP,NW}_feature_importance.csv, ml_{AHP,NW}_cv_results.csv,
+ml_{AHP,NW}_vs_{AHP,NW}_comparison.csv. Also caches data/processed/spatial_blocks.csv.
+
+Runs sixth. Needs 03, 04 (the Huff outputs it's trained to predict) and 05
+(accessibility features). Its trained models are also called into directly
+by 16_shap_dependence.py (via run_shap, below) rather than being reloaded
+from disk, since this script does not save the fitted model objects
+themselves.
+
+Run the two models as two separate invocations (`--model AHP`, then
+`--model NW`), not the default `--model both`, on a machine with limited
+RAM. `--model both` still works and still frees Model 1's tables before
+starting Model 2 (see main() below), but each model on its own already
+holds a 1,279,632-row feature table and a 100-tree Random Forest in
+memory — training two in the same process at once is exactly what
+exhausted this pipeline's original 16 GB analysis machine and got the
+process killed by the OS with no Python traceback. A lock file
+(data/processed/06_ml_framework.lock) refuses to start a second instance
+of this script while one is already running, and each model's own peak
+memory use is printed at the end of its block.
 """
 
 import argparse
+import os
 import sys
+import threading
+from datetime import datetime
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -19,6 +65,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import psutil
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 from scipy.cluster.vq import kmeans2
@@ -34,19 +81,107 @@ from config import (
 )
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "tables/ml_AHP_feature_importance.csv",
+    "tables/ml_AHP_cv_results.csv",
+    "tables/ml_AHP_vs_AHP_comparison.csv",
+    "tables/ml_NW_feature_importance.csv",
+    "tables/ml_NW_cv_results.csv",
+    "tables/ml_NW_vs_NW_comparison.csv",
+]
+
+# Training one model holds a 1,279,632-row feature table plus a 100-tree
+# Random Forest in memory at once; training two at once (--model both on a
+# machine with limited RAM) can exceed what is physically available and
+# get one or both processes killed by the OS with no Python traceback at
+# all — this happened in practice on a 16 GB machine. This lock file
+# refuses to start a second training run while one is already in
+# progress, rather than letting both compete for memory silently.
+LOCK_PATH = DATA_PROCESSED / "06_ml_framework.lock"
+
+
+def acquire_lock():
+    """Refuse to start if another instance of this script is already running.
+
+    This does not detect a *stale* lock left behind by a hard kill (an
+    OS-level out-of-memory kill bypasses Python's normal cleanup, so the
+    lock file is never removed) — if this script refuses to start and you
+    are certain no other instance is actually running, delete
+    data/processed/06_ml_framework.lock by hand and run again.
+    """
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    if LOCK_PATH.exists():
+        print(f"ERROR: {LOCK_PATH} already exists.")
+        print(LOCK_PATH.read_text())
+        print("This means another 06_ml_framework.py run appears to already be in "
+              "progress. Training two full models at once can exhaust this machine's "
+              "memory. If you are certain no other instance is actually running (for "
+              "example, after a previous run was killed and never cleaned up after "
+              "itself), delete the lock file and run this script again:")
+        print(f'  rm "{LOCK_PATH}"')
+        sys.exit(1)
+    LOCK_PATH.write_text(f"pid={os.getpid()}\nstarted={datetime.now().isoformat()}\n")
+
+
+def release_lock():
+    """Remove the lock file on a normal exit (including a handled error)."""
+    LOCK_PATH.unlink(missing_ok=True)
+
+
+class PeakMemoryTracker:
+    """Track this process's peak resident memory (RSS) over a span of work.
+
+    Samples memory in a background thread rather than at fixed points in
+    the code, since the actual peak can land anywhere across loading data,
+    building the feature table, or fitting any one of the five per-fold
+    Random Forests, and instrumenting every one of those points by hand
+    would be fragile. Used to report each model's peak memory separately
+    (see main() below) so it is clear how close a single model's training
+    run sits to exhausting this machine's RAM.
+    """
+
+    def __init__(self, interval_s=1.0):
+        self.interval_s = interval_s
+        self._process = psutil.Process()
+        self._peak_bytes = 0
+        self._stop = threading.Event()
+        self._thread = None
+
+    def _run(self):
+        while not self._stop.is_set():
+            rss = self._process.memory_info().rss
+            self._peak_bytes = max(self._peak_bytes, rss)
+            self._stop.wait(self.interval_s)
+
+    def start(self):
+        self._peak_bytes = self._process.memory_info().rss
+        self._stop.clear()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop_and_report_gb(self):
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=self.interval_s * 2)
+        return self._peak_bytes / (1024 ** 3)
+
 
 def build_municipality_features(munis_pts_path, acc_path, composite_path,
                                  composite_col, output_col):
-    """Load and join GI indicators, accessibility, and a model-specific
-    composite GI score.
+    """Build one model's municipality feature table: GI indicators, accessibility, and its own composite GI score.
 
-    composite_col is the column read from composite_path (e.g. "GI_AHP" from
-    MUNICIPALITIES_AHP, or "GI_Final_NotWeighted" from MUNICIPALITIES_NW);
-    output_col is the name it's given in the returned feature table, so each
-    model's own composite score is distinguishable downstream (feature
-    importance CSVs, the AHP-vs-NW comparison figure) instead of both models
-    training on a column literally named "GI_AHP". See
-    outputs/audit/ml_model_design_note.md for why this must differ per model.
+    `composite_col` names the column to read from `composite_path` — "GI_AHP"
+    from the AHP municipality layer for Model 1, or "GI_Final_NotWeighted"
+    from the NW municipality layer for Model 2. `output_col` is what that
+    column is renamed to in the table this function returns, so each model's
+    own composite score stays distinguishable in every downstream file
+    (feature importance CSVs, the AHP-vs-NW comparison figure) instead of
+    both models ending up with an identically-named "GI_AHP" column. Each
+    model must be built from its own call to this function with its own
+    composite_path — building one shared feature table and reusing it for
+    both models would train Model 2 on GI_AHP instead of its own target's
+    GI, which is a bug this design specifically avoids (see
+    docs/ml_model_design_note.md).
     """
     munis_pts = gpd.read_file(munis_pts_path)
     munis_pts = ensure_crs(munis_pts, EPSG, label=munis_pts_path.name)
@@ -68,10 +203,26 @@ def build_municipality_features(munis_pts_path, acc_path, composite_path,
 
 
 def build_spatial_blocks(munis_pts_path, cache_path=None, n_blocks=5, random_state=42):
-    """Spatial blocks on municipality centroids via KMeans (scipy backend —
-    sklearn's KMeans on this machine hits a broken MKL threadpoolctl check,
-    see _check_mkl_vcomp, and crashes the process). Cached to cache_path so
-    the clustering only has to run once.
+    """Group municipalities into 5 geographic clusters for spatial cross-validation.
+
+    Ordinary (non-spatial) cross-validation would let the model see
+    settlements from a municipality in training and then get tested on
+    other settlements from that same municipality — an easy test that
+    would overstate how well the model generalises to places it has never
+    seen. Clustering municipalities into geographic blocks by their
+    location, and later holding out one whole block per fold, means each
+    fold is tested on municipalities the model never saw in training,
+    which is a fairer measure of genuine spatial generalisation.
+
+    Uses scipy's clustering function (`kmeans2`) rather than scikit-learn's
+    KMeans, because scikit-learn's KMeans crashes this machine's process
+    outright — a known Windows-specific interaction between scikit-learn's
+    internal MKL/OpenMP runtime check (`_check_mkl_vcomp`) and this
+    machine's MKL installation, separate from the AVX-512 dispatch crash
+    documented in docs/reproducibility_note.md. Switching to scipy's
+    implementation was the practical fix. Blocks are cached to
+    `cache_path`, since municipality locations never change between runs
+    and reclustering every time would be wasted work.
     """
     if cache_path is not None and cache_path.exists():
         print(f"  Loading spatial blocks from cache: {cache_path}")
@@ -95,7 +246,13 @@ def build_spatial_blocks(munis_pts_path, cache_path=None, n_blocks=5, random_sta
 
 
 def melt_od_matrix(od_path):
-    """Melt wide OD matrix to long village-municipality pairs."""
+    """Reshape the wide OD matrix (one row per settlement, one column per municipality) into one row per (settlement, municipality) pair.
+
+    The Random Forest needs one training row per (settlement, municipality)
+    combination, each with its own distance and its own Huff probability
+    (Pij) as the value to predict — the wide OD matrix from 03/04 has to be
+    unpacked into that long shape first.
+    """
     huff_od = pd.read_csv(od_path)
     pij_cols = [c for c in huff_od.columns if c.startswith("Pij_")]
     dist_cols = [c for c in huff_od.columns if c.startswith("dist_")]
@@ -114,7 +271,17 @@ def melt_od_matrix(od_path):
 
 
 def train_rf_spatial_cv(df_ml_cv, feature_cols, target_col="Pij", sample_frac=1.0):
-    """Train Random Forest with spatial 5-fold cross-validation."""
+    """Train and evaluate the Random Forest, one fold per spatial block.
+
+    Each of the 5 spatial blocks (see build_spatial_blocks) takes a turn as
+    the held-out test set, with the model trained fresh on the other four
+    each time — standard 5-fold cross-validation, except the folds are
+    geographic blocks of municipalities rather than random rows, so a
+    model can never be tested on a municipality's settlements after having
+    trained on other settlements from that same municipality. The CSV's
+    "fold" numbers below are 1-indexed (fold 1..5); internally this loop
+    uses spatial_block 0..4 for the same five groups.
+    """
     fold_results = []
     all_preds = {}
     feature_importances = np.zeros(len(feature_cols))
@@ -185,7 +352,13 @@ def annotate_wall_time_anomalies(df_results, factor=3.0):
 
 def build_comparison(df_ml_cv, all_preds, huff_summary_path,
                       muni_col="dominant_municipality"):
-    """Find dominant ML municipality per village and compare with Huff."""
+    """For each settlement, find which municipality the Random Forest predicts most strongly, and compare it to the Huff model's own choice.
+
+    The predicted Pij values used here always come from the fold where
+    that settlement's municipality was held out (see all_preds, built in
+    train_rf_spatial_cv) — every prediction is a genuine out-of-sample
+    prediction, never a value the model saw during its own training.
+    """
     df_ml_cv = df_ml_cv.copy()
     df_ml_cv["Pij_predicted"] = df_ml_cv.index.map(all_preds)
 
@@ -210,7 +383,14 @@ def build_comparison(df_ml_cv, all_preds, huff_summary_path,
 
 
 def run_shap(rf_model, X_sample, feature_cols, figures_path, prefix="AHP"):
-    """Compute SHAP values on sample and save plots."""
+    """Compute SHAP feature-contribution values for a trained model and save the summary plots.
+
+    Called from 16_shap_dependence.py, not from this script's own main() —
+    this script trains the models but does not keep the fitted model
+    objects around after main() finishes, so 16_shap_dependence.py imports
+    this module directly and calls its own training + this function to get
+    a live model to explain.
+    """
     import shap
 
     print(f"  Computing SHAP values ({len(X_sample)} samples)...")
@@ -240,13 +420,22 @@ def main():
     parser.add_argument("--sample-frac", type=float, default=1.0)
     args = parser.parse_args()
 
+    acquire_lock()
+    try:
+        _main(args)
+    finally:
+        release_lock()
+
+
+def _main(args):
     print("=== ML FRAMEWORK ===")
     print()
 
-    # Paths — all repository-relative. These used to point outside the repo
-    # at "Matrix and tables"; see crs_utils / Stage 2A audit trail for why
-    # that was a problem (no working data availability statement is possible
-    # while a script depends on a path only one machine has).
+    # All paths below are relative to the repository. They used to point
+    # outside it, at a folder named "Matrix and tables" that existed only on
+    # one machine — a script that depends on a path like that cannot be run
+    # by anyone else, and breaks the data availability statement a published
+    # paper needs. See docs/reproducibility_note.md for the full fix.
     munis_pts_path = DATA_RAW / MUNICIPALITIES_PTS
     munis_ahp_path = DATA_RAW / MUNICIPALITIES_AHP
     munis_nw_path = DATA_RAW / MUNICIPALITIES_NW
@@ -261,13 +450,16 @@ def main():
     FIGURES.mkdir(parents=True, exist_ok=True)
 
     # ── Shared setup ─────────────────────────────────────────
-    # Spatial blocks depend only on municipality centroids, so they're
-    # genuinely shared. Municipality *features* are NOT shared: each model
-    # gets its own composite GI score (GI_AHP for Model 1, GI_Final_NotWeighted
-    # -- renamed GI_NW here -- for Model 2), matching which Huff weighting
-    # scheme it's actually predicting. Building one shared munis_features
-    # table (as before) meant Model 2 trained on GI_AHP too, which is exactly
-    # the bug this refit corrects — see outputs/audit/ml_model_design_note.md.
+    # The 5 spatial blocks depend only on where the municipalities are, so
+    # both models genuinely share the same blocks. Everything else is kept
+    # separate on purpose: each model builds its own municipality feature
+    # table below, with its own composite GI column (GI_AHP for Model 1,
+    # GI_Final_NotWeighted — renamed GI_NW here — for Model 2), matching
+    # the Huff weighting scheme it is actually being trained to predict.
+    # An earlier version of this script built one shared feature table for
+    # both models, which meant Model 2 was trained on GI_AHP as well as its
+    # own target — see docs/ml_model_design_note.md for how that was found
+    # and fixed.
     print("Building spatial blocks...")
     blocks_df = build_spatial_blocks(munis_pts_path, cache_path=blocks_cache_path)
     print(f"  Blocks: {blocks_df['spatial_block'].value_counts().sort_index().to_dict()}")
@@ -277,6 +469,8 @@ def main():
     # MODEL 1 — AHP Huff as target
     # ════════════════════════════════════════════════════════
     if args.model in ["AHP", "both"]:
+        mem_tracker = PeakMemoryTracker()
+        mem_tracker.start()
         print("=== MODEL 1: AHP Huff target ===")
         print("Building municipality features (composite: GI_AHP from MUNICIPALITIES_AHP)...")
         munis_features_ahp = build_municipality_features(
@@ -322,12 +516,22 @@ def main():
         agree_ahp = comparison_ahp["agreement"].sum()
         print(f"  AHP vs ML agreement: {agree_ahp}/{len(comparison_ahp)} "
               f"({agree_ahp/len(comparison_ahp)*100:.1f}%)")
+        print(f"  Peak memory during Model 1 (AHP): {mem_tracker.stop_and_report_gb():.2f} GB")
+        print()
+
+    if args.model == "both":
+        print("Freeing Model 1's feature and training tables before starting Model 2, "
+              "so the two models' large tables are never held in memory at once...")
+        del munis_features_ahp, df_pairs_ahp, df_ml_ahp, preds_ahp
+        gc.collect()
         print()
 
     # ════════════════════════════════════════════════════════
     # MODEL 2 — NW Huff as target
     # ════════════════════════════════════════════════════════
     if args.model in ["NW", "both"]:
+        mem_tracker = PeakMemoryTracker()
+        mem_tracker.start()
         print("=== MODEL 2: NW Huff target ===")
         print("Building municipality features (composite: GI_Final_NotWeighted "
               "from MUNICIPALITIES_NW, stored as GI_NW)...")
@@ -373,6 +577,7 @@ def main():
         agree_nw = comparison_nw["agreement"].sum()
         print(f"  NW vs ML agreement: {agree_nw}/{len(comparison_nw)} "
               f"({agree_nw/len(comparison_nw)*100:.1f}%)")
+        print(f"  Peak memory during Model 2 (NW): {mem_tracker.stop_and_report_gb():.2f} GB")
         print()
 
     print("All ML outputs saved to outputs/tables/")

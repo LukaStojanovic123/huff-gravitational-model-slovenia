@@ -1,6 +1,27 @@
 """
-Load 100 indicators, min-max normalise, compute non-weighted GI and
-AHP-weighted GI using rarity weights and AHP group weights.
+Step 1 of the pipeline: check the Gravitational Index (GI) inputs.
+
+What this script does: the two GI layers this study uses — GI_AHP (AHP group
+weighting) and GI_Final_NotWeighted (no group weighting) — arrive already
+computed in the raw data, one number per municipality per scenario. This
+script does not calculate the GI itself. What it does is (1) independently
+recompute the "rarity weight" of each of the 100 underlying indicators from
+first principles and check that the result matches the reference table
+(tableS3) to six decimal places, as a check that the published weighting
+scheme is actually what was applied to the data, and (2) load both GI
+layers and report summary statistics and the top-20 municipality rankings
+under each.
+
+Reads: Municipalities_Points_normalized.gpkg (the 100 raw indicator values
+per municipality), Municipalities_All_Groups_Weighted_AHP.gpkg (GI_AHP),
+Municipalities_All_Groups_NotWeighted_Normalized.gpkg (GI_Final_NotWeighted),
+tableS3_individual_indicator_weights.csv (the reference rarity weights).
+
+Writes: table_GI_summary_stats.csv, table_top20_GI_both.csv.
+
+Runs first in the pipeline; every later script that uses GI_AHP or
+GI_Final_NotWeighted reads them straight from the raw municipality layers,
+not from anything this script produces.
 """
 
 import sys
@@ -18,23 +39,50 @@ from config import (
 )
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "tables/table_GI_summary_stats.csv",
+    "tables/table_top20_GI_both.csv",
+]
+
 
 def load_indicator_group_map(supplementary_path):
-    """Indicator_code -> Thematic_group, from the reference weight table.
+    """Map each indicator code to its thematic group, from tableS3.
 
-    tableS3 lists 100 real indicators: the raw Municipalities_Points_normalized
-    file has 102 n_-prefixed columns, but n_Area_km2 is not an attractiveness
-    indicator and n_Fitness_C is an exact duplicate of n_Fitness, so both are
-    excluded here (matching src/06_ml_framework.py's handling of n_Fitness_C).
+    tableS3 lists 100 real indicators, but the raw indicator file
+    (Municipalities_Points_normalized.gpkg) has 102 columns starting with
+    "n_": n_Area_km2 is municipality area, not a service/attractiveness
+    indicator, and n_Fitness_C is an exact duplicate of n_Fitness under a
+    different name. Both are excluded here for that reason (the same two
+    columns are excluded the same way in 06_ml_framework.py).
     """
-    ref = pd.read_csv(supplementary_path / "tableS3_individual_indicator_weights.csv", sep=";")
+    # No sep= argument: tableS3 is comma-delimited, like every other table
+    # in this repository. A previous version of this line hardcoded
+    # sep=";", left over from when tableS3 genuinely was semicolon-
+    # delimited; a later fix standardised all four supplementary tables to
+    # commas without updating this line, which meant the whole file was
+    # read as one unsplit column and this call failed outright with
+    # KeyError: ['Indicator_code'] the next time this script ran.
+    ref = pd.read_csv(supplementary_path / "tableS3_individual_indicator_weights.csv")
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
     return dict(zip(ref["Indicator_code"], ref["Thematic_group"])), ref
 
 
 def compute_rarity_weights(pts, group_map, n_municipalities):
-    """ri = max(1 - nonzero_i / N, 0.01); wi = sqrt(ri) / sum(sqrt(ri)) within group."""
+    """Compute each indicator's rarity weight within its thematic group.
+
+    An indicator that only a few municipalities have (e.g. an airport) is
+    more informative than one nearly every municipality has (e.g. a primary
+    school), so rarer indicators get more weight. The rarity score ri is
+    1 minus the share of municipalities that have a nonzero value for that
+    indicator, floored at 0.01: without the floor, an indicator present in
+    (almost) every municipality would get a weight of exactly zero and be
+    dropped from the index entirely, even though its actual values still
+    vary and still carry information. The floor keeps a small (1%) minimum
+    contribution for every indicator instead. Weights are then square-rooted
+    and renormalised to sum to 1 within each thematic group, so within-group
+    rankings are compressed rather than dominated by the rarest indicator.
+    """
     rows = []
     for code, group in group_map.items():
         if code not in pts.columns:

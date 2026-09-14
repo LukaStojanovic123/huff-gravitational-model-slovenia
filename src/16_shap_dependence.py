@@ -1,15 +1,55 @@
 """
-Regenerate SHAP dependence plots for both Random Forests (AHP-target and
-NW-target). 06_ml_framework.py never persists a trained model, so this
-script retrains one RF per model (identical hyperparameters, full training
-data) purely for SHAP explanation purposes, then computes SHAP values on a
-fixed 5,000-pair sample and plots dependence for the five highest
-mean-|SHAP| features. Each model uses its own composite GI feature
-(GI_AHP or GI_NW) — see outputs/audit/ml_model_design_note.md.
+Step 16 of the pipeline: for each Random Forest's five most influential
+features, how does the model's prediction actually change as that
+feature's value changes?
+
+What this script does: SHAP (SHapley Additive exPlanations) values
+attribute each individual prediction to the features that produced it —
+useful for asking not just "which features matter" (that's feature
+importance, from 06_ml_framework.py) but "in which direction, and how
+strongly, does a feature push the prediction." 06_ml_framework.py trains
+its models but never saves the fitted model objects to disk, so this
+script retrains one Random Forest per model — identical hyperparameters
+and training data, purely so there is a live model to explain — computes
+SHAP values on a fixed 5,000-pair sample, and plots how the prediction
+moves against each of the five features with the largest average SHAP
+impact. Each model uses its own composite GI feature (GI_AHP or GI_NW,
+never the other one's — see docs/ml_model_design_note.md for why that
+distinction matters).
+
+Reads: Municipalities_Points_normalized.gpkg, accessibility_normalized.csv,
+the AHP and NW GI layers, and huff_od_matrix.csv / huff_NW_od_matrix.csv
+(already computed by 03 and 04). Imports 06_ml_framework.py directly as a
+module to reuse its feature-building and OD-melting functions rather than
+duplicating them.
+
+Writes, per model (AHP and NW): fig_shap_dependence_{prefix}.png/.pdf (the
+five-panel summary figure), one fig_shap_dependence_{prefix}_{feature}.png/.pdf
+per top feature (file names depend on which features rank in the top 5,
+so they are not fully predictable in advance — see OUTPUT_FILES below),
+and fig08_shap_summary_{prefix}.png / fig08_shap_bar_{prefix}.png.
+
+Runs sixteenth. Needs 03 and 04's Huff outputs and imports 06_ml_framework.py
+directly; does not need 06's own main() to have been run first, since it
+retrains its own models from scratch.
+
+Run the two models as two separate invocations (`--model AHP`, then
+`--model NW`), not the default `--model both`, on a machine with limited
+RAM — training a full Random Forest for each model in the same process is
+exactly what exhausted this pipeline's 16 GB analysis machine during
+Stage 2.4 verification and got the process killed by the OS mid-run, the
+same failure mode 06_ml_framework.py hit first (see that script's own
+docstring). This script has its own lock file
+(data/processed/16_shap_dependence.lock) and its own per-model peak memory
+report, for the same reasons.
 """
 
+import argparse
+import gc
+import os
 import sys
 import importlib.util
+from datetime import datetime
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -28,7 +68,7 @@ from sklearn.ensemble import RandomForestRegressor
 # import time). That crash does NOT reproduce as of this environment
 # (verified directly: `scipy.linalg.inv(np.random.rand(3,3))` runs cleanly,
 # and `import shap` with matplotlib already imported does not crash either —
-# see outputs/audit/reproducibility_note.md for the verification). The
+# see docs/reproducibility_note.md for the verification). The
 # workaround is removed because it had a real cost: blocking matplotlib
 # detection makes `shap.summary_plot`/`shap.plots.bar` permanently think
 # matplotlib isn't installed for the rest of the process, which is exactly
@@ -42,10 +82,68 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import shap
 
-from config import (DATA_RAW, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
+from config import (DATA_RAW, DATA_PROCESSED, FIGURES, MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
                      MUNICIPALITIES_PTS, TABLES)
 
 SRC_DIR = Path(__file__).resolve().parent
+
+# Like 06_ml_framework.py's own lock, and for the same reason: this script
+# retrains a full Random Forest per model purely for SHAP explanation, and
+# doing both models in one process (the default, for convenience) held
+# enough memory at once to get the process killed by the OS on a 16 GB
+# machine during this repository's own Stage 2.4 pipeline verification —
+# the same failure mode 06_ml_framework.py hit first. Run `--model AHP`
+# and `--model NW` as two separate invocations on a memory-constrained
+# machine. This is a separate lock file from 06_ml_framework.py's own,
+# since the two scripts run independently of each other.
+LOCK_PATH = DATA_PROCESSED / "16_shap_dependence.lock"
+
+
+def acquire_lock():
+    """Refuse to start if another instance of this script is already running.
+
+    Does not detect a stale lock left by a hard kill — see the matching
+    note in 06_ml_framework.py::acquire_lock for why, and how to recover
+    (delete the lock file by hand if you are certain nothing else is
+    running).
+    """
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    if LOCK_PATH.exists():
+        print(f"ERROR: {LOCK_PATH} already exists.")
+        print(LOCK_PATH.read_text())
+        print("This means another 16_shap_dependence.py run appears to already be in "
+              "progress. If you are certain no other instance is actually running, "
+              "delete the lock file and run this script again:")
+        print(f'  rm "{LOCK_PATH}"')
+        sys.exit(1)
+    LOCK_PATH.write_text(f"pid={os.getpid()}\nstarted={datetime.now().isoformat()}\n")
+
+
+def release_lock():
+    """Remove the lock file on a normal exit (including a handled error)."""
+    LOCK_PATH.unlink(missing_ok=True)
+
+# Only the statically-named files are listed — the per-feature dependence
+# panels (fig_shap_dependence_{prefix}_{feature}.png/.pdf) are named after
+# whichever features happen to rank in each model's top 5 by mean |SHAP|,
+# which is data-dependent and can change between reruns if the underlying
+# data changes. 19_output_manifest.py treats files matching that naming
+# pattern as claimed by this script even though it cannot list them by
+# exact name in advance.
+OUTPUT_FILES = [
+    "figures/fig_shap_dependence_AHP.png",
+    "figures/fig_shap_dependence_AHP.pdf",
+    "figures/fig_shap_dependence_NW.png",
+    "figures/fig_shap_dependence_NW.pdf",
+    "figures/fig08_shap_summary_AHP.png",
+    "figures/fig08_shap_bar_AHP.png",
+    "figures/fig08_shap_summary_NW.png",
+    "figures/fig08_shap_bar_NW.png",
+]
+OUTPUT_FILE_PATTERNS = [
+    "figures/fig_shap_dependence_AHP_*",
+    "figures/fig_shap_dependence_NW_*",
+]
 
 RF_SEED = 42
 SHAP_SAMPLE_SEED = 42
@@ -54,6 +152,11 @@ N_DEPENDENCE_FEATURES = 5
 
 
 def load_module(stem):
+    """Import another src/NN_name.py script as a live module, by file path.
+
+    Needed because script filenames start with a digit ("06_ml_framework"),
+    which Python's normal `import` statement cannot handle directly.
+    """
     path = SRC_DIR / f"{stem}.py"
     spec = importlib.util.spec_from_file_location(stem, path)
     mod = importlib.util.module_from_spec(spec)
@@ -62,6 +165,12 @@ def load_module(stem):
 
 
 def run(mod06, model_name, prefix, composite_path, composite_col, output_col, od_path):
+    """Retrain one model, compute its SHAP values, and render its dependence figures.
+
+    Run once for the AHP-target model and once for the NW-target model
+    (see main() below) — everything in this function operates on a single
+    model at a time.
+    """
     print(f"=== SHAP DEPENDENCE ({model_name} model) ===")
     print(f"(RF seed = {RF_SEED}, SHAP sample seed = {SHAP_SAMPLE_SEED}, "
           f"sample size = {SHAP_SAMPLE_SIZE})")
@@ -199,17 +308,41 @@ def run(mod06, model_name, prefix, composite_path, composite_col, output_col, od
 
 
 def main():
-    FIGURES.mkdir(parents=True, exist_ok=True)
-    mod06 = load_module("06_ml_framework")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model", choices=["AHP", "NW", "both"], default="both")
+    args = parser.parse_args()
 
-    run(mod06, "AHP", "AHP",
-        DATA_RAW / MUNICIPALITIES_AHP, "GI_AHP", "GI_AHP",
-        TABLES / "huff_od_matrix.csv")
-    run(mod06, "NW", "NW",
-        DATA_RAW / MUNICIPALITIES_NW, "GI_Final_NotWeighted", "GI_NW",
-        TABLES / "huff_NW_od_matrix.csv")
+    acquire_lock()
+    try:
+        FIGURES.mkdir(parents=True, exist_ok=True)
+        mod06 = load_module("06_ml_framework")
 
-    print("Done.")
+        if args.model in ["AHP", "both"]:
+            mem_tracker = mod06.PeakMemoryTracker()
+            mem_tracker.start()
+            run(mod06, "AHP", "AHP",
+                DATA_RAW / MUNICIPALITIES_AHP, "GI_AHP", "GI_AHP",
+                TABLES / "huff_od_matrix.csv")
+            print(f"Peak memory during AHP model: {mem_tracker.stop_and_report_gb():.2f} GB")
+            print()
+
+        if args.model == "both":
+            print("Freeing AHP-model working memory before starting the NW model...")
+            gc.collect()
+            print()
+
+        if args.model in ["NW", "both"]:
+            mem_tracker = mod06.PeakMemoryTracker()
+            mem_tracker.start()
+            run(mod06, "NW", "NW",
+                DATA_RAW / MUNICIPALITIES_NW, "GI_Final_NotWeighted", "GI_NW",
+                TABLES / "huff_NW_od_matrix.csv")
+            print(f"Peak memory during NW model: {mem_tracker.stop_and_report_gb():.2f} GB")
+            print()
+
+        print("Done.")
+    finally:
+        release_lock()
 
 
 if __name__ == "__main__":

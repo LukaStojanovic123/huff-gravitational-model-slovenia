@@ -1,6 +1,27 @@
 """
-Rerun Huff with beta 1.5 2.0 2.5 3.0, compute agreement and Cohen
-kappa vs beta=2, save table and figure.
+Step 7 of the pipeline: how sensitive are the Huff results to the choice
+of distance-decay exponent (BETA)?
+
+What this script does: recomputes the AHP Huff catchment assignment four
+more times, using BETA = 1.5, 2.0, 2.5 and 3.0 instead of the study's
+chosen value of 2 (config.py's BETA), reusing the same distance matrix and
+GI_AHP values each time. For each alternative beta, it measures how many
+settlements still end up assigned to the same municipality as the
+beta=2 baseline (plain agreement percentage and Cohen's kappa, which
+corrects agreement for how likely two assignments would match by chance
+alone), plus how Ljubljana's and Maribor's catchment sizes shift. This is
+a robustness check, not a search for a better beta — the published results
+still use BETA=2 regardless of what this script finds.
+
+Reads: Municipalities_All_Groups_Weighted_AHP.gpkg (GI_AHP),
+huff_od_matrix.csv (the distance matrix, already computed by
+03_huff_ahp.py), huff_AHP_summary.csv (the beta=2 baseline to compare
+against).
+
+Writes: table_beta_sensitivity_clean.csv, fig_beta_sensitivity.png/.pdf.
+
+Runs seventh. Needs 03_huff_ahp.py's outputs; does not touch or depend on
+04, 05 or 06.
 """
 
 import sys
@@ -17,6 +38,14 @@ from sklearn.metrics import cohen_kappa_score
 from config import DATA_RAW, TABLES, FIGURES, BETA, MUNICIPALITIES_AHP, EPSG
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "tables/table_beta_sensitivity_clean.csv",
+    "figures/fig_beta_sensitivity.png",
+    "figures/fig_beta_sensitivity.pdf",
+]
+
+# The alternative beta values to test against the study's chosen value of
+# 2 (config.py's BETA) — two lower and two higher, spaced by 0.5.
 BETAS = [1.5, 2.0, 2.5, 3.0]
 
 
@@ -42,11 +71,14 @@ def load_distance_matrix(od_path):
 
 
 def compute_huff_dominant(gi_series, muni_names, dist_array, beta):
-    """Compute Huff Pij for a given beta, return dominant muni index per village.
+    """Run the Huff formula with a given beta and return each settlement's winning municipality.
 
-    Villages with a zero-distance municipality (village is the municipal seat)
-    are assigned to that municipality directly, since GI / dist**beta is
-    undefined at dist=0.
+    Same formula as compute_huff() in 03_huff_ahp.py, but returns only the
+    winning municipality's column index per settlement rather than the
+    full probability matrix, since that is all this sensitivity check
+    needs. A settlement exactly at a municipal seat (distance 0) is
+    assigned to that municipality directly, since the formula is undefined
+    at zero distance.
     """
     gi = gi_series.reindex(muni_names).values.astype(np.float32)
 

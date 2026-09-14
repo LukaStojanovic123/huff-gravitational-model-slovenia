@@ -1,10 +1,33 @@
 """
-Join the three settlement-level agreement layers (AHP vs NW, AHP vs ML,
-NW vs ML) plus the AHP entropy layer, produce the primary three-way
-disagreement synthesis layer and summary table (n_disagree 0-3, the
-paper's uncertainty measure), plus a secondary four-way version that also
-folds in RF-AHP-target vs RF-NW-target, and per-comparison "where do
-disagreeing settlements go" destination tables for all four comparisons.
+Step 14 of the pipeline: for how many of the four independent models does
+each settlement's assignment agree, and where does it end up when they
+disagree?
+
+What this script does: joins the three headline settlement-level agreement
+layers from 11_export_outputs.py (AHP Huff vs NW Huff, AHP Huff vs its
+Random Forest, NW Huff vs its Random Forest) together with the AHP entropy
+layer, and counts, per settlement, how many of the three pairwise
+comparisons disagree — 0 means all three models point to the same
+municipality, 3 means every pairwise comparison disagrees. This
+"n_disagree" count is the paper's headline uncertainty measure. A
+secondary four-way version repeats the same count with the RF-AHP vs
+RF-NW comparison folded in as well, since that comparison was added later
+and was never part of the original three-way measure. Finally, for each of
+the four pairwise comparisons, it tabulates which municipality "wins" a
+disagreeing settlement from which — settlement counts below
+MIN_DESTINATION_COUNT are dropped, since a handful of one-off
+disagreements are not a meaningful pattern.
+
+Reads: the four agreement map GPKGs and the AHP entropy GPKG, all built by
+11_export_outputs.py and 09_entropy_uncertainty.py.
+
+Writes: map_disagreement_count_villages.gpkg, table_disagreement_synthesis.csv
+(primary, 3-way), map_disagreement_count_4way_villages.gpkg,
+table_disagreement_synthesis_4way.csv (secondary, 4-way), and
+table_disagreement_destinations.csv.
+
+Runs fourteenth. Needs 11_export_outputs.py's map layers and
+09_entropy_uncertainty.py's AHP entropy layer.
 """
 
 import sys
@@ -17,6 +40,14 @@ import pandas as pd
 import geopandas as gpd
 
 from config import GPKG, TABLES
+
+OUTPUT_FILES = [
+    "gpkg/map_disagreement_count_villages.gpkg",
+    "tables/table_disagreement_synthesis.csv",
+    "gpkg/map_disagreement_count_4way_villages.gpkg",
+    "tables/table_disagreement_synthesis_4way.csv",
+    "tables/table_disagreement_destinations.csv",
+]
 
 AHP_VS_NW_PATH = GPKG / "map_AHP_vs_NW_villages.gpkg"
 AHP_VS_ML_PATH = GPKG / "map_AHP_vs_ML_villages.gpkg"
@@ -38,6 +69,7 @@ MIN_DESTINATION_COUNT = 5
 
 
 def build_synthesis_table(merged, n_disagree_col, entropy_col, entropy_class_col, k_range):
+    """Summarise, for each possible disagreement count, how many settlements fall there and how uncertain (by entropy) they tend to be."""
     rows = []
     for k in k_range:
         sub = merged[merged[n_disagree_col] == k]
@@ -100,14 +132,14 @@ def main():
 
     n_bucket1_3way = int((merged["n_disagree_3way"] == 1).sum())
     print(f"[primary, 3-way] n_disagree == 1 settlements: {n_bucket1_3way}")
-    print("  IMPORTANT: n_disagree==1 is only possible because 'ml_dominant_muni' is "
-          "NOT a single consistent classification across the three source layers. "
-          "map_AHP_vs_ML_villages.gpkg's ml_dominant_muni comes from the RF model "
-          "trained on the AHP Huff target (06_ml_framework.py Model 1), while "
-          "map_NW_vs_ML_villages.gpkg's ml_dominant_muni comes from the separately "
-          "trained RF model fit on the NW Huff target (Model 2) — two different "
-          "models, per 12_export_outputs.py::export_agreement_maps. See "
-          "outputs/audit/ml_model_design_note.md.")
+    print("  IMPORTANT: n_disagree==1 can happen at all only because the column named "
+          "'ml_dominant_muni' does not mean the same model in all three comparisons it "
+          "appears in. In map_AHP_vs_ML_villages.gpkg it comes from the Random Forest "
+          "trained on the AHP Huff target (Model 1 in 06_ml_framework.py); in "
+          "map_NW_vs_ML_villages.gpkg it comes from the separate Random Forest trained "
+          "on the NW Huff target (Model 2) — two different models sharing one column "
+          "name across the two source layers, by design (see "
+          "11_export_outputs.py::export_agreement_maps and docs/ml_model_design_note.md).")
     print()
 
     # ── Primary output layer and synthesis table (3-way) ──

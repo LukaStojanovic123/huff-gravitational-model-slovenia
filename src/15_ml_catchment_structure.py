@@ -1,10 +1,29 @@
 """
-Random Forest catchment structure vs Huff (AHP/NW), and AHP-vs-NW-target
-feature importance group comparison. Uses the RF trained on the AHP Huff
-target (06_ml_framework.py Model 1) as "the RF model" for catchment sizes,
-since that is the value set matching the brief's stated Novo mesto/
-Ljubljana/Maribor/Kamnik/Litija reference figures; the separately-trained
-NW-target RF (Model 2) is reported alongside for completeness.
+Step 15 of the pipeline: how do the Random Forest models' catchment sizes
+compare to the Huff models', and which feature groups drive each Random
+Forest's predictions?
+
+What this script does: two independent comparisons. First, it puts the
+catchment sizes (settlement counts per municipality) from all four
+models — AHP Huff, NW Huff, and the two separately-trained Random Forest
+models — side by side, ranks each one, and keeps the union of every
+model's top 20 municipalities (not just the AHP Huff top 20), since the
+Random Forest models' size hierarchy differs enough from the Huff models'
+that a plain top-20 slice from one model would hide municipalities that
+rank highly under another. Second, it groups each Random Forest's 189
+input features into a small number of thematic categories (distance, the
+composite GI score, accessibility, individual GI indicators, and so on)
+and compares how much combined importance each category carries between
+the AHP-target and NW-target models.
+
+Reads: huff_AHP_summary.csv, huff_NW_summary.csv, ml_AHP_vs_AHP_comparison.csv,
+ml_NW_vs_NW_comparison.csv, ml_AHP_feature_importance.csv,
+ml_NW_feature_importance.csv — all already computed by 03, 04 and 06.
+
+Writes: table_ml_catchment_sizes.csv, table_feature_importance_comparison.csv,
+fig_feature_importance_comparison.png/.pdf.
+
+Runs fifteenth. Needs 03, 04 and 06's outputs.
 """
 
 import sys
@@ -24,10 +43,20 @@ CATCHMENT_TABLE_PATH = TABLES / "table_ml_catchment_sizes.csv"
 FI_COMPARISON_TABLE_PATH = TABLES / "table_feature_importance_comparison.csv"
 FI_COMPARISON_FIG_PATH = FIGURES / "fig_feature_importance_comparison"
 
+OUTPUT_FILES = [
+    "tables/table_ml_catchment_sizes.csv",
+    "tables/table_feature_importance_comparison.csv",
+    "figures/fig_feature_importance_comparison.png",
+    "figures/fig_feature_importance_comparison.pdf",
+]
+
+# How many top-ranked municipalities to keep, per model, before taking the
+# union across all four models (see catchment_sizes below).
 TOP_N = 20
 
 
 def _feature_group(feature):
+    """Sort one ML feature name into a thematic category for the importance comparison."""
     if feature == "dist_to_muni":
         return "Distance"
     if feature == "GI_AHP":
@@ -44,6 +73,7 @@ def _feature_group(feature):
 
 
 def catchment_sizes():
+    """Compare catchment sizes across all four models and save the top-20-union table."""
     print("=== RF CATCHMENT STRUCTURE ===")
     print()
 
@@ -59,7 +89,6 @@ def catchment_sizes():
 
     print("RF (AHP-target model) top 10 catchments:")
     print(rf_ahp_sizes.head(10).to_string())
-    print("  (brief expects Novo mesto 384, Ljubljana 307, Maribor 260, Kamnik 201, Litija 180)")
     print()
 
     all_munis = sorted(set(ahp_sizes.index) | set(nw_sizes.index)
@@ -94,6 +123,7 @@ def catchment_sizes():
 
 
 def feature_importance_comparison():
+    """Group each Random Forest's feature importances by theme and compare the two models."""
     print("=== FEATURE IMPORTANCE COMPARISON (AHP-target vs NW-target RF) ===")
     print()
 

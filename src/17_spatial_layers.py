@@ -1,8 +1,27 @@
 """
-Build the spatial layers referenced in the manuscript's figure plan that
-script 12 never creates: the study-area overview, GI choropleth layers
-(NW and AHP), and catchment layers (AHP Huff, NW Huff, RF) with both a
-per-settlement and a dissolved-by-municipality version.
+Step 17 of the pipeline: build the map layers the manuscript's figures
+need that no other script produces.
+
+What this script does: three groups of QGIS-ready spatial layers that sit
+outside the main table/agreement-map pipeline in 11_export_outputs.py —
+a study-area overview (municipality and settlement boundaries, for the
+paper's introductory map), GI choropleth layers for both weighting
+schemes (municipality polygons carrying their GI value, rank, and
+thematic group subtotals, for the GI comparison figures), and catchment
+layers for the AHP Huff, NW Huff and Random Forest assignments, each
+saved both as individual settlements and dissolved into one polygon per
+municipality (for a cleaner catchment-boundary map at municipality scale).
+
+Reads: obcine_poligoni.shp, Villages_points_real.shp, NA.shp, both GI
+municipality layers, and huff_AHP_summary.csv, huff_NW_summary.csv,
+ml_AHP_vs_AHP_comparison.csv (already computed by 03, 04 and 06).
+
+Writes: fig01_study_area.gpkg, fig03_GI_NW_municipalities.gpkg,
+fig04_GI_AHP_municipalities.gpkg, fig05_catchments_AHP.gpkg,
+fig06_catchments_NW.gpkg, fig10_catchments_ML.gpkg.
+
+Runs seventeenth. Needs 03, 04 and 06's outputs for the catchment layers;
+the study area and GI choropleth layers only need the raw data.
 """
 
 import sys
@@ -19,10 +38,20 @@ from config import (
 )
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "gpkg/fig01_study_area.gpkg",
+    "gpkg/fig03_GI_NW_municipalities.gpkg",
+    "gpkg/fig04_GI_AHP_municipalities.gpkg",
+    "gpkg/fig05_catchments_AHP.gpkg",
+    "gpkg/fig06_catchments_NW.gpkg",
+    "gpkg/fig10_catchments_ML.gpkg",
+]
+
 OBCINE_FILE = "obcine_poligoni.shp"
 
 
 def build_study_area():
+    """Save municipality and settlement boundaries as the study-area overview layer."""
     print("--- 3.1 Study area layer ---")
     obcine = gpd.read_file(DATA_RAW / OBCINE_FILE)[["SIFRA", "NAZIV", "geometry"]].rename(
         columns={"SIFRA": "muni_id", "NAZIV": "muni_name"})
@@ -40,6 +69,7 @@ def build_study_area():
 
 
 def build_gi_choropleths():
+    """Attach each GI scenario's score, rank, and group subtotals to the municipality polygons."""
     print("--- 3.2 GI choropleth layers ---")
     obcine = gpd.read_file(DATA_RAW / OBCINE_FILE)[["SIFRA", "NAZIV", "geometry"]].rename(
         columns={"SIFRA": "muni_id", "NAZIV": "muni_name"})
@@ -70,7 +100,14 @@ def build_gi_choropleths():
 
 
 def build_catchment_layer(na, dominant_series, id_col, out_path, dominant_field_name):
-    """dominant_series: Village_ID -> dominant municipality name."""
+    """Save one model's catchment assignment as both a settlement-level and a dissolved municipality-level layer.
+
+    `dominant_series` maps each settlement's Village_ID to its dominant
+    municipality name for whichever model is being saved. The dissolved
+    layer merges every settlement polygon assigned to the same
+    municipality into one polygon, for a catchment-boundary map at
+    municipality scale rather than individual settlement scale.
+    """
     layer = na.merge(dominant_series.rename(dominant_field_name),
                       left_on="NA_MID", right_index=True, how="left")
     sizes = layer[dominant_field_name].value_counts()
@@ -90,6 +127,7 @@ def build_catchment_layer(na, dominant_series, id_col, out_path, dominant_field_
 
 
 def build_catchments():
+    """Build the AHP Huff, NW Huff, and Random Forest catchment layers."""
     print("--- 3.3 Catchment layers ---")
     na = gpd.read_file(DATA_RAW / SETTLEMENTS_POLY)[["NA_MID", "NA_UIME", "geometry"]]
     na = ensure_crs(na, EPSG, label=SETTLEMENTS_POLY)

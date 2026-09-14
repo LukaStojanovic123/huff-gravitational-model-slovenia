@@ -71,8 +71,18 @@ SUPPLEMENTARY  = OUTPUTS / "supplementary"
 # Study constants
 N_MUNICIPALITIES = 212
 N_SETTLEMENTS    = 6036
+# Distance-decay exponent in the Huff model's attractiveness formula
+# (GI / distance**BETA) — 2 is the standard inverse-square exponent used
+# in gravity-model spatial interaction, matching the original Huff (1963)
+# formulation. src/07_beta_sensitivity.py checks how much the results
+# change if this is varied.
 BETA             = 2
 EPSG             = 3794
+# Maximum road-network distance (metres) a settlement can be assigned
+# across when computing the Huff probabilities — comfortably larger than
+# any real driving distance within Slovenia (the country's longest
+# straight-line extent is well under 300 km), so this only ever excludes
+# pairs that are not realistically reachable, not genuine short trips.
 CUTOFF_M         = 300_000
 
 # Key filenames in DATA_RAW

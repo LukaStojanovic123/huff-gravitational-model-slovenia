@@ -1,6 +1,27 @@
 """
-Compute normalised Shannon entropy of Pij distribution per settlement,
-map uncertainty zones, save entropy layer.
+Step 9 of the pipeline: how confidently is each settlement assigned to its
+dominant municipality?
+
+What this script does: a settlement whose Huff probabilities are spread
+almost evenly across many municipalities is a much less confident
+assignment than one where a single municipality dominates overwhelmingly,
+even though both get assigned a single "dominant" municipality elsewhere
+in this pipeline. This script measures that spread using Shannon entropy
+(a standard information-theory measure of how spread out a probability
+distribution is) computed over each settlement's full row of Huff
+probabilities, normalised to a 0-1 scale so it does not depend on the
+number of municipalities. A settlement is then classified as low, medium
+or high uncertainty using the thresholds below, for both the AHP and NW
+Huff models.
+
+Reads: NA.shp (settlement polygons), huff_od_matrix.csv and
+huff_NW_od_matrix.csv (the full Huff probability matrices, already
+computed by 03_huff_ahp.py and 04_huff_nonweighted.py).
+
+Writes: map_entropy_AHP_villages.gpkg, map_entropy_NW_villages.gpkg,
+table_entropy_summary.csv.
+
+Runs ninth. Needs 03 and 04's outputs; independent of everything else.
 """
 
 import sys
@@ -15,13 +36,29 @@ import geopandas as gpd
 from config import DATA_RAW, TABLES, GPKG, N_MUNICIPALITIES, SETTLEMENTS_POLY, EPSG
 from crs_utils import ensure_crs
 
+OUTPUT_FILES = [
+    "gpkg/map_entropy_AHP_villages.gpkg",
+    "gpkg/map_entropy_NW_villages.gpkg",
+    "tables/table_entropy_summary.csv",
+]
+
+# Entropy classification bands: low uncertainty below 0.2, high uncertainty
+# above 0.5, medium in between.
 LOW_THRESHOLD = 0.2
 HIGH_THRESHOLD = 0.5
 
 
 def compute_normalized_entropy(od_path, n_municipalities):
-    """H = -sum(pij * log2(pij)) / log2(N). 0 => one dominant municipality,
-    1 => a perfectly uniform Pij distribution across all municipalities."""
+    """Compute each settlement's normalised Shannon entropy over its Huff probability row.
+
+    Entropy is 0 when a settlement's Huff probability is concentrated
+    entirely on one municipality (a fully confident assignment) and
+    approaches 1 when the probability is spread evenly across all
+    municipalities (a maximally uncertain assignment). Dividing by the
+    maximum possible entropy (log2 of the number of municipalities) puts
+    the score on a fixed 0-1 scale, independent of how many municipalities
+    there are.
+    """
     od = pd.read_csv(od_path)
     pij_cols = [c for c in od.columns if c.startswith("Pij_")]
     pij = od[pij_cols].values.astype(np.float64)
@@ -39,6 +76,7 @@ def compute_normalized_entropy(od_path, n_municipalities):
 
 
 def classify_entropy(entropy):
+    """Bucket each settlement's entropy score into low/medium/high uncertainty."""
     return np.select(
         [entropy < LOW_THRESHOLD, entropy <= HIGH_THRESHOLD],
         ["low", "medium"],

@@ -1,6 +1,28 @@
 """
-For each of 86 facility types compute nearest-facility road distance
-per municipality, normalise inverted 0-1, save accessibility_normalized.csv.
+Step 5 of the pipeline: how well each municipality is served by other
+services (used as ML features, not by the Huff model itself).
+
+What this script does: for each of the 86 facility types listed in
+data/facility_layers.txt (hospitals, schools, post offices, and so on),
+finds the nearest facility of that type to each municipality by road
+distance, then rescales each facility type's distances onto a 0-1 scale
+where 1 means "closest municipality to that facility type" and 0 means
+"furthest." This produces one accessibility score per municipality per
+facility type — 86 columns in total — used later as input features for the
+Random Forest models in 06_ml_framework.py. It plays no role in the Huff
+catchment assignment itself, which only uses road distance and GI.
+
+Reads: the 86 facility layers named in data/facility_layers.txt,
+Municipalities_Points_normalized.gpkg (municipality locations), and the
+road network cached by 02_road_network.py.
+
+Writes: accessibility_raw_distances.csv (raw distances, before rescaling)
+and accessibility_normalized.csv (the 0-1 rescaled version the ML models
+actually use).
+
+Runs fifth. Independent of the two Huff scripts (03, 04) — needs only the
+road network from 02 — but must run before 06_ml_framework.py, which reads
+accessibility_normalized.csv as part of its feature table.
 """
 
 import argparse
@@ -23,24 +45,39 @@ NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
 RAW_OUTPUT_PATH = TABLES / "accessibility_raw_distances.csv"
 NORM_OUTPUT_PATH = TABLES / "accessibility_normalized.csv"
 
+OUTPUT_FILES = [
+    "tables/accessibility_raw_distances.csv",
+    "tables/accessibility_normalized.csv",
+]
+
+# First, cheaper search radius for the nearest facility. Only municipalities
+# still missing a facility type after this search get the slower, wider
+# search up to CUTOFF_M below — most facility types are common enough that
+# almost every municipality finds one well within 80 km.
 PRIMARY_CUTOFF_M = 80_000
 
-# The 86 facility layers, one per line, in data/facility_layers.txt.
+# The 86 facility layers to use, one name per line, listed explicitly in
+# data/facility_layers.txt.
 #
-# This used to be a glob over DATA_RAW minus a hand-maintained exclude list.
-# That's what let all_roads.gpkg get silently counted as an 87th facility
-# type when it was dropped into DATA_RAW on 2026-08-14 (see the Stage 1/2A
-# audit trail) — glob discovery makes every file anyone adds to the raw data
-# directory a variable in the analysis. An explicit, version-controlled list
-# means a new file in DATA_RAW does nothing until someone deliberately adds
-# it here.
+# This list used to be built automatically by scanning every file in
+# DATA_RAW and guessing which ones were facility layers. That is exactly
+# how a stray file (all_roads.gpkg, dropped into DATA_RAW on 2026-08-14)
+# got silently counted as an 87th facility type and fed into the analysis
+# for three weeks before anyone noticed — scanning the folder makes every
+# file anyone ever places there a hidden input to the study. Listing the
+# 86 names explicitly, and checking that list into version control, means
+# a new file placed in DATA_RAW does nothing at all until a person
+# deliberately adds its name here.
 FACILITY_LAYERS_MANIFEST = REPO_ROOT / "data" / "facility_layers.txt"
 
 
 def discover_facility_layers(data_raw):
-    """Resolve the facility layers named in data/facility_layers.txt to paths
-    in DATA_RAW. Raises if a listed layer or an unresolvable duplicate is found —
-    this is meant to fail loudly, not silently drift."""
+    """Find the file for each facility layer named in data/facility_layers.txt.
+
+    Raises an error naming exactly which layer is missing, rather than
+    silently continuing with fewer than 86 facility types — a missing
+    layer should stop the run, not quietly change the study's inputs.
+    """
     names = [
         line.strip() for line in FACILITY_LAYERS_MANIFEST.read_text().splitlines()
         if line.strip()
@@ -67,7 +104,7 @@ def discover_facility_layers(data_raw):
 
 
 def load_graph():
-    """Rebuild the NetworkX graph from the noded roads saved by 02_road_network.py."""
+    """Rebuild the road network graph saved by 02_road_network.py."""
     if not NODED_ROADS_PATH.exists():
         raise FileNotFoundError(
             f"{NODED_ROADS_PATH} not found — run src/02_road_network.py first "
@@ -78,16 +115,19 @@ def load_graph():
 
 
 def snap_to_network(xy, node_coords, node_list):
-    """Snap an array of (x, y) coordinates to the nearest graph node."""
+    """Attach a set of map coordinates to their nearest road-network nodes."""
     tree = cKDTree(node_coords)
     _, idx = tree.query(xy)
     return [node_list[i] for i in idx]
 
 
 def load_and_snap_facilities(facility_paths, node_coords, node_list):
-    """Load every facility layer and snap its features to network nodes.
+    """Load every facility layer and find each facility's nearest road-network node.
 
-    Returns {facility_name: set_of_nearest_nodes}.
+    Returns, for each facility type, the set of network nodes any facility
+    of that type is closest to (a facility type usually has more than one
+    location — e.g. more than one hospital — so this is a set, not a
+    single node).
     """
     facility_nodes = {}
     for name, path in facility_paths.items():
@@ -101,8 +141,13 @@ def load_and_snap_facilities(facility_paths, node_coords, node_list):
 
 
 def nearest_facility_distances(G, muni_node, facility_nodes, primary_cutoff, extended_cutoff):
-    """One Dijkstra at `primary_cutoff`; only municipalities with an
-    unresolved facility get a second, wider Dijkstra up to `extended_cutoff`."""
+    """Find, for one municipality, its road distance to the nearest facility of each type.
+
+    Runs a fast search out to `primary_cutoff` first. Only the facility
+    types not yet found within that radius get a second, slower search out
+    to `extended_cutoff` — most facility types are found in the first pass,
+    so this avoids paying the cost of the wide search for every single one.
+    """
     lengths = nx.single_source_dijkstra_path_length(
         G, muni_node, cutoff=primary_cutoff, weight="length_m")
 
@@ -192,6 +237,10 @@ def main():
     dist_cols = [c for c in raw.columns if c.startswith("dist_")]
     print()
 
+    # A municipality with no facility of a given type within either search
+    # radius gets that facility type's own worst (maximum) observed
+    # distance across all municipalities, so it reads as "least accessible"
+    # for that facility type rather than leaving a gap in the feature table.
     print("Filling remaining NaN distances with column maximum...")
     col_max = raw[dist_cols].max(axis=0, skipna=True)
     global_max = raw[dist_cols].max().max()
@@ -203,6 +252,14 @@ def main():
     print(f"Saved {RAW_OUTPUT_PATH}")
     print()
 
+    # Rescale each facility type's distance column onto a common 0-1 scale,
+    # and flip the direction so that 1 means "closest" and 0 means
+    # "furthest" — a higher accessibility score reads the same way a
+    # higher GI or Huff probability does, which matters when these columns
+    # are later used as ML features alongside those. If every municipality
+    # has the exact same distance to a facility type (dmax == dmin), every
+    # municipality gets the maximum score, since there is no difference
+    # between them to rescale.
     print("Applying inverted min-max normalisation...")
     norm = raw[["Muni_ID", "Muni_Name"]].copy()
     for col in dist_cols:
