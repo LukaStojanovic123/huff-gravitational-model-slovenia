@@ -29,7 +29,7 @@ ml_{AHP,NW}_vs_{AHP,NW}_comparison.csv. Also caches data/processed/spatial_block
 
 Runs sixth. Needs 03, 04 (the Huff outputs it's trained to predict) and 05
 (accessibility features). Its trained models are also called into directly
-by 16_shap_dependence.py (via run_shap, below) rather than being reloaded
+by 15_shap_dependence.py (via run_shap, below) rather than being reloaded
 from disk, since this script does not save the fitted model objects
 themselves.
 
@@ -430,9 +430,9 @@ def build_comparison(df_ml_cv, all_preds, huff_summary_path,
 def run_shap(rf_model, X_sample, feature_cols, figures_path, prefix="AHP"):
     """Compute SHAP feature-contribution values for a trained model and save the summary plots.
 
-    Called from 16_shap_dependence.py, not from this script's own main() —
+    Called from 15_shap_dependence.py, not from this script's own main() —
     this script trains the models but does not keep the fitted model
-    objects around after main() finishes, so 16_shap_dependence.py imports
+    objects around after main() finishes, so 15_shap_dependence.py imports
     this module directly and calls its own training + this function to get
     a live model to explain.
     """

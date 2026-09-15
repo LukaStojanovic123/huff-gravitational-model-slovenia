@@ -115,7 +115,7 @@ layers never covered, since it doesn't involve either Huff model.
 
 ## Why `n_disagree` counts against more than one model
 
-`14_disagreement_synthesis.py` joins all four comparison layers on `Village_ID` and counts,
+`13_disagreement_synthesis.py` joins all four comparison layers on `Village_ID` and counts,
 per settlement, how many of the pairwise comparisons disagree (`n_disagree`, 0 to 4). Because
 the "ML" column in `map_AHP_vs_ML` and the "ML" column in `map_NW_vs_ML` come from two
 *separately trained* models — not the same model's predictions reused twice — a settlement

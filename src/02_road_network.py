@@ -42,7 +42,7 @@ from config import DATA_RAW, DATA_PROCESSED, ROADS_FILE, EPSG
 from crs_utils import ensure_crs
 
 # Writes only to data/processed/ (a gitignored cache), nothing under
-# outputs/ — nothing for 19_output_manifest.py to track here.
+# outputs/ — nothing for 18_output_manifest.py to track here.
 OUTPUT_FILES = []
 
 # The OSM road classes ("fclass") a car can actually be driven on. This
