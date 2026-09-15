@@ -156,6 +156,11 @@ def consolidate_tables():
 
     # table1: the AHP group priority weights are a pairwise-comparison judgment,
     # not a data-derived result — a genuine input, not something to recompute.
+    # Same warning as tableS1 below: this is a plain copy from
+    # data/external/. Any future correction to this table must be made to
+    # data/external/table1_AHP_group_weights_FIXED.csv, not to
+    # outputs/tables/table1_AHP_group_weights.csv directly — the latter is
+    # silently overwritten by the former on every run.
     safe_copy(DATA_EXTERNAL / "table1_AHP_group_weights_FIXED.csv",
               TABLES / "table1_AHP_group_weights.csv", "table1_AHP_group_weights")
 
