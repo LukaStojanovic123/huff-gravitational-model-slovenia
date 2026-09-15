@@ -1,0 +1,101 @@
+Indicator_code,Indicator_name,Thematic_group
+n_Zoo,Zoos,Culture
+n_Archives,Archives,Culture
+n_Theater,Theaters,Culture
+n_Cinemas,Cinemas,Culture
+n_Book_Store,Book stores,Culture
+n_Arch_Site,Archaeological sites,Culture
+n_Religion_B,Religious buildings,Culture
+n_Libraries,Libraries,Culture
+n_Museums,Museums,Culture
+n_Artwork,Artworks,Culture
+n_Chapels,Chapels,Culture
+n_PCHeritage,Protected cultural heritage sites,Culture
+n_SAZU,SAZU (Slovenian Academy of Sciences),Education
+n_University,Universities,Education
+n_School_Mus,Schools of music,Education
+n_School_Art,Schools of arts,Education
+n_Faculties,Faculties,Education
+n_Dorms,Student dormitories,Education
+n_Second_Sch,Secondary schools,Education
+n_Privat_Sch,Private schools,Education
+n_Kindergard,Kindergartens,Education
+n_Enrolled_K,Enrolled in kindergarten,Education
+n_Students,University students,Education
+n_Enrolled_S,Enrolled in secondary school,Education
+n_Primary_Sc,Primary schools,Education
+n_Enroll_Pri,Enrolled in primary school,Education
+n_Exchange_C,Currency exchange offices,Finance
+n_Finance_of,Financial offices,Finance
+n_Banks,Banks,Finance
+n_ATMs,ATMs,Finance
+n_Nursing_H,Nursing homes,Healthcare
+n_Clinics,Clinics,Healthcare
+n_Hospitals,Hospitals,Healthcare
+n_Veterinary,Veterinarian offices,Healthcare
+n_Dentists,Dentist offices,Healthcare
+n_Doctor_off,Doctor offices,Healthcare
+n_NumberDr,Number of doctors,Healthcare
+n_Dom_zdrav,Health centres (dom zdravja),Healthcare
+n_Pharmacy,Pharmacies,Healthcare
+n_Main_Court,Main courthouse,Judiciary and Emergency
+n_Emb_Consul,Embassies and consulates,Judiciary and Emergency
+n_High_Court,Higher courts,Judiciary and Emergency
+n_Reg_Court,Regional courts,Judiciary and Emergency
+n_Police_sta,Police stations,Judiciary and Emergency
+n_Local_Cour,Local courts,Judiciary and Emergency
+n_Town_hall,Town halls,Judiciary and Emergency
+n_Fire_stat,Fire stations,Judiciary and Emergency
+n_Rec_Bins,Recycling bins,Residential
+n_CommunityC,Community centres,Residential
+n_Apartments,Apartments (census),Residential
+n_Population,Total population,Residential
+n_Employ,Employed population,Residential
+n_Addresses,Number of addresses,Residential
+n_Density,Population density,Residential
+n_Outdoor_S,Outdoor shops,Sports and Recreation
+n_Swim_Pool,Swimming pools,Sports and Recreation
+n_Fitness,Fitness centres,Sports and Recreation
+n_Stadiums,Stadiums,Sports and Recreation
+n_Sport_Hall,Sports halls,Sports and Recreation
+n_Bike_Shop,Bicycle shops,Sports and Recreation
+n_Sport_Shop,Sports shops,Sports and Recreation
+n_Camp_Site,Camp sites,Sports and Recreation
+n_Playground,Playgrounds,Sports and Recreation
+n_Parks,City parks,Sports and Recreation
+n_Bike_paths,Bicycle path length (km),Sports and Recreation
+n_Hunt_Stand,Hunting stands,Sports and Recreation
+n_Travel_A,Travel agencies,Tourism and Services
+n_Gift_Shop,Gift shops,Tourism and Services
+n_Fast_food,Fast food outlets,Tourism and Services
+n_Hotels,Hotels,Tourism and Services
+n_Bakery,Bakeries,Tourism and Services
+n_Hostels,Hostels and motels,Tourism and Services
+n_Pub_Toilet,Public toilets,Tourism and Services
+n_Restaurant,Restaurants,Tourism and Services
+n_Clubs_Bars,Clubs and bars,Tourism and Services
+n_Tur_arriv,Tourist arrivals,Tourism and Services
+n_OvernightS,Overnight stays,Tourism and Services
+n_Tur_inf_p,Tourist information points,Tourism and Services
+n_Apartme_OS,Tourist apartments,Tourism and Services
+n_Kiosk,Kiosks,Trade and Business
+n_Marketplac,Marketplaces,Trade and Business
+n_Shp_mall,Shopping malls,Trade and Business
+n_Thematic_S,Thematic shops,Trade and Business
+n_Supermarke,Supermarkets,Trade and Business
+n_Ind_B_Zone,Industrial and business zones,Trade and Business
+n_Companies,Registered companies,Trade and Business
+n_Seaport,Seaports,Traffic and Communications
+n_Airports,Airports,Traffic and Communications
+n_Parking_V,Vending parking,Traffic and Communications
+n_Car_Rent,Car rental services,Traffic and Communications
+n_Gas_stat,Petrol stations,Traffic and Communications
+n_Bike_Renta,Bicycle rental locations,Traffic and Communications
+n_Car_Wash,Car wash services,Traffic and Communications
+n_Driving_sc,Driving schools,Traffic and Communications
+n_Roads_L,Highway road length (km),Traffic and Communications
+n_Railway_St,Railway stations,Traffic and Communications
+n_Railway_L,Railway length (km),Traffic and Communications
+n_Parking,Parking facilities,Traffic and Communications
+n_Bus_stops,Bus stops,Traffic and Communications
+n_Post_offic,Post offices,Traffic and Communications

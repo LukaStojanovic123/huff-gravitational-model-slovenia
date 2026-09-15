@@ -23,9 +23,9 @@ Writes: table1-6, tableS1-S4, the four agreement map GPKGs, and
 fig07_feature_importance.png/.pdf, listed in full in OUTPUT_FILES below.
 
 Runs eleventh, after every other numbered table- or map-producing script
-it depends on (03, 04, 06, 07). 13_morans_lisa.py in turn depends on the
+it depends on (03, 04, 06, 07). 12_morans_lisa.py in turn depends on the
 maps this script builds — it must always run after this script, never
-before (see 13_morans_lisa.py's own staleness check for what happens if
+before (see 12_morans_lisa.py's own staleness check for what happens if
 that order is violated).
 """
 
@@ -203,20 +203,27 @@ def consolidate_tables():
     safe_copy(DATA_EXTERNAL / "tableS1_indicators_sources.csv",
               SUPPLEMENTARY / "tableS1_indicators_sources.csv", "tableS1_indicators_sources")
 
-    for name in ("tableS2_AHP_priority_weights.csv", "tableS3_individual_indicator_weights.csv"):
-        status = "OK   " if (SUPPLEMENTARY / name).exists() else "MISSING"
-        print(f"  {status} {name} (expected already in outputs/supplementary/)")
+    # tableS2 is maintained directly (an AHP pairwise-comparison judgment,
+    # not something any script computes) — just check it is present.
+    status = "OK   " if (SUPPLEMENTARY / "tableS2_AHP_priority_weights.csv").exists() else "MISSING"
+    print(f"  {status} tableS2_AHP_priority_weights.csv (expected already in outputs/supplementary/)")
+
+    # tableS3 is written by 01_gi_construction.py, not by this script — if
+    # it's missing, that script hasn't been run, not this one.
+    status = "OK   " if (SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv").exists() else "MISSING"
+    print(f"  {status} tableS3_individual_indicator_weights.csv "
+          f"(written by 01_gi_construction.py — run that first if missing)")
 
     print()
 
 
 def load_indicator_group_map():
-    """Map each indicator code to its thematic group, read from tableS3 (see 01_gi_construction.py)."""
+    """Map each indicator code to its thematic group, read from tableS3 (written by 01_gi_construction.py)."""
     ref_path = SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv"
     if not ref_path.exists():
         return {}
     # No sep= argument: tableS3 is comma-delimited. See the matching note
-    # in 01_gi_construction.py::load_indicator_group_map for why this
+    # in 01_gi_construction.py::load_indicator_categories for why this
     # matters — a stale sep=";" here previously made this call fail.
     ref = pd.read_csv(ref_path)
     ref = ref.dropna(subset=["Indicator_code"])
@@ -402,7 +409,7 @@ def export_agreement_maps(data_raw, tables_path, gpkg_path):
 # Every output the full pipeline (all 18 numbered scripts) is expected to
 # produce, for the final completeness checklist below. Grouped by output
 # directory. This list is separate from each script's own OUTPUT_FILES
-# declaration (used by 19_output_manifest.py to check which script wrote
+# declaration (used by 18_output_manifest.py to check which script wrote
 # which file) — this one exists purely to answer "is everything here,"
 # not "who made it."
 EXPECTED_OUTPUTS = {
@@ -437,7 +444,7 @@ EXPECTED_OUTPUTS = {
         TABLES / "table5_beta_sensitivity.csv",
         TABLES / "table6_cv_performance.csv",
         # Three-way agreement, LISA, disagreement synthesis, RF catchment
-        # structure, feature importance comparison (src/13, 14, 15).
+        # structure, feature importance comparison (src/12, 13, 14).
         TABLES / "table_three_way_agreement.csv",
         TABLES / "table_join_counts.csv",
         TABLES / "table_lisa_summary.csv",
@@ -459,7 +466,7 @@ EXPECTED_OUTPUTS = {
         FIGURES / "fig07_feature_importance.pdf",
         FIGURES / "fig08_shap_bar_AHP.png",
         FIGURES / "fig08_shap_summary_AHP.png",
-        # SHAP dependence (src/16) and feature importance comparison (src/15).
+        # SHAP dependence (src/15) and feature importance comparison (src/14).
         FIGURES / "fig_shap_dependence_AHP.png",
         FIGURES / "fig_shap_dependence_AHP.pdf",
         FIGURES / "fig_feature_importance_comparison.png",
@@ -475,12 +482,12 @@ EXPECTED_OUTPUTS = {
         GPKG / "map_entropy_NW_villages.gpkg",
         GPKG / "map_lisa_AHP_vs_NW.gpkg",
         GPKG / "fig_huff_vs_commuting_municipalities.gpkg",
-        # LISA for all three comparisons (src/13).
+        # LISA for all three comparisons (src/12).
         GPKG / "map_lisa_AHP_vs_ML.gpkg",
         GPKG / "map_lisa_NW_vs_ML.gpkg",
-        # Three-way disagreement synthesis (src/14).
+        # Three-way disagreement synthesis (src/13).
         GPKG / "map_disagreement_count_villages.gpkg",
-        # Study area, GI choropleths, catchment layers (src/17).
+        # Study area, GI choropleths, catchment layers (src/16).
         GPKG / "fig01_study_area.gpkg",
         GPKG / "fig03_GI_NW_municipalities.gpkg",
         GPKG / "fig04_GI_AHP_municipalities.gpkg",

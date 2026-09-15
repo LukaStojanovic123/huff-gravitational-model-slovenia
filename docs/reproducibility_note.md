@@ -9,7 +9,7 @@ availability statement.
 The pipeline reads exactly 94 files from `DATA_RAW`, all listed by name in version-controlled
 repository files — nothing is discovered by globbing a directory anymore:
 
-- **8 core files**, named as constants in `config.py` and audited in `18_data_audit.py`'s
+- **8 core files**, named as constants in `config.py` and audited in `17_data_audit.py`'s
   `CORE_FILES` list: `gis_osm_roads_free_1.shp` (road network), `Municipalities_All_Groups_
   Weighted_AHP.gpkg`, `Municipalities_All_Groups_NotWeighted_Normalized.gpkg`,
   `Municipalities_Points_normalized.gpkg`, `Villages_points_real.shp`, `NA.shp`,
@@ -45,7 +45,7 @@ dependency.
 Three other absolute-path dependencies were found and removed during Stage 2A:
 
 1. `06_ml_framework.py`, `07_beta_sensitivity.py`, `09_entropy_uncertainty.py`,
-   `10_commuting_comparison.py`, `18_data_audit.py`, `16_shap_dependence.py` all read
+   `10_commuting_comparison.py`, `17_data_audit.py`, `15_shap_dependence.py` all read
    `accessibility_normalized.csv`, `huff_od_matrix.csv`, `huff_NW_od_matrix.csv`,
    `huff_summary.csv` and `huff_NW_summary.csv` from an external `Matrix and tables`
    directory that no script in the repository produced. `03_huff_ahp.py` and
@@ -89,24 +89,37 @@ python src/08_euclidean_comparison.py
 python src/09_entropy_uncertainty.py
 python src/10_commuting_comparison.py
 python src/11_export_outputs.py
-python src/13_morans_lisa.py
-python src/14_disagreement_synthesis.py
-python src/15_ml_catchment_structure.py
-python src/16_shap_dependence.py --model AHP
-python src/16_shap_dependence.py --model NW
-python src/17_spatial_layers.py
-python src/18_data_audit.py
-python src/19_output_manifest.py
+python src/12_morans_lisa.py
+python src/13_disagreement_synthesis.py
+python src/14_ml_catchment_structure.py
+python src/15_shap_dependence.py --model AHP
+python src/15_shap_dependence.py --model NW
+python src/16_spatial_layers.py
+python src/17_data_audit.py
+python src/18_output_manifest.py
 ```
 
 `--force` is only meaningful for 03/04/05 (the three with skip-if-exists behavior); it's a
 no-op if passed to a script without that flag defined, so it's omitted above where it isn't
 needed. `01_gi_construction.py` has always run unconditionally (no skip-if-exists guard) and
-was confirmed live in this remediation: 100 indicators mapped, all 10 group counts correct,
-computed rarity weights matching `tableS3`'s reference values to 1e-6 — none of it is copied
-from a static file.
+was confirmed live in this remediation: 100 indicators mapped, all 10 group counts correct.
 
-`06_ml_framework.py` and `16_shap_dependence.py` are both run above as two separate
+`tableS3_individual_indicator_weights.csv` used to be a hand-maintained file — someone ran
+the rarity-weight computation once and pasted the result into `outputs/supplementary/`, with
+nothing to ever regenerate it afterward. That is the same failure mode that let tableS1
+silently revert to a pre-correction version (see the BLAS/environment section above's sibling
+incident, and the fix commit for the full story): a value living in `outputs/` with no script
+that owns it can drift from whatever actually produced it. `01_gi_construction.py` now
+computes tableS3 itself, every run, from `Municipalities_Points_normalized.gpkg` and a small
+genuine input (`data/external/indicator_categories.csv`, the indicator name/group
+categorisation — the one part of tableS3 that really is a judgment call, not a derived
+number). `17_data_audit.py` independently re-derives the same rarity weights from the same
+two inputs, using its own separately written implementation of the formula, and cross-checks
+the result against what `01_gi_construction.py` actually wrote — the same "rebuild it from
+scratch and compare" principle already applied to the road network, OD matrix and
+accessibility scores elsewhere in that audit.
+
+`06_ml_framework.py` and `15_shap_dependence.py` are both run above as two separate
 invocations (`--model AHP` then `--model NW`), not the single `--model both` each script also
 supports. Confirmed by direct incident, twice, during this remediation's own Stage 2.4
 pipeline verification: `--model both` on a 16 GB machine holds two 1,279,632-row feature
@@ -114,7 +127,7 @@ tables and two 100-tree Random Forests in memory across the same process, which 
 available RAM and got the process killed by the operating system mid-run, with no Python
 traceback at all — the failure was silent enough that it looked at first like the script had
 simply hung. It happened first in `06_ml_framework.py`, and then again in
-`16_shap_dependence.py` once that script's turn in the pipeline came around, since it
+`15_shap_dependence.py` once that script's turn in the pipeline came around, since it
 retrains its own pair of models independently of `06`'s and was never covered by `06`'s fix.
 Both scripts now refuse to start a second instance of themselves while one is already running
 (separate lock files in `data/processed/`), check the lock's recorded PID against the running
@@ -125,7 +138,7 @@ the end of its run.
 
 Random seeds are fixed and printed at the point of use: `random_state=42` for the spatial
 KMeans blocks and both Random Forest models (`06_ml_framework.py`), `seed=42` for both the
-global permutation test and the LISA computation in `13_morans_lisa.py`, `999` join-count
+global permutation test and the LISA computation in `12_morans_lisa.py`, `999` join-count
 permutations. Re-running the sequence above on unchanged inputs reproduces every value in
 this rerun's tables exactly, including the two residual discrepancies noted below (they are
 properties of the input data, not of any randomness in the pipeline).
@@ -161,7 +174,7 @@ unchanged; this was a diagnostic only.
 
 ## Environment: a BLAS backend crash, and why OpenBLAS is required
 
-Later in the remediation, `13_morans_lisa.py` and several other scripts began crashing
+Later in the remediation, `12_morans_lisa.py` and several other scripts began crashing
 natively (no Python traceback) partway through a run. The cause was `libblas`/`liblapack`:
 conda-forge's default is Intel's MKL build, and MKL's own CPU-dispatch logic crashes on this
 machine's CPU (an i7-7700K, which has no AVX-512) the first time any code path reaches

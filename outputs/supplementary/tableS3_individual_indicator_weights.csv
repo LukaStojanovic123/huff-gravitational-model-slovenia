@@ -1,102 +1,101 @@
 Indicator_code,Indicator_name,Thematic_group,Nonzero_munis,Nonzero_pct,Rarity_score_ri,Sqrt_ri,Normalised within-group weight (w_i)
-n_Zoo,Zoos,Culture,1,0.5,0.995283,0.997639,0.106941
-n_Archives,Archives,Culture,6,2.8,0.971698,0.985747,0.105666
-n_Theater,Theaters,Culture,15,7.1,0.929245,0.963974,0.103332
-n_Cinemas,Cinemas,Culture,17,8.0,0.919811,0.959068,0.102806
-n_Book_Store,Book stores,Culture,27,12.7,0.872642,0.934153,0.100136
-n_Arch_Site,Archaeological sites,Culture,30,14.2,0.858491,0.926548,0.09932
-n_Religion_B,Religious buildings,Culture,43,20.3,0.79717,0.892844,0.095707
-n_Libraries,Libraries,Culture,64,30.2,0.698113,0.835532,0.089564
-n_Museums,Museums,Culture,71,33.5,0.665094,0.815533,0.08742
-n_Artwork,Artworks,Culture,101,47.6,0.523585,0.723592,0.077565
-n_Chapels,Chapels,Culture,204,96.2,0.037736,0.194257,0.020823
-n_PCHeritage,Protected cultural heritage sites,Culture,211,99.5,0.01,0.1,0.010719
-n_SAZU,SAZU (Slovenian Academy of Sciences),Education,1,0.5,0.995283,0.997639,0.119839
-n_University,Universities,Education,5,2.4,0.976415,0.988137,0.118698
-n_School_Mus,Schools of music,Education,6,2.8,0.971698,0.985747,0.118411
-n_School_Art,Schools of arts,Education,7,3.3,0.966981,0.983352,0.118123
-n_Faculties,Faculties,Education,11,5.2,0.948113,0.973711,0.116965
-n_Dorms,Student dormitories,Education,24,11.3,0.886792,0.941697,0.113119
-n_Second_Sch,Secondary schools,Education,48,22.6,0.773585,0.879537,0.105652
-n_Privat_Sch,Private schools,Education,56,26.4,0.735849,0.857816,0.103043
-n_Kindergard,Kindergartens,Education,202,95.3,0.04717,0.217186,0.026089
-n_Enrolled_K,Enrolled in kindergarten,Education,211,99.5,0.01,0.1,0.012012
-n_Students,University students,Education,211,99.5,0.01,0.1,0.012012
-n_Enrolled_S,Enrolled in secondary school,Education,211,99.5,0.01,0.1,0.012012
-n_Primary_Sc,Primary schools,Education,211,99.5,0.01,0.1,0.012012
-n_Enroll_Pri,Enrolled in primary school,Education,211,99.5,0.01,0.1,0.012012
-n_Exchange_C,Currency exchange offices,Finance,3,1.4,0.985849,0.992899,0.342083
-n_Finance_of,Financial offices,Finance,15,7.1,0.929245,0.963974,0.332118
-n_Banks,Banks,Finance,79,37.3,0.627358,0.79206,0.272888
-n_ATMs,ATMs,Finance,207,97.6,0.023585,0.153574,0.052911
-n_Nursing_H,Nursing homes,Healthcare,4,1.9,0.981132,0.990521,0.127251
-n_Clinics,Clinics,Healthcare,12,5.7,0.943396,0.971286,0.12478
-n_Hospitals,Hospitals,Healthcare,17,8.0,0.919811,0.959068,0.12321
-n_Veterinary,Veterinarian offices,Healthcare,24,11.3,0.886792,0.941697,0.120979
-n_Dentists,Dentist offices,Healthcare,42,19.8,0.801887,0.895481,0.115041
-n_Doctor_off,Doctor offices,Healthcare,47,22.2,0.778302,0.882214,0.113337
-n_NumberDr,Number of doctors,Healthcare,49,23.1,0.768868,0.876851,0.112648
-n_Dom_zdrav,Health centres (dom zdravja),Healthcare,55,25.9,0.740566,0.860561,0.110555
-n_Pharmacy,Pharmacies,Healthcare,177,83.5,0.165094,0.406318,0.052199
-n_Main_Court,Main courthouse,Judiciary and Emergency,1,0.5,0.995283,0.997639,0.134707
-n_Emb_Consul,Embassies and consulates,Judiciary and Emergency,2,0.9,0.990566,0.995272,0.134388
-n_High_Court,Higher courts,Judiciary and Emergency,4,1.9,0.981132,0.990521,0.133746
-n_Reg_Court,Regional courts,Judiciary and Emergency,11,5.2,0.948113,0.973711,0.131476
-n_Police_sta,Police stations,Judiciary and Emergency,30,14.2,0.858491,0.926548,0.125108
-n_Local_Cour,Local courts,Judiciary and Emergency,44,20.8,0.792453,0.890198,0.1202
-n_Town_hall,Town halls,Judiciary and Emergency,57,26.9,0.731132,0.855063,0.115456
-n_Fire_stat,Fire stations,Judiciary and Emergency,84,39.6,0.603774,0.777029,0.104919
-n_Rec_Bins,Recycling bins,Residential,25,11.8,0.882075,0.939189,0.389943
-n_CommunityC,Community centres,Residential,54,25.5,0.745283,0.863298,0.358434
-n_Apartments,Apartments (census),Residential,203,95.8,0.042453,0.206041,0.085546
-n_Population,Total population,Residential,211,99.5,0.01,0.1,0.041519
-n_Employ,Employed population,Residential,211,99.5,0.01,0.1,0.041519
-n_Addresses,Number of addresses,Residential,211,99.5,0.01,0.1,0.041519
-n_Density,Population density,Residential,211,99.5,0.01,0.1,0.041519
-n_Outdoor_S,Outdoor shops,Sports and Recreation,9,4.2,0.957547,0.978543,0.100485
-n_Swim_Pool,Swimming pools,Sports and Recreation,13,6.1,0.938679,0.968855,0.09949
-n_Fitness,Fitness centres,Sports and Recreation,29,13.7,0.863208,0.92909,0.095406
-n_Stadiums,Stadiums,Sports and Recreation,33,15.6,0.84434,0.91888,0.094358
-n_Sport_Hall,Sports halls,Sports and Recreation,35,16.5,0.834906,0.913732,0.093829
-n_Bike_Shop,Bicycle shops,Sports and Recreation,45,21.2,0.787736,0.887545,0.09114
-n_Sport_Shop,Sports shops,Sports and Recreation,51,24.1,0.759434,0.871455,0.089488
-n_Camp_Site,Camp sites,Sports and Recreation,53,25.0,0.75,0.866025,0.08893
-n_Playground,Playgrounds,Sports and Recreation,76,35.8,0.641509,0.800943,0.082247
-n_Parks,City parks,Sports and Recreation,136,64.2,0.358491,0.598741,0.061483
-n_Bike_paths,Bicycle path length (km),Sports and Recreation,156,73.6,0.264151,0.513956,0.052777
-n_Hunt_Stand,Hunting stands,Sports and Recreation,161,75.9,0.240566,0.490475,0.050366
-n_Travel_A,Travel agencies,Tourism and Services,5,2.4,0.976415,0.988137,0.126685
-n_Gift_Shop,Gift shops,Tourism and Services,38,17.9,0.820755,0.905955,0.116148
-n_Fast_food,Fast food outlets,Tourism and Services,63,29.7,0.70283,0.83835,0.107481
-n_Hotels,Hotels,Tourism and Services,66,31.1,0.688679,0.829867,0.106394
-n_Bakery,Bakeries,Tourism and Services,103,48.6,0.514151,0.717043,0.091929
-n_Hostels,Hostels and motels,Tourism and Services,108,50.9,0.490566,0.700404,0.089796
-n_Pub_Toilet,Public toilets,Tourism and Services,118,55.7,0.443396,0.66588,0.08537
-n_Restaurant,Restaurants,Tourism and Services,156,73.6,0.264151,0.513956,0.065892
-n_Clubs_Bars,Clubs and bars,Tourism and Services,177,83.5,0.165094,0.406318,0.052092
-n_Tur_arriv,Tourist arrivals,Tourism and Services,189,89.2,0.108491,0.329379,0.042228
-n_OvernightS,Overnight stays,Tourism and Services,190,89.6,0.103774,0.322139,0.0413
-n_Tur_inf_p,Tourist information points,Tourism and Services,193,91.0,0.089623,0.29937,0.038381
-n_Apartme_OS,Tourist apartments,Tourism and Services,195,92.0,0.080189,0.283176,0.036305
-n_Kiosk,Kiosks,Trade and Business,28,13.2,0.867925,0.931625,0.198867
-n_Marketplac,Marketplaces,Trade and Business,37,17.5,0.825472,0.908555,0.193943
-n_Shp_mall,Shopping malls,Trade and Business,50,23.6,0.764151,0.874157,0.1866
-n_Thematic_S,Thematic shops,Trade and Business,83,39.2,0.608491,0.780058,0.166513
-n_Supermarke,Supermarkets,Trade and Business,100,47.2,0.528302,0.726844,0.155154
-n_Ind_B_Zone,Industrial and business zones,Trade and Business,184,86.8,0.132075,0.363422,0.077577
-n_Companies,Registered companies,Trade and Business,211,99.5,0.01,0.1,0.021346
-n_Seaport,Seaports,Traffic and Communications,1,0.5,0.995283,0.997639,0.097386
-n_Airports,Airports,Traffic and Communications,29,13.7,0.863208,0.92909,0.090694
-n_Parking_V,Vending parking,Traffic and Communications,33,15.6,0.84434,0.91888,0.089698
-n_Car_Rent,Car rental services,Traffic and Communications,38,17.9,0.820755,0.905955,0.088436
-n_Gas_stat,Petrol stations,Traffic and Communications,39,18.4,0.816038,0.903348,0.088182
-n_Bike_Renta,Bicycle rental locations,Traffic and Communications,43,20.3,0.79717,0.892844,0.087156
-n_Car_Wash,Car wash services,Traffic and Communications,48,22.6,0.773585,0.879537,0.085857
-n_Driving_sc,Driving schools,Traffic and Communications,61,28.8,0.712264,0.843957,0.082384
-n_Roads_L,Highway road length (km),Traffic and Communications,65,30.7,0.693396,0.832704,0.081286
-n_Railway_St,Railway stations,Traffic and Communications,97,45.8,0.542453,0.736514,0.071896
-n_Railway_L,Railway length (km),Traffic and Communications,114,53.8,0.462264,0.6799,0.066369
-n_Parking,Parking facilities,Traffic and Communications,168,79.2,0.207547,0.455573,0.044471
-n_Bus_stops,Bus stops,Traffic and Communications,206,97.2,0.028302,0.168232,0.016422
-n_Post_offic,Post offices,Traffic and Communications,210,99.1,0.01,0.1,0.009762
-Total,,,,,,,1
+n_Zoo,Zoos,Culture,1,0.5,0.9952830188679245,0.9976387216161592,0.10694082374965617
+n_Archives,Archives,Culture,6,2.8,0.9716981132075472,0.9857474895770961,0.10566615575401579
+n_Theater,Theaters,Culture,15,7.1,0.9292452830188679,0.963973694152941,0.10333213686685441
+n_Cinemas,Cinemas,Culture,17,8.0,0.9198113207547169,0.9590679437634838,0.10280627016141132
+n_Book_Store,Book stores,Culture,27,12.7,0.8726415094339622,0.9341528298056814,0.10013552096860975
+n_Arch_Site,Archaeological sites,Culture,30,14.2,0.8584905660377359,0.926547659884658,0.09932029285196968
+n_Religion_B,Religious buildings,Culture,43,20.3,0.7971698113207547,0.8928436656664787,0.09570742896923387
+n_Libraries,Libraries,Culture,64,30.2,0.6981132075471699,0.8355316915277181,0.0895639327392668
+n_Museums,Museums,Culture,71,33.5,0.6650943396226415,0.8155331627975907,0.08742021168088968
+n_Artwork,Artworks,Culture,101,47.6,0.5235849056603774,0.7235916705299871,0.07756464101504583
+n_Chapels,Chapels,Culture,204,96.2,0.037735849056603765,0.19425717247145283,0.020823191395100027
+n_PCHeritage,Protected cultural heritage sites,Culture,211,99.5,0.01,0.1,0.010719393847946651
+n_SAZU,SAZU (Slovenian Academy of Sciences),Education,1,0.5,0.9952830188679245,0.9976387216161592,0.11983904052001611
+n_University,Universities,Education,5,2.4,0.9764150943396226,0.9881371839677032,0.11869769031920276
+n_School_Mus,Schools of music,Education,6,2.8,0.9716981132075472,0.9857474895770961,0.11841063381598034
+n_School_Art,Schools of arts,Education,7,3.3,0.9669811320754716,0.9833519878840291,0.11812287972400186
+n_Faculties,Faculties,Education,11,5.2,0.9481132075471698,0.9737110493093779,0.11696478430983535
+n_Dorms,Student dormitories,Education,24,11.3,0.8867924528301887,0.9416965821485117,0.11311912059992786
+n_Second_Sch,Secondary schools,Education,48,22.6,0.7735849056603774,0.8795367562872954,0.1056523155043599
+n_Privat_Sch,Private schools,Education,56,26.4,0.7358490566037736,0.8578164469184382,0.10304321365399763
+n_Kindergard,Kindergartens,Education,202,95.3,0.047169811320754707,0.21718612138153465,0.026088979744554142
+n_Enrolled_K,Enrolled in kindergarten,Education,211,99.5,0.01,0.1,0.012012268361624811
+n_Students,University students,Education,211,99.5,0.01,0.1,0.012012268361624811
+n_Enrolled_S,Enrolled in secondary school,Education,211,99.5,0.01,0.1,0.012012268361624811
+n_Primary_Sc,Primary schools,Education,211,99.5,0.01,0.1,0.012012268361624811
+n_Enroll_Pri,Enrolled in primary school,Education,211,99.5,0.01,0.1,0.012012268361624811
+n_Exchange_C,Currency exchange offices,Finance,3,1.4,0.9858490566037735,0.9928993184627399,0.3420834158544327
+n_Finance_of,Financial offices,Finance,15,7.1,0.9292452830188679,0.963973694152941,0.3321176759393948
+n_Banks,Banks,Finance,79,37.3,0.6273584905660378,0.7920596508887685,0.27288816287637246
+n_ATMs,ATMs,Finance,207,97.6,0.02358490566037741,0.15357377920848797,0.052910745329799995
+n_Nursing_H,Nursing homes,Healthcare,4,1.9,0.9811320754716981,0.9905211130872972,0.12725095219962865
+n_Clinics,Clinics,Healthcare,12,5.7,0.9433962264150944,0.9712858623572642,0.12477982469022485
+n_Hospitals,Hospitals,Healthcare,17,8.0,0.9198113207547169,0.9590679437634838,0.12321020466454946
+n_Veterinary,Veterinarian offices,Healthcare,24,11.3,0.8867924528301887,0.9416965821485117,0.12097852855254874
+n_Dentists,Dentist offices,Healthcare,42,19.8,0.8018867924528301,0.8954813188742857,0.11504131411047407
+n_Doctor_off,Doctor offices,Healthcare,47,22.2,0.7783018867924528,0.8822141955287576,0.11333690412227466
+n_NumberDr,Number of doctors,Healthcare,49,23.1,0.7688679245283019,0.8768511416017555,0.11264791959696568
+n_Dom_zdrav,Health centres (dom zdravja),Healthcare,55,25.9,0.7405660377358491,0.8605614665646197,0.11055520634521357
+n_Pharmacy,Pharmacies,Healthcare,177,83.5,0.16509433962264153,0.40631802768600056,0.052199145718120406
+n_Main_Court,Main courthouse,Judiciary and Emergency,1,0.5,0.9952830188679245,0.9976387216161592,0.13470718754838532
+n_Emb_Consul,Embassies and consulates,Judiciary and Emergency,2,0.9,0.9905660377358491,0.9952718411247498,0.13438759709208828
+n_High_Court,Higher courts,Judiciary and Emergency,4,1.9,0.9811320754716981,0.9905211130872972,0.13374612518560916
+n_Reg_Court,Regional courts,Judiciary and Emergency,11,5.2,0.9481132075471698,0.9737110493093779,0.13147632915126506
+n_Police_sta,Police stations,Judiciary and Emergency,30,14.2,0.8584905660377359,0.926547659884658,0.1251080443132817
+n_Local_Cour,Local courts,Judiciary and Emergency,44,20.8,0.7924528301886793,0.8901981971385244,0.12019992097230496
+n_Town_hall,Town halls,Judiciary and Emergency,57,26.9,0.7311320754716981,0.8550626149421445,0.115455703092628
+n_Fire_stat,Fire stations,Judiciary and Emergency,84,39.6,0.6037735849056604,0.7770286898858113,0.1049190926444376
+n_Rec_Bins,Recycling bins,Residential,25,11.8,0.8820754716981132,0.9391887306064278,0.3899431478997407
+n_CommunityC,Community centres,Residential,54,25.5,0.7452830188679245,0.8632977579421393,0.3584338635424021
+n_Apartments,Apartments (census),Residential,203,95.8,0.04245283018867929,0.20604084592303365,0.08554640131092234
+n_Population,Total population,Residential,211,99.5,0.01,0.1,0.04151914681173369
+n_Employ,Employed population,Residential,211,99.5,0.01,0.1,0.04151914681173369
+n_Addresses,Number of addresses,Residential,211,99.5,0.01,0.1,0.04151914681173369
+n_Density,Population density,Residential,211,99.5,0.01,0.1,0.04151914681173369
+n_Outdoor_S,Outdoor shops,Sports and Recreation,9,4.2,0.9575471698113207,0.9785433918898644,0.10048463117339858
+n_Swim_Pool,Swimming pools,Sports and Recreation,13,6.1,0.9386792452830188,0.968854604821084,0.09948970933018453
+n_Fitness,Fitness centres,Sports and Recreation,29,13.7,0.8632075471698113,0.929089633549859,0.09540632528720121
+n_Stadiums,Stadiums,Sports and Recreation,33,15.6,0.8443396226415094,0.918879547406247,0.09435787230198607
+n_Sport_Hall,Sports halls,Sports and Recreation,35,16.5,0.8349056603773585,0.9137317223219069,0.09382925261150299
+n_Bike_Shop,Bicycle shops,Sports and Recreation,45,21.2,0.7877358490566038,0.8875448434060128,0.09114017526321691
+n_Sport_Shop,Sports shops,Sports and Recreation,51,24.1,0.7594339622641509,0.8714550833314079,0.08948795051757465
+n_Camp_Site,Camp sites,Sports and Recreation,53,25.0,0.75,0.8660254037844386,0.0889303877654383
+n_Playground,Playgrounds,Sports and Recreation,76,35.8,0.6415094339622642,0.8009428406336274,0.08224719169234608
+n_Parks,City parks,Sports and Recreation,136,64.2,0.3584905660377359,0.5987408170800917,0.061483477044954424
+n_Bike_paths,Bicycle path length (km),Sports and Recreation,156,73.6,0.26415094339622647,0.5139561687500467,0.05277711390641538
+n_Hunt_Stand,Hunting stands,Sports and Recreation,161,75.9,0.24056603773584906,0.49047531817192297,0.050365913105780875
+n_Travel_A,Travel agencies,Tourism and Services,5,2.4,0.9764150943396226,0.9881371839677032,0.12668465647992397
+n_Gift_Shop,Gift shops,Tourism and Services,38,17.9,0.8207547169811321,0.9059551407112452,0.11614846364386638
+n_Fast_food,Fast food outlets,Tourism and Services,63,29.7,0.7028301886792453,0.8383496816241092,0.10748106958200977
+n_Hotels,Hotels,Tourism and Services,66,31.1,0.6886792452830188,0.8298670045754433,0.10639354343141458
+n_Bakery,Bakeries,Tourism and Services,103,48.6,0.5141509433962264,0.7170431949305609,0.09192890653734803
+n_Hostels,Hostels and motels,Tourism and Services,108,50.9,0.49056603773584906,0.7004041959724749,0.08979569477143616
+n_Pub_Toilet,Public toilets,Tourism and Services,118,55.7,0.44339622641509435,0.6658800390574073,0.08536950675826725
+n_Restaurant,Restaurants,Tourism and Services,156,73.6,0.26415094339622647,0.5139561687500467,0.06589202566226432
+n_Clubs_Bars,Clubs and bars,Tourism and Services,177,83.5,0.16509433962264153,0.40631802768600056,0.052092220183755006
+n_Tur_arriv,Tourist arrivals,Tourism and Services,189,89.2,0.10849056603773588,0.3293790613225678,0.04222821882664133
+n_OvernightS,Overnight stays,Tourism and Services,190,89.6,0.10377358490566035,0.32213907696158245,0.04130001275710694
+n_Tur_inf_p,Tourist information points,Tourism and Services,193,91.0,0.089622641509434,0.29937040854004593,0.03838094343729281
+n_Apartme_OS,Tourist apartments,Tourism and Services,195,92.0,0.08018867924528306,0.28317605697742715,0.036304737928673336
+n_Kiosk,Kiosks,Trade and Business,28,13.2,0.8679245283018868,0.9316246713681894,0.19886706620372158
+n_Marketplac,Marketplaces,Trade and Business,37,17.5,0.8254716981132075,0.9085547303895388,0.19394249558970003
+n_Shp_mall,Shopping malls,Trade and Business,50,23.6,0.7641509433962264,0.8741572761215377,0.1865999240312332
+n_Thematic_S,Thematic shops,Trade and Business,83,39.2,0.6084905660377358,0.7800580529920422,0.16651325499924013
+n_Supermarke,Supermarkets,Trade and Business,100,47.2,0.5283018867924528,0.726843784311631,0.15515399647176
+n_Ind_B_Zone,Industrial and business zones,Trade and Business,184,86.8,0.13207547169811318,0.3634218921558155,0.07757699823588
+n_Companies,Registered companies,Trade and Business,211,99.5,0.01,0.1,0.021346264468464993
+n_Seaport,Seaports,Traffic and Communications,1,0.5,0.9952830188679245,0.9976387216161592,0.09738597630458694
+n_Airports,Airports,Traffic and Communications,29,13.7,0.8632075471698113,0.929089633549859,0.09069445589596528
+n_Parking_V,Vending parking,Traffic and Communications,33,15.6,0.8443396226415094,0.918879547406247,0.08969778326718157
+n_Car_Rent,Car rental services,Traffic and Communications,38,17.9,0.8207547169811321,0.9059551407112452,0.08843614823149322
+n_Gas_stat,Petrol stations,Traffic and Communications,39,18.4,0.8160377358490566,0.9033480701529486,0.08818165519096312
+n_Bike_Renta,Bicycle rental locations,Traffic and Communications,43,20.3,0.7971698113207547,0.8928436656664787,0.08715625224273357
+n_Car_Wash,Car wash services,Traffic and Communications,48,22.6,0.7735849056603774,0.8795367562872954,0.08585727864296284
+n_Driving_sc,Driving schools,Traffic and Communications,61,28.8,0.7122641509433962,0.843957434319644,0.08238415061475053
+n_Roads_L,Highway road length (km),Traffic and Communications,65,30.7,0.6933962264150944,0.8327041650040513,0.08128564612091725
+n_Railway_St,Railway stations,Traffic and Communications,97,45.8,0.5424528301886793,0.7365139714823333,0.07189589840556762
+n_Railway_L,Railway length (km),Traffic and Communications,114,53.8,0.46226415094339623,0.6799001036500849,0.06636945213623001
+n_Parking,Parking facilities,Traffic and Communications,168,79.2,0.2075471698113207,0.4555734516094202,0.04447147489580286
+n_Bus_stops,Bus stops,Traffic and Communications,206,97.2,0.028301886792452824,0.16823164622761327,0.01642218045292302
+n_Post_offic,Post offices,Traffic and Communications,210,99.1,0.01,0.1,0.00976164759792234

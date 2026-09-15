@@ -1,27 +1,42 @@
 """
-Step 1 of the pipeline: check the Gravitational Index (GI) inputs.
+Step 1 of the pipeline: build the indicator rarity weights (tableS3) and
+check the Gravitational Index (GI) inputs.
 
 What this script does: the two GI layers this study uses — GI_AHP (AHP group
 weighting) and GI_Final_NotWeighted (no group weighting) — arrive already
 computed in the raw data, one number per municipality per scenario. This
-script does not calculate the GI itself. What it does is (1) independently
-recompute the "rarity weight" of each of the 100 underlying indicators from
-first principles and check that the result matches the reference table
-(tableS3) to six decimal places, as a check that the published weighting
-scheme is actually what was applied to the data, and (2) load both GI
+script does not calculate the GI itself. What it does is (1) compute the
+"rarity weight" of each of the 100 underlying indicators from first
+principles and publish that computation as tableS3, and (2) load both GI
 layers and report summary statistics and the top-20 municipality rankings
 under each.
+
+tableS3 used to be a hand-maintained file: someone ran this same
+computation once, pasted the result into outputs/supplementary/, and nothing
+ever regenerated it afterward. That is exactly the failure mode that let
+tableS1 silently revert to a pre-correction version (see
+docs/reproducibility_note.md) — a value living in outputs/ with no script
+that owns it can drift from whatever actually produced it. tableS3 is now a
+genuine pipeline output instead: this script reads only the part that
+cannot be computed (which thematic group each indicator belongs to, and its
+display name — a categorisation judgement, not a derived number, kept in
+data/external/indicator_categories.csv) and computes every numeric column
+itself, fresh, every run.
 
 Reads: Municipalities_Points_normalized.gpkg (the 100 raw indicator values
 per municipality), Municipalities_All_Groups_Weighted_AHP.gpkg (GI_AHP),
 Municipalities_All_Groups_NotWeighted_Normalized.gpkg (GI_Final_NotWeighted),
-tableS3_individual_indicator_weights.csv (the reference rarity weights).
+data/external/indicator_categories.csv (the indicator name/group
+categorisation — a genuine input, not something this script derives).
 
-Writes: table_GI_summary_stats.csv, table_top20_GI_both.csv.
+Writes: table_GI_summary_stats.csv, table_top20_GI_both.csv,
+tableS3_individual_indicator_weights.csv.
 
 Runs first in the pipeline; every later script that uses GI_AHP or
 GI_Final_NotWeighted reads them straight from the raw municipality layers,
-not from anything this script produces.
+not from anything this script produces. Scripts that read tableS3
+(11_export_outputs.py, 17_data_audit.py) rely on this script having run
+first to produce it.
 """
 
 import sys
@@ -34,35 +49,31 @@ import pandas as pd
 import geopandas as gpd
 
 from config import (
-    DATA_RAW, TABLES, SUPPLEMENTARY, N_MUNICIPALITIES, EPSG,
+    DATA_RAW, TABLES, SUPPLEMENTARY, REPO_ROOT, N_MUNICIPALITIES, EPSG,
     MUNICIPALITIES_AHP, MUNICIPALITIES_NW, MUNICIPALITIES_PTS,
 )
 from crs_utils import ensure_crs
 
+DATA_EXTERNAL = REPO_ROOT / "data" / "external"
+
 OUTPUT_FILES = [
     "tables/table_GI_summary_stats.csv",
     "tables/table_top20_GI_both.csv",
+    "supplementary/tableS3_individual_indicator_weights.csv",
 ]
 
 
-def load_indicator_group_map(supplementary_path):
-    """Map each indicator code to its thematic group, from tableS3.
+def load_indicator_categories(data_external_path):
+    """Load the indicator name/thematic-group categorisation.
 
-    tableS3 lists 100 real indicators, but the raw indicator file
-    (Municipalities_Points_normalized.gpkg) has 102 columns starting with
-    "n_": n_Area_km2 is municipality area, not a service/attractiveness
-    indicator, and n_Fitness_C is an exact duplicate of n_Fitness under a
-    different name. Both are excluded here for that reason (the same two
-    columns are excluded the same way in 06_ml_framework.py).
+    This is the one part of tableS3 that genuinely cannot be computed —
+    which of the 100 indicators are grouped together, and what each one is
+    called, is a categorisation judgement, not a number derived from data.
+    Kept as a small, explicitly non-regenerable input in data/external/
+    (the same treatment as tableS1's source citations and table1's AHP
+    matrix), separate from the rarity weights this script computes below.
     """
-    # No sep= argument: tableS3 is comma-delimited, like every other table
-    # in this repository. A previous version of this line hardcoded
-    # sep=";", left over from when tableS3 genuinely was semicolon-
-    # delimited; a later fix standardised all four supplementary tables to
-    # commas without updating this line, which meant the whole file was
-    # read as one unsplit column and this call failed outright with
-    # KeyError: ['Indicator_code'] the next time this script ran.
-    ref = pd.read_csv(supplementary_path / "tableS3_individual_indicator_weights.csv")
+    ref = pd.read_csv(data_external_path / "indicator_categories.csv")
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
     return dict(zip(ref["Indicator_code"], ref["Thematic_group"])), ref
@@ -93,6 +104,7 @@ def compute_rarity_weights(pts, group_map, n_municipalities):
             "Indicator_code": code,
             "Thematic_group": group,
             "Nonzero_munis": nonzero,
+            "Nonzero_pct": round(100 * nonzero / n_municipalities, 1),
             "ri": ri,
         })
     weights = pd.DataFrame(rows)
@@ -106,6 +118,7 @@ def main():
     print()
 
     TABLES.mkdir(parents=True, exist_ok=True)
+    SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
 
     print("Loading raw indicators (Municipalities_Points_normalized.gpkg)...")
     pts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
@@ -113,8 +126,8 @@ def main():
     n_cols = [c for c in pts.columns if c.startswith("n_")]
     print(f"  Shape: {pts.shape}  ({len(n_cols)} n_-prefixed columns)")
 
-    print("Loading indicator/group mapping (tableS3, 100 indicators)...")
-    group_map, ref = load_indicator_group_map(SUPPLEMENTARY)
+    print("Loading indicator name/group categorisation (data/external/indicator_categories.csv)...")
+    group_map, ref = load_indicator_categories(DATA_EXTERNAL)
     print(f"  Mapped indicators: {len(group_map)}")
     excluded = sorted(set(n_cols) - set(group_map.keys()))
     print(f"  n_ columns not in mapping (expected: n_Area_km2, n_Fitness_C): {excluded}")
@@ -125,13 +138,29 @@ def main():
     print(f"  Computed weights for {len(weights)} indicators across "
           f"{weights['Thematic_group'].nunique()} groups")
 
-    validation = weights.merge(
-        ref[["Indicator_code", "Normalised within-group weight (w_i)"]],
-        on="Indicator_code", how="left")
-    max_diff = (validation["wi"] - validation["Normalised within-group weight (w_i)"]).abs().max()
-    print(f"  Max |computed wi - reference wi| vs tableS3: {max_diff:.6f}")
+    # Every thematic group's weights must sum to exactly 1 by construction
+    # (wi is defined as sqrt_ri divided by its own group's sum) — this is a
+    # self-consistency check on the computation itself, not a comparison
+    # against an external reference, since tableS3 is this script's own
+    # output rather than something to validate against.
+    group_sums = weights.groupby("Thematic_group")["wi"].sum()
+    max_sum_error = (group_sums - 1.0).abs().max()
+    print(f"  Max |group weight sum - 1.0|: {max_sum_error:.2e} "
+          f"({'OK' if max_sum_error < 1e-9 else 'UNEXPECTED — investigate'})")
     print()
     print(weights.sort_values(["Thematic_group", "wi"], ascending=[True, False]).to_string(index=False))
+    print()
+
+    print("Building tableS3 (indicator name, group, and computed rarity weights)...")
+    table_s3 = weights.merge(ref[["Indicator_code", "Indicator_name"]], on="Indicator_code", how="left")
+    table_s3 = table_s3.rename(columns={
+        "ri": "Rarity_score_ri", "sqrt_ri": "Sqrt_ri", "wi": "Normalised within-group weight (w_i)",
+    })
+    table_s3 = table_s3[["Indicator_code", "Indicator_name", "Thematic_group", "Nonzero_munis",
+                          "Nonzero_pct", "Rarity_score_ri", "Sqrt_ri",
+                          "Normalised within-group weight (w_i)"]]
+    table_s3.to_csv(SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv", index=False)
+    print(f"Saved tableS3_individual_indicator_weights.csv ({len(table_s3)} rows)")
     print()
 
     print("Loading GI_Final_NotWeighted (Municipalities_All_Groups_NotWeighted_Normalized.gpkg)...")

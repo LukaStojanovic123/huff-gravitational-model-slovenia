@@ -1,69 +1,69 @@
 path,producing_script
-outputs/audit/GI_full_212_municipalities.csv,18_data_audit.py
-outputs/audit/data_audit_report.md,18_data_audit.py
-outputs/audit/indicator_audit.csv,18_data_audit.py
-outputs/audit/manuscript_number_check.csv,18_data_audit.py
-outputs/audit/output_manifest.csv,19_output_manifest.py
-outputs/audit/raw_input_inventory.csv,18_data_audit.py
+outputs/audit/GI_full_212_municipalities.csv,17_data_audit.py
+outputs/audit/data_audit_report.md,17_data_audit.py
+outputs/audit/indicator_audit.csv,17_data_audit.py
+outputs/audit/manuscript_number_check.csv,17_data_audit.py
+outputs/audit/output_manifest.csv,18_output_manifest.py
+outputs/audit/raw_input_inventory.csv,17_data_audit.py
 outputs/figures/fig07_beta_sensitivity.pdf,ORPHANED — no script claims this file
 outputs/figures/fig07_beta_sensitivity.png,ORPHANED — no script claims this file
 outputs/figures/fig07_feature_importance.pdf,11_export_outputs.py
 outputs/figures/fig07_feature_importance.png,11_export_outputs.py
-outputs/figures/fig08_shap_bar_AHP.png,16_shap_dependence.py
-outputs/figures/fig08_shap_bar_NW.png,16_shap_dependence.py
-outputs/figures/fig08_shap_summary_AHP.png,16_shap_dependence.py
-outputs/figures/fig08_shap_summary_NW.png,16_shap_dependence.py
+outputs/figures/fig08_shap_bar_AHP.png,15_shap_dependence.py
+outputs/figures/fig08_shap_bar_NW.png,15_shap_dependence.py
+outputs/figures/fig08_shap_summary_AHP.png,15_shap_dependence.py
+outputs/figures/fig08_shap_summary_NW.png,15_shap_dependence.py
 outputs/figures/fig_beta_sensitivity.pdf,07_beta_sensitivity.py
 outputs/figures/fig_beta_sensitivity.png,07_beta_sensitivity.py
-outputs/figures/fig_feature_importance_comparison.pdf,15_ml_catchment_structure.py
-outputs/figures/fig_feature_importance_comparison.png,15_ml_catchment_structure.py
-outputs/figures/fig_shap_dependence_AHP.pdf,16_shap_dependence.py
-outputs/figures/fig_shap_dependence_AHP.png,16_shap_dependence.py
-outputs/figures/fig_shap_dependence_AHP_GI_AHP.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_GI_AHP.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_dist_to_muni.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_dist_to_muni.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Hostels_motels.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Hostels_motels.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW.pdf,16_shap_dependence.py
-outputs/figures/fig_shap_dependence_NW.png,16_shap_dependence.py
-outputs/figures/fig_shap_dependence_NW_GI_NW.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_GI_NW.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_dist_to_muni.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_dist_to_muni.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_n_Area_km2.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_n_Area_km2.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_n_Employ.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_n_Employ.png,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.pdf,16_shap_dependence.py (pattern match)
-outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.png,16_shap_dependence.py (pattern match)
-outputs/gpkg/fig01_study_area.gpkg,17_spatial_layers.py
-outputs/gpkg/fig03_GI_NW_municipalities.gpkg,17_spatial_layers.py
-outputs/gpkg/fig04_GI_AHP_municipalities.gpkg,17_spatial_layers.py
-outputs/gpkg/fig05_catchments_AHP.gpkg,17_spatial_layers.py
-outputs/gpkg/fig06_catchments_NW.gpkg,17_spatial_layers.py
-outputs/gpkg/fig10_catchments_ML.gpkg,17_spatial_layers.py
+outputs/figures/fig_feature_importance_comparison.pdf,14_ml_catchment_structure.py
+outputs/figures/fig_feature_importance_comparison.png,14_ml_catchment_structure.py
+outputs/figures/fig_shap_dependence_AHP.pdf,15_shap_dependence.py
+outputs/figures/fig_shap_dependence_AHP.png,15_shap_dependence.py
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_GI_AHP.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_dist_to_muni.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Hostels_motels.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Hostels_motels.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Recycle_Bins.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_AHP_nacc_Theaters.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW.pdf,15_shap_dependence.py
+outputs/figures/fig_shap_dependence_NW.png,15_shap_dependence.py
+outputs/figures/fig_shap_dependence_NW_GI_NW.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_GI_NW.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_dist_to_muni.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_dist_to_muni.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_n_Area_km2.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_n_Area_km2.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_n_Employ.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_n_Employ.png,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.pdf,15_shap_dependence.py (pattern match)
+outputs/figures/fig_shap_dependence_NW_nacc_Hostels_motels.png,15_shap_dependence.py (pattern match)
+outputs/gpkg/fig01_study_area.gpkg,16_spatial_layers.py
+outputs/gpkg/fig03_GI_NW_municipalities.gpkg,16_spatial_layers.py
+outputs/gpkg/fig04_GI_AHP_municipalities.gpkg,16_spatial_layers.py
+outputs/gpkg/fig05_catchments_AHP.gpkg,16_spatial_layers.py
+outputs/gpkg/fig06_catchments_NW.gpkg,16_spatial_layers.py
+outputs/gpkg/fig10_catchments_ML.gpkg,16_spatial_layers.py
 outputs/gpkg/fig_huff_vs_commuting_municipalities.gpkg,10_commuting_comparison.py
 outputs/gpkg/map_AHP_vs_ML_villages.gpkg,11_export_outputs.py
 outputs/gpkg/map_AHP_vs_NW_villages.gpkg,11_export_outputs.py
 outputs/gpkg/map_ML_AHP_vs_ML_NW_villages.gpkg,11_export_outputs.py
 outputs/gpkg/map_NW_vs_ML_villages.gpkg,11_export_outputs.py
-outputs/gpkg/map_disagreement_count_4way_villages.gpkg,14_disagreement_synthesis.py
-outputs/gpkg/map_disagreement_count_villages.gpkg,14_disagreement_synthesis.py
+outputs/gpkg/map_disagreement_count_4way_villages.gpkg,13_disagreement_synthesis.py
+outputs/gpkg/map_disagreement_count_villages.gpkg,13_disagreement_synthesis.py
 outputs/gpkg/map_entropy_AHP_villages.gpkg,09_entropy_uncertainty.py
 outputs/gpkg/map_entropy_NW_villages.gpkg,09_entropy_uncertainty.py
 outputs/gpkg/map_euclidean_vs_network_villages.gpkg,08_euclidean_comparison.py
-outputs/gpkg/map_lisa_AHP_vs_ML.gpkg,13_morans_lisa.py
-outputs/gpkg/map_lisa_AHP_vs_NW.gpkg,13_morans_lisa.py
-outputs/gpkg/map_lisa_MLAHP_vs_MLNW.gpkg,13_morans_lisa.py
-outputs/gpkg/map_lisa_NW_vs_ML.gpkg,13_morans_lisa.py
+outputs/gpkg/map_lisa_AHP_vs_ML.gpkg,12_morans_lisa.py
+outputs/gpkg/map_lisa_AHP_vs_NW.gpkg,12_morans_lisa.py
+outputs/gpkg/map_lisa_MLAHP_vs_MLNW.gpkg,12_morans_lisa.py
+outputs/gpkg/map_lisa_NW_vs_ML.gpkg,12_morans_lisa.py
 outputs/supplementary/tableS1_indicators_sources.csv,11_export_outputs.py
 outputs/supplementary/tableS2_AHP_priority_weights.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
-outputs/supplementary/tableS3_individual_indicator_weights.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
+outputs/supplementary/tableS3_individual_indicator_weights.csv,01_gi_construction.py
 outputs/supplementary/tableS4_beta_sensitivity.csv,11_export_outputs.py
 outputs/tables/accessibility_normalized.csv,05_accessibility.py
 outputs/tables/accessibility_raw_distances.csv,05_accessibility.py
@@ -93,17 +93,17 @@ outputs/tables/table5_beta_sensitivity.csv,11_export_outputs.py
 outputs/tables/table6_cv_performance.csv,11_export_outputs.py
 outputs/tables/table_GI_summary_stats.csv,01_gi_construction.py
 outputs/tables/table_beta_sensitivity_clean.csv,07_beta_sensitivity.py
-outputs/tables/table_disagreement_destinations.csv,14_disagreement_synthesis.py
-outputs/tables/table_disagreement_synthesis.csv,14_disagreement_synthesis.py
-outputs/tables/table_disagreement_synthesis_4way.csv,14_disagreement_synthesis.py
+outputs/tables/table_disagreement_destinations.csv,13_disagreement_synthesis.py
+outputs/tables/table_disagreement_synthesis.csv,13_disagreement_synthesis.py
+outputs/tables/table_disagreement_synthesis_4way.csv,13_disagreement_synthesis.py
 outputs/tables/table_entropy_summary.csv,09_entropy_uncertainty.py
 outputs/tables/table_euclidean_vs_network.csv,08_euclidean_comparison.py
-outputs/tables/table_feature_importance_comparison.csv,15_ml_catchment_structure.py
+outputs/tables/table_feature_importance_comparison.csv,14_ml_catchment_structure.py
 outputs/tables/table_huff_vs_commuting.csv,10_commuting_comparison.py
 outputs/tables/table_huff_vs_commuting_summary.csv,10_commuting_comparison.py
-outputs/tables/table_join_counts.csv,13_morans_lisa.py
-outputs/tables/table_lisa_summary.csv,13_morans_lisa.py
-outputs/tables/table_ml_catchment_sizes.csv,15_ml_catchment_structure.py
-outputs/tables/table_morans_i_results.csv,13_morans_lisa.py
-outputs/tables/table_three_way_agreement.csv,13_morans_lisa.py
+outputs/tables/table_join_counts.csv,12_morans_lisa.py
+outputs/tables/table_lisa_summary.csv,12_morans_lisa.py
+outputs/tables/table_ml_catchment_sizes.csv,14_ml_catchment_structure.py
+outputs/tables/table_morans_i_results.csv,12_morans_lisa.py
+outputs/tables/table_three_way_agreement.csv,12_morans_lisa.py
 outputs/tables/table_top20_GI_both.csv,01_gi_construction.py
