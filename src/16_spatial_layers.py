@@ -1,5 +1,5 @@
 """
-Step 17 of the pipeline: build the map layers the manuscript's figures
+Step 16 of the pipeline: build the map layers the manuscript's figures
 need that no other script produces.
 
 What this script does: three groups of QGIS-ready spatial layers that sit
@@ -20,7 +20,7 @@ Writes: fig01_study_area.gpkg, fig03_GI_NW_municipalities.gpkg,
 fig04_GI_AHP_municipalities.gpkg, fig05_catchments_AHP.gpkg,
 fig06_catchments_NW.gpkg, fig10_catchments_ML.gpkg.
 
-Runs seventeenth. Needs 03, 04 and 06's outputs for the catchment layers;
+Runs sixteenth. Needs 03, 04 and 06's outputs for the catchment layers;
 the study area and GI choropleth layers only need the raw data.
 """
 

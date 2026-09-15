@@ -1,5 +1,5 @@
 """
-Step 13 of the pipeline: do settlements that disagree between two models
+Step 12 of the pipeline: do settlements that disagree between two models
 cluster together geographically, or are they scattered at random?
 
 What this script does: for each of the four headline village-level
@@ -22,10 +22,13 @@ Writes: table_morans_i_results.csv, table_three_way_agreement.csv,
 table_join_counts.csv, table_lisa_summary.csv, and one map_lisa_*.gpkg
 layer per comparison.
 
-Runs after 11_export_outputs.py, not simply "script 13" in numeric
-sequence for its own sake — it depends on the maps 11 builds, and running
-it before 11 has actually happened once in this repository's history (see
-assert_map_is_fresh below for the guard that was added because of it).
+Runs after 11_export_outputs.py — its position right after 11 in the
+numbering is deliberate: this script depends on the maps 11 builds, and
+running it before 11 has actually happened once in this repository's
+history, under an earlier numbering scheme where the position of this
+script and the export script didn't line up with their real dependency
+(see assert_map_is_fresh below for the guard that was added because of
+it, and docs/reproducibility_note.md for the full incident).
 """
 
 import sys

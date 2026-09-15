@@ -1,5 +1,5 @@
 """
-Step 18 of the pipeline: independently recompute a large sample of the
+Step 17 of the pipeline: independently recompute a large sample of the
 pipeline's own numbers from source and check them against each other and
 against the manuscript, as a final self-check before publication.
 
@@ -29,8 +29,8 @@ of 01 through 17.
 Writes: data_audit_report.md, raw_input_inventory.csv, indicator_audit.csv,
 GI_full_212_municipalities.csv, manuscript_number_check.csv.
 
-Runs eighteenth, second to last — after every script whose numbers it
-checks, before only 19_output_manifest.py.
+Runs seventeenth, second to last — after every script whose numbers it
+checks, before only 18_output_manifest.py.
 """
 
 import sys
@@ -53,7 +53,7 @@ from scipy.stats import spearmanr, skew
 from sklearn.metrics import cohen_kappa_score
 
 from config import (
-    DATA_RAW, DATA_PROCESSED, TABLES, OUTPUTS, GPKG, SUPPLEMENTARY,
+    DATA_RAW, DATA_PROCESSED, TABLES, OUTPUTS, GPKG, SUPPLEMENTARY, REPO_ROOT,
     N_MUNICIPALITIES, N_SETTLEMENTS, BETA, EPSG, CUTOFF_M, ROADS_FILE,
     MUNICIPALITIES_AHP, MUNICIPALITIES_NW, MUNICIPALITIES_PTS,
     VILLAGES_FILE, SETTLEMENTS_POLY, COMMUTING_FILE,
@@ -61,6 +61,7 @@ from config import (
 from crs_utils import ensure_crs
 
 AUDIT_DIR = OUTPUTS / "audit"
+DATA_EXTERNAL = REPO_ROOT / "data" / "external"
 OBCINE_FILE = "obcine_poligoni.shp"
 
 OUTPUT_FILES = [
@@ -221,7 +222,7 @@ def compute_ahp_consistency_ratio():
 
 
 def section_1_2():
-    """Recompute each indicator's rarity weight from raw data and check it against tableS3, plus recheck the AHP consistency ratio."""
+    """Independently recompute each indicator's rarity weight from raw data and check it against tableS3, plus recheck the AHP consistency ratio."""
     log("## 1.2 Indicator database audit\n")
 
     pts = gpd.read_file(DATA_RAW / MUNICIPALITIES_PTS)
@@ -241,10 +242,56 @@ def section_1_2():
         f"the GI while `n_Fitness_C` is a duplicate of `n_Fitness`)")
     log("")
 
+    # Independently recompute the rarity weights from the raw indicator data
+    # and the categorisation input, using the same formula as
+    # 01_gi_construction.py::compute_rarity_weights but implemented
+    # separately here, and compare against what that script actually wrote
+    # to tableS3. This is the genuine cross-check tableS3 needs now that it
+    # is a computed pipeline output rather than a hand-maintained file —
+    # the same principle already applied elsewhere in this audit (the road
+    # network, OD matrix and accessibility scores are all independently
+    # rebuilt from scratch and compared against their scripts' own output,
+    # rather than just re-displaying it).
+    cats = pd.read_csv(DATA_EXTERNAL / "indicator_categories.csv")
+    cats = cats.dropna(subset=["Indicator_code"])
+    cats = cats[cats["Indicator_code"] != "Total"]
+    group_map = dict(zip(cats["Indicator_code"], cats["Thematic_group"]))
+
+    recompute_rows = []
+    for code, group in group_map.items():
+        if code not in pts.columns:
+            continue
+        nonzero = int((pts[code] != 0).sum())
+        ri = max(1 - nonzero / N_MUNICIPALITIES, 0.01)
+        recompute_rows.append({"Indicator_code": code, "Thematic_group": group,
+                                "Nonzero_munis": nonzero, "ri": ri})
+    recomputed = pd.DataFrame(recompute_rows)
+    recomputed["sqrt_ri"] = np.sqrt(recomputed["ri"])
+    recomputed["wi"] = recomputed.groupby("Thematic_group")["sqrt_ri"].transform(lambda s: s / s.sum())
+
+    cross_check = recomputed.merge(
+        ref[["Indicator_code", "Rarity_score_ri", "Sqrt_ri", "Normalised within-group weight (w_i)"]],
+        on="Indicator_code", how="outer", indicator=True)
+    unmatched = cross_check[cross_check["_merge"] != "both"]
+    max_ri_diff = (cross_check["ri"] - cross_check["Rarity_score_ri"]).abs().max()
+    max_wi_diff = (cross_check["wi"] - cross_check["Normalised within-group weight (w_i)"]).abs().max()
+    weights_confirmed = len(unmatched) == 0 and max_ri_diff < 1e-9 and max_wi_diff < 1e-9
+    log(f"- Independently recomputed rarity weights vs `tableS3` "
+        f"(`01_gi_construction.py`'s own output): "
+        f"max |ri diff| = {max_ri_diff:.2e}, max |wi diff| = {max_wi_diff:.2e}, "
+        f"{len(unmatched)} indicator(s) present in only one of the two. "
+        f"**{'CONFIRMED — tableS3 matches an independent recomputation' if weights_confirmed else 'DOES NOT MATCH — investigate 01_gi_construction.py or this recomputation'}.**\n")
+
     group_counts = ref["Thematic_group"].value_counts()
+    # Keys must match tableS3's actual Thematic_group spelling exactly
+    # ("Traffic and Communications", not the short form "Traffic") — see
+    # _map_group_name's docstring below for why this matters and what went
+    # wrong the last time these fell out of sync.
     expected_counts = {
-        "Healthcare": 9, "Education": 14, "Traffic": 14, "Trade": 7, "Culture": 12,
-        "Sports": 12, "Tourism": 13, "Finance": 4, "Judiciary": 8, "Residential": 7,
+        "Healthcare": 9, "Education": 14, "Traffic and Communications": 14,
+        "Trade and Business": 7, "Culture": 12, "Sports and Recreation": 12,
+        "Tourism and Services": 13, "Finance": 4, "Judiciary and Emergency": 8,
+        "Residential": 7,
     }
     log("### Group indicator counts (Healthcare 9 / Education 14 / Traffic&Comm 14 / "
         "Trade&Business 7 / Culture 12 / Sports&Recreation 12 / Tourism&Services 13 / "
@@ -320,16 +367,31 @@ def section_1_2():
 
 
 _GROUP_NAME_MAP = {
-    "Healthcare": "Healthcare", "Education": "Education", "Traffic": "Traffic & Communications",
-    "Trade": "Trade & Business", "Culture": "Culture", "Sports": "Sports & Recreation",
-    "Tourism": "Tourism & Services", "Finance": "Finance", "Judiciary": "Judiciary & Emergency",
-    "Residential": "Residential",
+    "Healthcare": "Healthcare", "Education": "Education",
+    "Traffic and Communications": "Traffic & Communications",
+    "Trade and Business": "Trade & Business", "Culture": "Culture",
+    "Sports and Recreation": "Sports & Recreation",
+    "Tourism and Services": "Tourism & Services", "Finance": "Finance",
+    "Judiciary and Emergency": "Judiciary & Emergency", "Residential": "Residential",
 }
 
 
-def _map_group_name(short_name):
-    """Expand a thematic group's short column-name abbreviation to its full display name."""
-    return _GROUP_NAME_MAP.get(short_name, short_name)
+def _map_group_name(name):
+    """Convert a thematic group name from tableS3's spelling ("X and Y") to table1's ("X & Y").
+
+    tableS3 (and the raw indicator categorisation it's built from) spells
+    out group names in full ("Traffic and Communications"); table1's own
+    "Thematic Group" column abbreviates the same names with an ampersand
+    ("Traffic & Communications"). Both are the correct spelling for their
+    own table — this just translates between them so this script can look
+    a tableS3 group up in table1. This mapping, and the group-count check
+    in section_1_2 below, both went stale for the same reason once before:
+    an earlier commit standardised tableS3's group names from short
+    abbreviations ("Traffic") to the full "and"-form without updating
+    either place that still expected the old short form, so every lookup
+    for five of the ten groups silently returned nothing.
+    """
+    return _GROUP_NAME_MAP.get(name, name)
 
 
 # ══════════════════════════════════════════════════════════════
@@ -826,7 +888,7 @@ def section_1_8():
         else:
             rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
                          "repository_value": "NOT YET COMPUTED",
-                         "status": "PENDING — run src/13_morans_lisa.py first",
+                         "status": "PENDING — run src/12_morans_lisa.py first",
                          "source_file": "outputs/tables/table_morans_i_results.csv"})
 
     lisa_summary_path = TABLES / "table_lisa_summary.csv"
@@ -858,7 +920,7 @@ def section_1_8():
                                           "repository is map_lisa_AHP_vs_NW.gpkg (a different comparison), "
                                           "and its cluster_type has no HL/LH categories at all "
                                           "(counts: HH=4024, LL=361, not significant=1651). "
-                                          "Run src/13_morans_lisa.py to compute it.",
+                                          "Run src/12_morans_lisa.py to compute it.",
                      "status": "FLAGGED — cannot be checked from current outputs",
                      "source_file": "outputs/gpkg/map_lisa_AHP_vs_NW.gpkg (wrong comparison)"})
 
@@ -984,7 +1046,7 @@ def main():
     AUDIT_DIR.mkdir(parents=True, exist_ok=True)
 
     log(f"# Data Audit Report\n")
-    log(f"Generated by `src/18_data_audit.py`. Every figure below is computed directly "
+    log(f"Generated by `src/17_data_audit.py`. Every figure below is computed directly "
         f"from the files in `DATA_RAW` ({DATA_RAW}) or from this repository's own "
         f"pipeline outputs — nothing here is copied from the README or the manuscript "
         f"draft.\n")

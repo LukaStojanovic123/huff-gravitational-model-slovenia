@@ -1,5 +1,5 @@
 """
-Step 15 of the pipeline: how do the Random Forest models' catchment sizes
+Step 14 of the pipeline: how do the Random Forest models' catchment sizes
 compare to the Huff models', and which feature groups drive each Random
 Forest's predictions?
 
@@ -23,7 +23,7 @@ ml_NW_feature_importance.csv — all already computed by 03, 04 and 06.
 Writes: table_ml_catchment_sizes.csv, table_feature_importance_comparison.csv,
 fig_feature_importance_comparison.png/.pdf.
 
-Runs fifteenth. Needs 03, 04 and 06's outputs.
+Runs fourteenth. Needs 03, 04 and 06's outputs.
 """
 
 import sys

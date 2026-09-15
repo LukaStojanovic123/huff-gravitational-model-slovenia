@@ -1,5 +1,5 @@
 """
-Step 14 of the pipeline: for how many of the four independent models does
+Step 13 of the pipeline: for how many of the four independent models does
 each settlement's assignment agree, and where does it end up when they
 disagree?
 
@@ -26,7 +26,7 @@ Writes: map_disagreement_count_villages.gpkg, table_disagreement_synthesis.csv
 table_disagreement_synthesis_4way.csv (secondary, 4-way), and
 table_disagreement_destinations.csv.
 
-Runs fourteenth. Needs 11_export_outputs.py's map layers and
+Runs thirteenth. Needs 11_export_outputs.py's map layers and
 09_entropy_uncertainty.py's AHP entropy layer.
 """
 

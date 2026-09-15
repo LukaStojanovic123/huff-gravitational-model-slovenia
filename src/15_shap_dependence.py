@@ -1,5 +1,5 @@
 """
-Step 16 of the pipeline: for each Random Forest's five most influential
+Step 15 of the pipeline: for each Random Forest's five most influential
 features, how does the model's prediction actually change as that
 feature's value changes?
 
@@ -29,7 +29,7 @@ per top feature (file names depend on which features rank in the top 5,
 so they are not fully predictable in advance — see OUTPUT_FILES below),
 and fig08_shap_summary_{prefix}.png / fig08_shap_bar_{prefix}.png.
 
-Runs sixteenth. Needs 03 and 04's Huff outputs and imports 06_ml_framework.py
+Runs fifteenth. Needs 03 and 04's Huff outputs and imports 06_ml_framework.py
 directly; does not need 06's own main() to have been run first, since it
 retrains its own models from scratch.
 
@@ -40,7 +40,7 @@ exactly what exhausted this pipeline's 16 GB analysis machine during
 Stage 2.4 verification and got the process killed by the OS mid-run, the
 same failure mode 06_ml_framework.py hit first (see that script's own
 docstring). This script has its own lock file
-(data/processed/16_shap_dependence.lock) and its own per-model peak memory
+(data/processed/15_shap_dependence.lock) and its own per-model peak memory
 report, for the same reasons.
 """
 
@@ -97,7 +97,7 @@ SRC_DIR = Path(__file__).resolve().parent
 # and `--model NW` as two separate invocations on a memory-constrained
 # machine. This is a separate lock file from 06_ml_framework.py's own,
 # since the two scripts run independently of each other.
-LOCK_PATH = DATA_PROCESSED / "16_shap_dependence.lock"
+LOCK_PATH = DATA_PROCESSED / "15_shap_dependence.lock"
 
 
 def _parse_lock_pid(lock_text):
@@ -151,7 +151,7 @@ def acquire_lock():
         else:
             print(f"ERROR: {LOCK_PATH} already exists.")
             print(lock_text)
-            print("This means another 16_shap_dependence.py run appears to already be in "
+            print("This means another 15_shap_dependence.py run appears to already be in "
                   "progress. If you are certain no other instance is actually running, "
                   "delete the lock file and run this script again:")
             print(f'  rm "{LOCK_PATH}"')
@@ -167,7 +167,7 @@ def release_lock():
 # panels (fig_shap_dependence_{prefix}_{feature}.png/.pdf) are named after
 # whichever features happen to rank in each model's top 5 by mean |SHAP|,
 # which is data-dependent and can change between reruns if the underlying
-# data changes. 19_output_manifest.py treats files matching that naming
+# data changes. 18_output_manifest.py treats files matching that naming
 # pattern as claimed by this script even though it cannot list them by
 # exact name in advance.
 OUTPUT_FILES = [
