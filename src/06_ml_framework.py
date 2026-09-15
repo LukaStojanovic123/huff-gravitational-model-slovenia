@@ -100,26 +100,71 @@ OUTPUT_FILES = [
 LOCK_PATH = DATA_PROCESSED / "06_ml_framework.lock"
 
 
+def _parse_lock_pid(lock_text):
+    """Extract the PID recorded in a lock file's text, or None if it can't be read."""
+    for line in lock_text.splitlines():
+        if line.startswith("pid="):
+            try:
+                return int(line[len("pid="):])
+            except ValueError:
+                return None
+    return None
+
+
+def _lock_owner_is_alive(pid):
+    """Check whether the process that wrote the lock file is still actually running.
+
+    A hard kill (the OS-level out-of-memory kill this lock exists to guard
+    against) leaves the lock file behind, since it bypasses Python's normal
+    cleanup — without this check, that permanent lock would fail every
+    future run for a reason that no longer exists, and the only fix would
+    be someone remembering to delete the file by hand. Matches on the PID
+    still existing *and* still looking like a Python process, since the
+    operating system can in principle reuse a PID number for an unrelated
+    process once the original one is gone (unlikely, but cheap to guard
+    against). If the process exists but its details can't be inspected
+    (permissions), that is treated as "still alive" — it is safer to
+    wrongly refuse to start than to wrongly clear a lock that is still
+    genuinely held.
+    """
+    try:
+        proc = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return False
+    try:
+        return proc.is_running() and "python" in proc.name().lower()
+    except psutil.AccessDenied:
+        return True
+
+
 def acquire_lock():
     """Refuse to start if another instance of this script is already running.
 
-    This does not detect a *stale* lock left behind by a hard kill (an
-    OS-level out-of-memory kill bypasses Python's normal cleanup, so the
-    lock file is never removed) — if this script refuses to start and you
-    are certain no other instance is actually running, delete
-    data/processed/06_ml_framework.lock by hand and run again.
+    If a lock file exists, its recorded PID is checked for whether that
+    process is still alive (see _lock_owner_is_alive) — a lock left behind
+    by a process that no longer exists is cleared automatically rather
+    than blocking every future run. Only a lock whose PID is confirmed
+    still running blocks a new run.
     """
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     if LOCK_PATH.exists():
-        print(f"ERROR: {LOCK_PATH} already exists.")
-        print(LOCK_PATH.read_text())
-        print("This means another 06_ml_framework.py run appears to already be in "
-              "progress. Training two full models at once can exhaust this machine's "
-              "memory. If you are certain no other instance is actually running (for "
-              "example, after a previous run was killed and never cleaned up after "
-              "itself), delete the lock file and run this script again:")
-        print(f'  rm "{LOCK_PATH}"')
-        sys.exit(1)
+        lock_text = LOCK_PATH.read_text()
+        old_pid = _parse_lock_pid(lock_text)
+        if old_pid is not None and not _lock_owner_is_alive(old_pid):
+            print(f"Found a stale lock at {LOCK_PATH} — process {old_pid} is no longer "
+                  "running (most likely killed without a chance to clean up after "
+                  "itself). Clearing it automatically.")
+            print(f"  Previous lock contents:\n{lock_text}")
+            LOCK_PATH.unlink()
+        else:
+            print(f"ERROR: {LOCK_PATH} already exists.")
+            print(lock_text)
+            print("This means another 06_ml_framework.py run appears to already be in "
+                  "progress. Training two full models at once can exhaust this machine's "
+                  "memory. If you are certain no other instance is actually running, "
+                  "delete the lock file and run this script again:")
+            print(f'  rm "{LOCK_PATH}"')
+            sys.exit(1)
     LOCK_PATH.write_text(f"pid={os.getpid()}\nstarted={datetime.now().isoformat()}\n")
 
 

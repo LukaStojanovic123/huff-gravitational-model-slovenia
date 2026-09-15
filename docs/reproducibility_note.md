@@ -117,8 +117,11 @@ simply hung. It happened first in `06_ml_framework.py`, and then again in
 `16_shap_dependence.py` once that script's turn in the pipeline came around, since it
 retrains its own pair of models independently of `06`'s and was never covered by `06`'s fix.
 Both scripts now refuse to start a second instance of themselves while one is already running
-(separate lock files in `data/processed/`) and report each model's own peak memory at the end
-of its run.
+(separate lock files in `data/processed/`), check the lock's recorded PID against the running
+process list on every acquire and clear it automatically if that process is no longer alive —
+so a kill like the one that caused this in the first place does not leave a permanent lock
+behind for someone to find and delete by hand — and report each model's own peak memory at
+the end of its run.
 
 Random seeds are fixed and printed at the point of use: `random_state=42` for the spatial
 KMeans blocks and both Random Forest models (`06_ml_framework.py`), `seed=42` for both the

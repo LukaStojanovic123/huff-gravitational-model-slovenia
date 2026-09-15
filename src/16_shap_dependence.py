@@ -60,6 +60,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import numpy as np
 import pandas as pd
+import psutil
 from sklearn.ensemble import RandomForestRegressor
 
 # A previous version of this script blocked matplotlib detection during
@@ -99,23 +100,62 @@ SRC_DIR = Path(__file__).resolve().parent
 LOCK_PATH = DATA_PROCESSED / "16_shap_dependence.lock"
 
 
+def _parse_lock_pid(lock_text):
+    """Extract the PID recorded in a lock file's text, or None if it can't be read."""
+    for line in lock_text.splitlines():
+        if line.startswith("pid="):
+            try:
+                return int(line[len("pid="):])
+            except ValueError:
+                return None
+    return None
+
+
+def _lock_owner_is_alive(pid):
+    """Check whether the process that wrote the lock file is still actually running.
+
+    See the identical function in 06_ml_framework.py::_lock_owner_is_alive
+    for the full reasoning — a hard kill leaves the lock file behind, so
+    this lets a genuinely dead lock clear itself automatically instead of
+    blocking every future run until someone remembers to delete it by hand.
+    """
+    try:
+        proc = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return False
+    try:
+        return proc.is_running() and "python" in proc.name().lower()
+    except psutil.AccessDenied:
+        return True
+
+
 def acquire_lock():
     """Refuse to start if another instance of this script is already running.
 
-    Does not detect a stale lock left by a hard kill — see the matching
-    note in 06_ml_framework.py::acquire_lock for why, and how to recover
-    (delete the lock file by hand if you are certain nothing else is
-    running).
+    If a lock file exists, its recorded PID is checked for whether that
+    process is still alive — a lock left behind by a process that no
+    longer exists is cleared automatically rather than blocking every
+    future run. Only a lock whose PID is confirmed still running blocks a
+    new run.
     """
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     if LOCK_PATH.exists():
-        print(f"ERROR: {LOCK_PATH} already exists.")
-        print(LOCK_PATH.read_text())
-        print("This means another 16_shap_dependence.py run appears to already be in "
-              "progress. If you are certain no other instance is actually running, "
-              "delete the lock file and run this script again:")
-        print(f'  rm "{LOCK_PATH}"')
-        sys.exit(1)
+        lock_text = LOCK_PATH.read_text()
+        old_pid = _parse_lock_pid(lock_text)
+        if old_pid is not None and not _lock_owner_is_alive(old_pid):
+            print(f"Found a stale lock at {LOCK_PATH} — process {old_pid} is no longer "
+                  "running (most likely killed without a chance to clean up after "
+                  "itself). Clearing it automatically.")
+            print(f"  Previous lock contents:\n{lock_text}")
+            LOCK_PATH.unlink()
+        else:
+            print(f"ERROR: {LOCK_PATH} already exists.")
+            print(lock_text)
+            print("This means another 16_shap_dependence.py run appears to already be in "
+                  "progress. If you are certain no other instance is actually running, "
+                  "delete the lock file and run this script again:")
+            print(f'  rm "{LOCK_PATH}"')
+            sys.exit(1)
     LOCK_PATH.write_text(f"pid={os.getpid()}\nstarted={datetime.now().isoformat()}\n")
 
 

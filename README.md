@@ -170,8 +170,10 @@ operating system with no Python error at all — this happened first in
 `06_ml_framework.py`, then again in `16_shap_dependence.py`, since it
 retrains its own pair of models independently of `06`'s. Both scripts
 refuse to start a second instance of themselves while one is already
-running (separate lock files in `data/processed/`), and print each
-model's own peak memory use at the end of its run.
+running (separate lock files in `data/processed/`), automatically clear
+that lock if the process that created it is no longer actually running
+(so a killed run doesn't permanently block every future one), and print
+each model's own peak memory use at the end of its run.
 
 ---
 
