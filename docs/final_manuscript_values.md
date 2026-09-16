@@ -59,9 +59,9 @@ for that. One number per line, source file in parentheses.
 - Spearman rank correlation, GI_NW vs GI_AHP: rho = 0.9583, p = 3.61e-116 (`data_audit_report.md` 1.3)
 - Municipalities changing rank by > 10 places between GI_NW and GI_AHP: 90 / 212 (`data_audit_report.md` 1.3)
 - Top 5 by GI_Final_NotWeighted: 1 Ljubljana (1.0000), 2 Maribor (0.4675), 3 Koper (0.2561),
-  4 Ptuj (0.2482), 5 Nova Gorica (0.2045) (`table2_top20_GI_NotWeighted.csv`)
+  4 Ptuj (0.2482), 5 Nova Gorica (0.2045) (`table_top20_GI_both.csv`)
 - Top 5 by GI_AHP: 1 Ljubljana (1.0000), 2 Maribor (0.5624), 3 Ptuj (0.3197), 4 Koper (0.2465),
-  5 Nova Gorica (0.2308) (`table3_top20_GI_AHP.csv`)
+  5 Nova Gorica (0.2308) (`table_top20_GI_both.csv`)
 
 ## Huff catchments
 

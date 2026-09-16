@@ -2,24 +2,27 @@
 Step 11 of the pipeline: assemble every paper-ready table, figure and map
 layer into outputs/, and report which of them are actually present.
 
-What this script does: three things. First, it builds or copies the six
-main manuscript tables and four supplementary tables into
-outputs/tables/ and outputs/supplementary/, computing the ones that are
-pure derivations directly from other outputs rather than trusting a
-possibly stale pre-existing copy (see consolidate_tables below). Second,
-it builds the four headline village-level agreement maps (AHP vs NW Huff,
-AHP Huff vs its Random Forest, NW Huff vs its Random Forest, and the two
-Random Forest models against each other) as GPKG layers for QGIS, adding
-the map_class/is_ljubljana_source fields QGIS needs for consistent
-styling. Third, it draws the feature-importance bar chart for the AHP
-Random Forest and prints a checklist of every file the full pipeline is
-expected to have produced by this point, so a missing upstream step is
-obvious rather than silently absent.
+What this script does: three things. First, it builds or copies table1,
+table3-5 and four supplementary tables into outputs/tables/ and
+outputs/supplementary/, computing the ones that are pure derivations
+directly from other outputs rather than trusting a possibly stale
+pre-existing copy (see consolidate_tables below) — Table 2 is
+01_gi_construction.py's job (table_top20_GI_both.csv), and Table 6 is
+13_disagreement_synthesis.py's (table6_entropy_by_divergence.csv), not
+this script's. Second, it builds the four headline village-level
+agreement maps (AHP vs NW Huff, AHP Huff vs its Random Forest, NW Huff
+vs its Random Forest, and the two Random Forest models against each
+other) as GPKG layers for QGIS, adding the map_class/is_ljubljana_source
+fields QGIS needs for consistent styling. Third, it draws the
+feature-importance bar chart for the AHP Random Forest and prints a
+checklist of every file the full pipeline is expected to have produced
+by this point, so a missing upstream step is obvious rather than
+silently absent.
 
 Reads: whichever upstream outputs each table/map needs — see the specific
 functions below and the EXPECTED_OUTPUTS checklist for the full list.
 
-Writes: table1-6, tableS1-S4, the four agreement map GPKGs, and
+Writes: table1, table3-5, tableS1-S4, the four agreement map GPKGs, and
 fig07_feature_importance.png/.pdf, listed in full in OUTPUT_FILES below.
 
 Runs eleventh, after every other numbered table- or map-producing script
@@ -43,7 +46,6 @@ import matplotlib.patches as mpatches
 
 from config import (
     DATA_RAW, DATA_PROCESSED, TABLES, FIGURES, GPKG, SUPPLEMENTARY, OUTPUTS, EPSG, REPO_ROOT,
-    MUNICIPALITIES_AHP, MUNICIPALITIES_NW,
 )
 from crs_utils import ensure_crs
 
@@ -53,11 +55,9 @@ DATA_EXTERNAL = REPO_ROOT / "data" / "external"
 
 OUTPUT_FILES = [
     "tables/table1_AHP_group_weights.csv",
-    "tables/table2_top20_GI_NotWeighted.csv",
-    "tables/table3_top20_GI_AHP.csv",
-    "tables/table4_top15_catchments.csv",
+    "tables/table3_catchments_top15.csv",
+    "tables/table4_cv_performance.csv",
     "tables/table5_beta_sensitivity.csv",
-    "tables/table6_cv_performance.csv",
     "supplementary/tableS1_indicators_sources.csv",
     "supplementary/tableS4_beta_sensitivity.csv",
     "figures/fig07_feature_importance.png",
@@ -108,22 +108,6 @@ def first_existing(*paths):
     return None
 
 
-def build_top20_gi_table(gpkg_path, gi_col, out_path, label):
-    """Rank all 212 municipalities by a GI column and save the top 20.
-
-    Computed directly from the raw municipality layer each time this runs
-    (not copied from a pre-existing file), so this table can never go
-    stale relative to the actual GI data.
-    """
-    gdf = gpd.read_file(gpkg_path)
-    gdf = ensure_crs(gdf, EPSG, label=gpkg_path.name)
-    ranked = gdf[["Muni_Name", gi_col]].sort_values(gi_col, ascending=False).reset_index(drop=True)
-    ranked.insert(0, "Rank", ranked.index + 1)
-    ranked = ranked.rename(columns={"Muni_Name": "Municipality"})
-    ranked.head(20).to_csv(out_path, index=False)
-    print(f"  OK    {label} -> {out_path.name} (computed from {gpkg_path.name})")
-
-
 def build_top15_catchment_table(out_path, label):
     """Build the top-15 catchment size table, AHP and NW side by side.
 
@@ -142,15 +126,44 @@ def build_top15_catchment_table(out_path, label):
     print(f"  OK    {label} -> {out_path.name} (computed from huff_AHP_summary.csv / huff_NW_summary.csv)")
 
 
+def build_cv_performance_table(out_path, label):
+    """Merge the AHP and NW 5-fold spatial CV results into one table, one row per fold, plus mean and sd rows.
+
+    Retires table6_cv_performance.csv, which held the AHP model's CV
+    results only (a plain copy of ml_AHP_cv_results.csv) — the NW model's
+    results had no manuscript table at all. Computed directly from
+    06_ml_framework.py's own per-fold output each time this runs, not
+    copied, so it can never go stale relative to the actual CV results.
+    """
+    ahp_cv = pd.read_csv(TABLES / "ml_AHP_cv_results.csv")
+    nw_cv = pd.read_csv(TABLES / "ml_NW_cv_results.csv")
+    combined = pd.DataFrame({
+        "fold": ahp_cv["fold"],
+        "AHP_R2": ahp_cv["r2"], "AHP_MAE": ahp_cv["mae"], "AHP_RMSE": ahp_cv["rmse"],
+        "NW_R2": nw_cv["r2"], "NW_MAE": nw_cv["mae"], "NW_RMSE": nw_cv["rmse"],
+    })
+    mean_row = {"fold": "mean", **{c: combined[c].mean() for c in combined.columns if c != "fold"}}
+    sd_row = {"fold": "sd", **{c: combined[c].std() for c in combined.columns if c != "fold"}}
+    combined = pd.concat([combined, pd.DataFrame([mean_row, sd_row])], ignore_index=True)
+    combined.to_csv(out_path, index=False)
+    print(f"  OK    {label} -> {out_path.name} (computed from ml_AHP_cv_results.csv / ml_NW_cv_results.csv)")
+
+
 def consolidate_tables():
-    """Build/copy the paper's final tables (table1-6, tableS1-S4) into place.
+    """Build/copy the paper's final tables (table1, table3-4, tableS1-S4) into place.
 
     table1 and tableS1 are genuine inputs (the AHP pairwise-comparison result
     and the indicator source citations) that no script computes from data —
     those are copied from data/external/, which is committed to the repo, not
-    an absolute path on one machine. table2-4 are pure rankings/derivations
+    an absolute path on one machine. table3-4 are pure rankings/derivations
     with no ambiguity, so they're computed here directly from repo data
-    instead of being copied from a pre-existing file.
+    instead of being copied from a pre-existing file. (Table 2, the combined
+    GI top-20 ranking, is 01_gi_construction.py's job — see
+    table_top20_GI_both.csv — not this script's; the separate AHP-only and
+    NW-only top-20 tables this script used to build independently were
+    retired once that combined table existed, since computing the same
+    ranking twice in two scripts is exactly the kind of duplication this
+    repository has had drift from before.)
     """
     print("Consolidating paper tables...")
 
@@ -164,13 +177,9 @@ def consolidate_tables():
     safe_copy(DATA_EXTERNAL / "table1_AHP_group_weights_FIXED.csv",
               TABLES / "table1_AHP_group_weights.csv", "table1_AHP_group_weights")
 
-    build_top20_gi_table(DATA_RAW / MUNICIPALITIES_NW, "GI_Final_NotWeighted",
-                          TABLES / "table2_top20_GI_NotWeighted.csv", "table2_top20_GI_NotWeighted")
+    build_top15_catchment_table(TABLES / "table3_catchments_top15.csv", "table3_catchments_top15")
 
-    build_top20_gi_table(DATA_RAW / MUNICIPALITIES_AHP, "GI_AHP",
-                          TABLES / "table3_top20_GI_AHP.csv", "table3_top20_GI_AHP")
-
-    build_top15_catchment_table(TABLES / "table4_top15_catchments.csv", "table4_top15_catchments")
+    build_cv_performance_table(TABLES / "table4_cv_performance.csv", "table4_cv_performance")
 
     # table_beta_sensitivity_clean.csv (07_beta_sensitivity.py's actual output) must win over
     # the unsuffixed table_beta_sensitivity.csv name. That unsuffixed name was a legacy
@@ -187,9 +196,6 @@ def consolidate_tables():
     else:
         print("  SKIP  table5_beta_sensitivity / tableS4_beta_sensitivity: "
               "no table_beta_sensitivity(_clean).csv found — run src/07_beta_sensitivity.py first")
-
-    safe_copy(TABLES / "ml_AHP_cv_results.csv",
-              TABLES / "table6_cv_performance.csv", "table6_cv_performance")
 
     # tableS1: indicator source citations — reference metadata, not a computed result.
     # This is a plain copy, not a regeneration: a correction ever applied to
@@ -448,19 +454,19 @@ EXPECTED_OUTPUTS = {
         TABLES / "table_morans_i_results.csv",
         TABLES / "table_huff_vs_commuting.csv",
         TABLES / "table_huff_vs_commuting_summary.csv",
+        TABLES / "table7_commuting_comparison.csv",
         TABLES / "table1_AHP_group_weights.csv",
-        TABLES / "table2_top20_GI_NotWeighted.csv",
-        TABLES / "table3_top20_GI_AHP.csv",
-        TABLES / "table4_top15_catchments.csv",
+        TABLES / "table3_catchments_top15.csv",
+        TABLES / "table4_cv_performance.csv",
         TABLES / "table5_beta_sensitivity.csv",
-        TABLES / "table6_cv_performance.csv",
-        # Three-way agreement, LISA, disagreement synthesis, RF catchment
-        # structure, feature importance comparison (src/12, 13, 14).
+        # Three-way agreement, LISA, disagreement synthesis (incl. table 6),
+        # RF catchment structure, feature importance comparison (src/12, 13, 14).
         TABLES / "table_three_way_agreement.csv",
         TABLES / "table_join_counts.csv",
         TABLES / "table_lisa_summary.csv",
         TABLES / "table_disagreement_synthesis.csv",
         TABLES / "table_disagreement_destinations.csv",
+        TABLES / "table6_entropy_by_divergence.csv",
         TABLES / "table_ml_catchment_sizes.csv",
         TABLES / "table_feature_importance_comparison.csv",
     ],
@@ -471,8 +477,8 @@ EXPECTED_OUTPUTS = {
         SUPPLEMENTARY / "tableS4_beta_sensitivity.csv",
     ],
     "outputs/figures": [
-        FIGURES / "fig07_beta_sensitivity.png",
-        FIGURES / "fig07_feature_importance_AHP.png",
+        FIGURES / "fig_beta_sensitivity.png",
+        FIGURES / "fig_beta_sensitivity.pdf",
         FIGURES / "fig07_feature_importance.png",
         FIGURES / "fig07_feature_importance.pdf",
         FIGURES / "fig08_shap_bar_AHP.png",

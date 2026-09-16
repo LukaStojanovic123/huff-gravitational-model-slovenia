@@ -22,6 +22,9 @@ Villages_points_real.shp, and huff_AHP_summary.csv (already computed by
 03_huff_ahp.py — this comparison uses the AHP Huff model only, not NW).
 
 Writes: table_huff_vs_commuting.csv, table_huff_vs_commuting_summary.csv,
+table7_commuting_comparison.csv (the manuscript-facing reshaping of the
+summary above, with pattern percentages and the self-containment
+breakdown by each definition individually and by both together), and
 fig_huff_vs_commuting_municipalities.gpkg.
 
 Runs tenth. Needs 03_huff_ahp.py's output.
@@ -42,6 +45,7 @@ from crs_utils import ensure_crs
 OUTPUT_FILES = [
     "tables/table_huff_vs_commuting.csv",
     "tables/table_huff_vs_commuting_summary.csv",
+    "tables/table7_commuting_comparison.csv",
     "gpkg/fig_huff_vs_commuting_municipalities.gpkg",
 ]
 
@@ -237,6 +241,47 @@ def main():
                              for k, v in pattern_counts.items()})
     pd.DataFrame(summary_rows).to_csv(TABLES / "table_huff_vs_commuting_summary.csv", index=False)
     print("Saved table_huff_vs_commuting_summary.csv")
+
+    # Table 7: the same summary as above, reshaped for the manuscript
+    # (percentages instead of raw pattern-name columns) plus the
+    # self-containment breakdown by each definition individually and by
+    # both together — this used to only be obtainable by re-deriving
+    # huff_majority_centre == SIFRA from table_huff_vs_commuting.csv by
+    # hand, since classify_pattern() only ever used it internally.
+    huff_self = result["huff_majority_centre"] == result["SIFRA"]
+    commuting_self = result["commuting_is_centre"].astype(bool)
+    n_p1 = int((result["pattern"] == "Pattern 1: Huff self, Commuting external").sum())
+    n_p2 = int((result["pattern"] == "Pattern 2: Commuting self, Huff external").sum())
+    n_p3 = int((result["pattern"] == "Pattern 3: both external, different centre").sum())
+    table7_rows = [
+        {"category": "Agreement", "n_municipalities": n_agree, "share_pct": round(agreement_pct, 2)},
+        {"category": "Pattern 1: Huff self-contained, Commuting external",
+         "n_municipalities": n_p1, "share_pct": round(100 * n_p1 / n_total, 2)},
+        {"category": "Pattern 2: Commuting self-contained, Huff external",
+         "n_municipalities": n_p2, "share_pct": round(100 * n_p2 / n_total, 2)},
+        {"category": "Pattern 3: Both external, different centre",
+         "n_municipalities": n_p3, "share_pct": round(100 * n_p3 / n_total, 2)},
+        {"category": "Total", "n_municipalities": n_total, "share_pct": 100.0},
+        {"category": "Cohen's kappa", "n_municipalities": round(kappa, 4), "share_pct": None},
+        {"category": "Commuting-based self-contained municipalities",
+         "n_municipalities": int(commuting_self.sum()), "share_pct": None},
+        {"category": "Huff-based self-contained municipalities",
+         "n_municipalities": int(huff_self.sum()), "share_pct": None},
+        {"category": "Self-contained under both definitions",
+         "n_municipalities": int((huff_self & commuting_self).sum()), "share_pct": None},
+    ]
+    table7 = pd.DataFrame({"category": [r["category"] for r in table7_rows]})
+    # Built as an explicit object Series, not through normal DataFrame
+    # construction: the "Cohen's kappa" row shares this column with every
+    # other row's integer municipality count, and letting pandas infer the
+    # column's dtype from all the values together would upcast every
+    # integer to float (146 -> 146.0) just because one row needs decimal
+    # precision.
+    table7["Number of municipalities"] = pd.Series(
+        [r["n_municipalities"] for r in table7_rows], dtype=object)
+    table7["Share (%)"] = [r["share_pct"] for r in table7_rows]
+    table7.to_csv(TABLES / "table7_commuting_comparison.csv", index=False)
+    print("Saved table7_commuting_comparison.csv")
 
     result.to_file(GPKG / "fig_huff_vs_commuting_municipalities.gpkg", driver="GPKG")
     print("Saved fig_huff_vs_commuting_municipalities.gpkg")

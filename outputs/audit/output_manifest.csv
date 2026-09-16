@@ -5,8 +5,6 @@ outputs/audit/indicator_audit.csv,17_data_audit.py
 outputs/audit/manuscript_number_check.csv,17_data_audit.py
 outputs/audit/output_manifest.csv,18_output_manifest.py
 outputs/audit/raw_input_inventory.csv,17_data_audit.py
-outputs/figures/fig07_beta_sensitivity.pdf,ORPHANED — no script claims this file
-outputs/figures/fig07_beta_sensitivity.png,ORPHANED — no script claims this file
 outputs/figures/fig07_feature_importance.pdf,11_export_outputs.py
 outputs/figures/fig07_feature_importance.png,11_export_outputs.py
 outputs/figures/fig08_shap_bar_AHP.png,15_shap_dependence.py
@@ -71,26 +69,20 @@ outputs/tables/huff_AHP_summary.csv,03_huff_ahp.py
 outputs/tables/huff_NW_od_matrix.csv,04_huff_nonweighted.py
 outputs/tables/huff_NW_summary.csv,04_huff_nonweighted.py
 outputs/tables/huff_od_matrix.csv,03_huff_ahp.py
-outputs/tables/manuscript_table2_GI_top20.csv,ORPHANED — no script claims this file
-outputs/tables/manuscript_table3_catchments_top15.csv,ORPHANED — no script claims this file
-outputs/tables/manuscript_table4_cv_performance.csv,ORPHANED — no script claims this file
-outputs/tables/manuscript_table5_model_comparison.csv,ORPHANED — no script claims this file
-outputs/tables/manuscript_table6_entropy_by_divergence.csv,ORPHANED — no script claims this file
-outputs/tables/manuscript_table7_commuting_comparison.csv,ORPHANED — no script claims this file
 outputs/tables/ml_AHP_cv_results.csv,06_ml_framework.py
 outputs/tables/ml_AHP_feature_importance.csv,06_ml_framework.py
-outputs/tables/ml_AHP_feature_importance_original.csv,ORPHANED — no script claims this file
+outputs/tables/ml_AHP_feature_importance_original.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
 outputs/tables/ml_AHP_vs_AHP_comparison.csv,06_ml_framework.py
-outputs/tables/ml_AHP_vs_AHP_comparison_original.csv,ORPHANED — no script claims this file
+outputs/tables/ml_AHP_vs_AHP_comparison_original.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
 outputs/tables/ml_NW_cv_results.csv,06_ml_framework.py
 outputs/tables/ml_NW_feature_importance.csv,06_ml_framework.py
 outputs/tables/ml_NW_vs_NW_comparison.csv,06_ml_framework.py
 outputs/tables/table1_AHP_group_weights.csv,11_export_outputs.py
-outputs/tables/table2_top20_GI_NotWeighted.csv,11_export_outputs.py
-outputs/tables/table3_top20_GI_AHP.csv,11_export_outputs.py
-outputs/tables/table4_top15_catchments.csv,11_export_outputs.py
+outputs/tables/table3_catchments_top15.csv,11_export_outputs.py
+outputs/tables/table4_cv_performance.csv,11_export_outputs.py
 outputs/tables/table5_beta_sensitivity.csv,11_export_outputs.py
-outputs/tables/table6_cv_performance.csv,11_export_outputs.py
+outputs/tables/table6_entropy_by_divergence.csv,13_disagreement_synthesis.py
+outputs/tables/table7_commuting_comparison.csv,10_commuting_comparison.py
 outputs/tables/table_GI_summary_stats.csv,01_gi_construction.py
 outputs/tables/table_beta_sensitivity_clean.csv,07_beta_sensitivity.py
 outputs/tables/table_disagreement_destinations.csv,13_disagreement_synthesis.py

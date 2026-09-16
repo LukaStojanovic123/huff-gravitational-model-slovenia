@@ -23,8 +23,12 @@ Reads: the four agreement map GPKGs and the AHP entropy GPKG, all built by
 
 Writes: map_disagreement_count_villages.gpkg, table_disagreement_synthesis.csv
 (primary, 3-way), map_disagreement_count_4way_villages.gpkg,
-table_disagreement_synthesis_4way.csv (secondary, 4-way), and
-table_disagreement_destinations.csv.
+table_disagreement_synthesis_4way.csv (secondary, 4-way),
+table_disagreement_destinations.csv, and table6_entropy_by_divergence.csv
+(the same 3-way entropy/n_disagree cross-tab as table_disagreement_synthesis.csv,
+but as raw settlement counts per entropy class plus a total row, matching
+the manuscript's Table 6 exactly, instead of percentages a reader would
+otherwise have to convert).
 
 Runs thirteenth. Needs 11_export_outputs.py's map layers and
 09_entropy_uncertainty.py's AHP entropy layer.
@@ -47,6 +51,7 @@ OUTPUT_FILES = [
     "gpkg/map_disagreement_count_4way_villages.gpkg",
     "tables/table_disagreement_synthesis_4way.csv",
     "tables/table_disagreement_destinations.csv",
+    "tables/table6_entropy_by_divergence.csv",
 ]
 
 AHP_VS_NW_PATH = GPKG / "map_AHP_vs_NW_villages.gpkg"
@@ -64,8 +69,39 @@ OUTPUT_LAYER_4WAY_PATH = GPKG / "map_disagreement_count_4way_villages.gpkg"
 SYNTHESIS_TABLE_4WAY_PATH = TABLES / "table_disagreement_synthesis_4way.csv"
 
 DESTINATIONS_TABLE_PATH = TABLES / "table_disagreement_destinations.csv"
+TABLE6_ENTROPY_PATH = TABLES / "table6_entropy_by_divergence.csv"
 
 MIN_DESTINATION_COUNT = 5
+
+
+def build_entropy_by_divergence_table(merged, n_disagree_col, entropy_col, entropy_class_col, k_range):
+    """Cross-tabulate entropy class against disagreement count as raw settlement counts, plus a total row.
+
+    This used to only be obtainable by reading map_disagreement_count_villages.gpkg
+    by hand and cross-tabulating entropy_class against n_disagree — this
+    writes that cross-tab directly as a real pipeline output instead.
+    """
+    rows = []
+    for k in k_range:
+        sub = merged[merged[n_disagree_col] == k]
+        n = len(sub)
+        rows.append({
+            "n_disagree": k, "n_settlements": n,
+            "mean_entropy_AHP": sub[entropy_col].mean() if n else np.nan,
+            "sd_entropy_AHP": sub[entropy_col].std() if n else np.nan,
+            "n_low": int((sub[entropy_class_col] == "low").sum()),
+            "n_medium": int((sub[entropy_class_col] == "medium").sum()),
+            "n_high": int((sub[entropy_class_col] == "high").sum()),
+        })
+    rows.append({
+        "n_disagree": "total", "n_settlements": len(merged),
+        "mean_entropy_AHP": merged[entropy_col].mean(),
+        "sd_entropy_AHP": merged[entropy_col].std(),
+        "n_low": int((merged[entropy_class_col] == "low").sum()),
+        "n_medium": int((merged[entropy_class_col] == "medium").sum()),
+        "n_high": int((merged[entropy_class_col] == "high").sum()),
+    })
+    return pd.DataFrame(rows)
 
 
 def build_synthesis_table(merged, n_disagree_col, entropy_col, entropy_class_col, k_range):
@@ -161,6 +197,14 @@ def main():
 
     n_identical_3way = int(merged["all_three_same"].sum())
     print(f"Settlements with identical dominant centre from all three models (3-way): {n_identical_3way}")
+    print()
+
+    table6 = build_entropy_by_divergence_table(
+        merged, "n_disagree_3way", "entropy_AHP", "entropy_class", [0, 1, 2, 3])
+    table6.to_csv(TABLE6_ENTROPY_PATH, index=False)
+    print("=== TABLE 6: ENTROPY BY DIVERGENCE COUNT (3-way) ===")
+    print(table6.to_string(index=False))
+    print(f"\nSaved {TABLE6_ENTROPY_PATH}")
     print()
 
     # ── Secondary output layer and synthesis table (4-way) ──
