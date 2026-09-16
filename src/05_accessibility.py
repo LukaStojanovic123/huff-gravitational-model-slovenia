@@ -194,8 +194,11 @@ def main():
     facility_paths = discover_facility_layers(DATA_RAW)
     print(f"  Found {len(facility_paths)} facility layers")
     if len(facility_paths) != 86:
-        print(f"  WARNING: expected 86 facility layers, found {len(facility_paths)} — "
-              "check data/facility_layers.txt.")
+        raise RuntimeError(
+            f"Expected 86 facility layers, found {len(facility_paths)} — check "
+            "data/facility_layers.txt against DATA_RAW. Every downstream accessibility "
+            "score, and the manuscript's own facility-type count, assumes exactly 86."
+        )
     print()
 
     print("Building road network graph...")
@@ -214,9 +217,13 @@ def main():
 
     print("Loading and snapping facility layers to the network...")
     facility_nodes = load_and_snap_facilities(facility_paths, node_coords, node_list)
-    for name, nodes in facility_nodes.items():
-        if not nodes:
-            print(f"  WARNING: {name} has no snappable features")
+    unsnappable = [name for name, nodes in facility_nodes.items() if not nodes]
+    if unsnappable:
+        raise RuntimeError(
+            f"{len(unsnappable)} facility layer(s) have no snappable features, so they "
+            f"would silently contribute zero distances to every municipality: {unsnappable}. "
+            "Check the source layer(s) for empty or invalid geometry."
+        )
     print(f"  Snapped {len(facility_nodes)} facility layers")
     print()
 

@@ -190,9 +190,13 @@ def main():
     if orphaned or ambiguous or missing:
         print("The pipeline output does not fully match what the scripts declare — "
               "see the sections above for exactly where.")
-    else:
-        print("Every declared file is present exactly once, and every present file "
-              "is accounted for.")
+        print()
+        print(f"=== FAILED: {len(orphaned)} orphaned, {len(ambiguous)} ambiguous, "
+              f"{len(missing)} missing ===")
+        sys.exit(1)
+
+    print("Every declared file is present exactly once, and every present file "
+          "is accounted for.")
     print()
     print("Done.")
 

@@ -129,7 +129,10 @@ Recomputed priority vector from the matrix's principal eigenvector (should repro
 
 ### Territorial descriptors vs functional counts
 
-`n_Area_km2` is a municipality-area indicator present in `Municipalities_Points_normalized.gpkg` but excluded from the GI computation (absent from the tableS3 100-indicator mapping used by `01_gi_construction.py`). `06_ml_framework.py::build_municipality_features` keeps every raw `n_` column except `n_Fitness_C`, so `n_Area_km2` **is** included as an ML feature. This confirms the draft's claim that municipality area is excluded from the GI but included in the ML feature set.
+- `n_Area_km2` present in `Municipalities_Points_normalized.gpkg`: **True**
+- `n_Area_km2` present in tableS3's 100-indicator mapping (i.e. included in the GI): **False**
+
+**Territorial-descriptor exclusion CONFIRMED: `n_Area_km2` is correctly excluded from the GI's 100-indicator set.**
 
 Saved `indicator_audit.csv` (100 rows).
 
@@ -170,40 +173,46 @@ Saved `GI_full_212_municipalities.csv` (212 municipalities, 10 NW group scores +
 
 ### Snapping distances
 
-- Municipality centroids: mean=39.5 m, max=297.5 m  (draft claims mean 39.5 m, max 297.5 m)
-- Settlement centroids: mean=58.3 m, max=1470.5 m, count > 500 m: 77  (draft claims mean 58.3 m, max 1,470.5 m)
+- Municipality snapping distance, mean (m): 39.5  (final_manuscript_values.md: 39.5) — CONFIRMED
+- Municipality snapping distance, max (m): 297.5  (final_manuscript_values.md: 297.5) — CONFIRMED
+- Settlement snapping distance, mean (m): 58.3  (final_manuscript_values.md: 58.3) — CONFIRMED
+- Settlement snapping distance, max (m): 1470.5  (final_manuscript_values.md: 1,470.5) — CONFIRMED
+- Settlements snapped > 500 m: 77  (final_manuscript_values.md: 77) — CONFIRMED
 
 ## 1.5 Origin-destination matrix audit
 
 `data/processed/distance_matrix.npy` is absent (see 1.1), so this matrix is reconstructed directly here via the identical Dijkstra procedure used by `03_huff_ahp.py::compute_distance_matrix`, to recover true pre-fill NaN counts.
 
-- Matrix shape: **(6036, 212)**  (expected 6,036 x 212)
-- Valid (reached-within-cutoff) network distances before fill: **1279433/1279632 (99.98%)**  (draft claims 99.84%)
-- Missing pairs (unreached within 300 km cutoff): **199**  (draft claims 2,107, filled with the maximum observed distance per municipality)
+- Matrix shape: **(6036, 212)**  (final_manuscript_values.md: 6,036 villages x 212 municipalities) — CONFIRMED
+- Valid (reached-within-cutoff) network distances before fill: **1279433/1279632 (99.98%)**
+- Missing pairs (unreached within 300 km cutoff): **199**  (filled with the maximum observed distance per municipality)
 - Fill method used by the pipeline: each missing (village, muni) pair is filled with the **column (municipality) maximum** observed distance — confirmed by reading `03_huff_ahp.py::compute_distance_matrix`.
 - Distance distribution after fill: min=0.0 m, max=299982.3 m, mean=108309.1 m, median=101996.7 m
 - Settlements with zero distance to their own municipality (village at the municipal seat): **212**
 
-**Draft OD-matrix figures DO NOT MATCH — see corrected values above.**
+**OD-matrix figures vs final_manuscript_values.md (199 missing pairs, 99.98% valid): CONFIRMED.**
 
 ## 1.6 Accessibility indicator audit
 
 Recomputed directly via the two-stage Dijkstra in `05_accessibility.py::nearest_facility_distances` to recover missing/recovered counts that the final (already-filled) cached CSV cannot reveal.
 
-- Facility types discovered: **86**  (draft claims 86)
-- Total distance values computed (munis x facility types): **18232**  (draft claims 18,232)
-- Values missing after the 80 km primary search: **918**  (draft claims 1,111)
-- Values recovered by the 300 km extended search: **918**  (draft claims 1,105)
-- Values remaining missing after both searches (filled with the column maximum): **0**  (draft claims 6, all district courts in Prekmurje)
+- Facility types discovered: **86**
+- Total distance values computed (munis x facility types): **18232**
+- Values missing after the 80 km primary search: **918**
+- Values recovered by the 300 km extended search: **918**
+- Values remaining missing after both searches (filled with the column maximum): **0**
 
-**Draft accessibility figures DO NOT MATCH — see corrected values above.**
+**Accessibility figures vs final_manuscript_values.md (86 types, 18,232 values): CONFIRMED.**
+(missing/recovered/still-missing breakdown — 918/918/0 — has no maintained reference value yet; not gated.)
 
 ## 1.7 Machine learning audit
 
-- Training table row count (villages x municipalities): **1,279,632**  (draft claims 1,279,632)
-- Feature count: **189**  (draft claims 189) — breakdown: 101 raw GI indicators (incl. `n_Area_km2`), 86 accessibility, 1 GI_AHP, 1 distance-to-municipality
+- `n_Area_km2` present in the ML feature set (`06_ml_framework.py::build_municipality_features` keeps every raw `n_` column except `n_Fitness_C`): **True** (CONFIRMED — complements 1.2, which excludes it from the GI)
 
-**Draft row/feature counts CONFIRMED.**
+- Training table row count (from `huff_od_matrix.csv`: 6,036 villages x 212 municipalities): **1,279,632**
+- Feature count: **189** — breakdown: 101 raw GI indicators (incl. `n_Area_km2`), 86 accessibility, 1 GI_AHP, 1 distance-to-municipality
+
+**Row/feature counts vs final_manuscript_values.md (1,279,632 rows x 189 features): CONFIRMED.**
 
 ### Hyperparameters (read from `06_ml_framework.py::train_rf_spatial_cv`)
 
@@ -212,9 +221,9 @@ Recomputed directly via the two-stage Dijkstra in `05_accessibility.py::nearest_
 
 ### Spatial block sizes (from cached `spatial_blocks.csv`)
 
-- {0: 61, 1: 34, 2: 23, 3: 52, 4: 42}  (draft claims 52, 34, 24, 61, 41)
+- {0: 61, 1: 34, 2: 23, 3: 52, 4: 42}
 
-**Block sizes DO NOT MATCH — corrected sizes above.**
+**Block sizes vs final_manuscript_values.md ([23, 34, 42, 52, 61]): CONFIRMED (as a set).**
 
 ### Sample fraction per fold
 
@@ -256,41 +265,41 @@ Recomputed directly via the two-stage Dijkstra in `05_accessibility.py::nearest_
 - Individual GI indicators: 6.84%
 - Municipality area: 0.75%
 
-(draft claims: distance 62.54%, GI_AHP 22.83%, accessibility 7.52%, individual GI indicators 6.38%, municipality area 0.74%)
+(final_manuscript_values.md: Distance 62.53%, GI_AHP 22.69%, Accessibility 7.19%, Individual GI indicators 6.84%, Municipality area 0.75%) — CONFIRMED (max |diff| = 0.00 pp)
 
 **NW** feature importance by group (of total 1.0000):
 
 - Distance: 69.16%
-- Other: 17.99%
+- GI_NW: 17.99%
 - Accessibility: 5.46%
 - Individual GI indicators: 5.00%
 - Municipality area: 2.39%
 
-Note: NW-target feature importance breakdown above is not reported anywhere in the current manuscript draft; it is produced here for the first time.
+(final_manuscript_values.md: Distance 69.16%, GI_NW 17.99%, Accessibility 5.46%, Individual GI indicators 5.00%, Municipality area 2.39%) — CONFIRMED (max |diff| = 0.00 pp)
 
 ## 1.8 Manuscript number verification
 
 Saved `manuscript_number_check.csv` (21 rows).
 
-                                  claim                                                                                               draft_value                                                                                                repository_value                                                                                              status                                        source_file
-                    AHP vs NW agreement                                                                                          88.6%, 5349/6036                                                                                               88.62%, 5349/6036                                                                                           CONFIRMED           outputs/gpkg/map_AHP_vs_NW_villages.gpkg
-                    AHP vs ML agreement                                                                                          75.4%, 4551/6036                                                                                               75.31%, 4546/6036                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg
-                     NW vs ML agreement                                                                                          77.4%, 4672/6036                                                                                               78.98%, 4767/6036                                                                                             DIFFERS            outputs/gpkg/map_NW_vs_ML_villages.gpkg
-         Euclidean vs network agreement                                                                             88.4%, 5335/6036, kappa 0.879                                                                                 88.49%, 5341/6036, kappa 0.8795                                                                                             DIFFERS      outputs/tables/table_euclidean_vs_network.csv
-                    Moran's I AHP vs NW                                                                                            0.184, z 24.31                                                                                               I=0.1838, z=23.68                                CONFIRMED (I; z is a permutation estimate and fluctuates run to run)          outputs/tables/table_morans_i_results.csv
-                    Moran's I AHP vs ML                                                                                            0.451, z 59.55                                                                                               I=0.4725, z=63.71 DIFFERS (I) — draft 0.451, repository 0.4725; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv
-                     Moran's I NW vs ML                                                                                            0.447, z 57.40                                                                                               I=0.4403, z=57.18 DIFFERS (I) — draft 0.447, repository 0.4403; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv
-                         LISA AHP vs ML                                                                  706 LL, 255 HL, 116 LH, 1077 significant                                                                 HH=338, LL=820, HL=304, LH=87, significant=1549            DIFFERS — draft LL=706/HL=255/LH=116/sig=1077 vs repository LL=820/HL=304/LH=87/sig=1549               outputs/gpkg/map_lisa_AHP_vs_ML.gpkg
-                Ljubljana catchment AHP                                                                                          1222 settlements                                                                                                1216 settlements                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv
-                 Ljubljana catchment NW                                                                                          1022 settlements                                                                                                1016 settlements                                                                                             DIFFERS                 outputs/tables/huff_NW_summary.csv
-              Top 5 catchments combined                                                                                               2147, 35.6%                                                                                                     2141, 35.5%                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv
-             Top 10 catchments combined                                                                                               2830, 46.9%                                                                                                     2825, 46.8%                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv
-       Municipalities with 1 settlement                                                                                                        32                                                                                                              32                                                                                           CONFIRMED                outputs/tables/huff_AHP_summary.csv
-                    Mean catchment size                                                                                          28.5, median 6.0                                                                                                28.5, median 6.0                                                                                           CONFIRMED                outputs/tables/huff_AHP_summary.csv
-Ljubljana disagreements under AHP vs ML                                                                                           940 settlements                                                                                                 939 settlements                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg
-                         Entropy AHP/NW AHP mean ~0.51, NW mean ~0.53 (Section 4.5 prose only; no manuscript max or class-count breakdown exists) AHP mean=0.5049 max=0.7569 (low=397/med=1892/high=3747); NW mean=0.5265 max=0.7931 (low=383/med=1671/high=3982)                          CONFIRMED (means only; no manuscript value exists for max or class counts)           outputs/tables/table_entropy_summary.csv
-                  RF AHP mean R squared                                                                                           0.845 +/- 0.088                                                                                                 0.846 +/- 0.086                                                                                           CONFIRMED               outputs/tables/ml_AHP_cv_results.csv
-                   RF NW mean R squared                                                                                           0.844 +/- 0.066                                                                                                 0.855 +/- 0.060                                                                                  DIFFERS (rounding)                outputs/tables/ml_NW_cv_results.csv
-                    Commuting agreement                                                                               68.9%, 146/212, kappa 0.676                                                                                   68.87%, 146/212, kappa 0.6755                                                                                           CONFIRMED outputs/tables/table_huff_vs_commuting_summary.csv
-           Commuting functional centres                                                                                                       101                                                                                                             101                                                                                           CONFIRMED         outputs/tables/table_huff_vs_commuting.csv
-           Beta sensitivity kappa range                                                                                            0.732 to 0.826                                                                                                  0.732 to 0.826                                                                                           CONFIRMED    outputs/tables/table_beta_sensitivity_clean.csv
+                                  claim                                                                                               draft_value                                                                                                repository_value                                                                                              status                                        source_file                                       reference_value             ref_status
+                    AHP vs NW agreement                                                                                          88.6%, 5349/6036                                                                                               88.62%, 5349/6036                                                                                           CONFIRMED           outputs/gpkg/map_AHP_vs_NW_villages.gpkg                                            5,349/6036 CONFIRMED vs reference
+                    AHP vs ML agreement                                                                                          75.4%, 4551/6036                                                                                               75.31%, 4546/6036                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg                                            4,546/6036 CONFIRMED vs reference
+                     NW vs ML agreement                                                                                          77.4%, 4672/6036                                                                                               78.98%, 4767/6036                                                                                             DIFFERS            outputs/gpkg/map_NW_vs_ML_villages.gpkg                                            4,767/6036 CONFIRMED vs reference
+         Euclidean vs network agreement                                                                             88.4%, 5335/6036, kappa 0.879                                                                                 88.49%, 5341/6036, kappa 0.8795                                                                                             DIFFERS      outputs/tables/table_euclidean_vs_network.csv                                            5,341/6036 CONFIRMED vs reference
+                    Moran's I AHP vs NW                                                                                            0.184, z 24.31                                                                                               I=0.1838, z=23.68                                CONFIRMED (I; z is a permutation estimate and fluctuates run to run)          outputs/tables/table_morans_i_results.csv                                              I=0.1838 CONFIRMED vs reference
+                    Moran's I AHP vs ML                                                                                            0.451, z 59.55                                                                                               I=0.4725, z=63.71 DIFFERS (I) — draft 0.451, repository 0.4725; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv                                              I=0.4725 CONFIRMED vs reference
+                     Moran's I NW vs ML                                                                                            0.447, z 57.40                                                                                               I=0.4403, z=57.18 DIFFERS (I) — draft 0.447, repository 0.4403; z is a permutation estimate and fluctuates run to run          outputs/tables/table_morans_i_results.csv                                              I=0.4403 CONFIRMED vs reference
+                         LISA AHP vs ML                                                                  706 LL, 255 HL, 116 LH, 1077 significant                                                                 HH=338, LL=820, HL=304, LH=87, significant=1549            DIFFERS — draft LL=706/HL=255/LH=116/sig=1077 vs repository LL=820/HL=304/LH=87/sig=1549               outputs/gpkg/map_lisa_AHP_vs_ML.gpkg                         HH=338, LL=820, HL=304, LH=87 CONFIRMED vs reference
+                Ljubljana catchment AHP                                                                                          1222 settlements                                                                                                1216 settlements                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv                                     1,216 settlements CONFIRMED vs reference
+                 Ljubljana catchment NW                                                                                          1022 settlements                                                                                                1016 settlements                                                                                             DIFFERS                 outputs/tables/huff_NW_summary.csv                                     1,016 settlements CONFIRMED vs reference
+              Top 5 catchments combined                                                                                               2147, 35.6%                                                                                                     2141, 35.5%                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv                                           2141, 35.5% CONFIRMED vs reference
+             Top 10 catchments combined                                                                                               2830, 46.9%                                                                                                     2825, 46.8%                                                                                             DIFFERS                outputs/tables/huff_AHP_summary.csv                                           2825, 46.8% CONFIRMED vs reference
+       Municipalities with 1 settlement                                                                                                        32                                                                                                              32                                                                                           CONFIRMED                outputs/tables/huff_AHP_summary.csv                                                    32 CONFIRMED vs reference
+                    Mean catchment size                                                                                          28.5, median 6.0                                                                                                28.5, median 6.0                                                                                           CONFIRMED                outputs/tables/huff_AHP_summary.csv                                      28.5, median 6.0 CONFIRMED vs reference
+Ljubljana disagreements under AHP vs ML                                                                                           940 settlements                                                                                                 939 settlements                                                                                             DIFFERS           outputs/gpkg/map_AHP_vs_ML_villages.gpkg                  (none in final_manuscript_values.md)     no reference value
+                         Entropy AHP/NW AHP mean ~0.51, NW mean ~0.53 (Section 4.5 prose only; no manuscript max or class-count breakdown exists) AHP mean=0.5049 max=0.7569 (low=397/med=1892/high=3747); NW mean=0.5265 max=0.7931 (low=383/med=1671/high=3982)                          CONFIRMED (means only; no manuscript value exists for max or class counts)           outputs/tables/table_entropy_summary.csv AHP mean=0.5049 max=0.7569; NW mean=0.5265 max=0.7931 CONFIRMED vs reference
+                  RF AHP mean R squared                                                                                           0.845 +/- 0.088                                                                                                 0.846 +/- 0.086                                                                                           CONFIRMED               outputs/tables/ml_AHP_cv_results.csv                                     0.8457 +/- 0.0865 CONFIRMED vs reference
+                   RF NW mean R squared                                                                                           0.844 +/- 0.066                                                                                                 0.855 +/- 0.060                                                                                  DIFFERS (rounding)                outputs/tables/ml_NW_cv_results.csv                                       0.8547 +/- 0.06 CONFIRMED vs reference
+                    Commuting agreement                                                                               68.9%, 146/212, kappa 0.676                                                                                   68.87%, 146/212, kappa 0.6755                                                                                           CONFIRMED outputs/tables/table_huff_vs_commuting_summary.csv                         68.87%, 146/212, kappa 0.6755 CONFIRMED vs reference
+           Commuting functional centres                                                                                                       101                                                                                                             101                                                                                           CONFIRMED         outputs/tables/table_huff_vs_commuting.csv                                                   101 CONFIRMED vs reference
+           Beta sensitivity kappa range                                                                                            0.732 to 0.826                                                                                                  0.732 to 0.826                                                                                           CONFIRMED    outputs/tables/table_beta_sensitivity_clean.csv                                        0.732 to 0.826 CONFIRMED vs reference

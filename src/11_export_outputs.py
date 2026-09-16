@@ -232,11 +232,22 @@ def load_indicator_group_map():
 
 
 def classify_feature(feature, group_map):
-    """Label one ML feature name for the feature-importance chart's colour legend."""
+    """Label one ML feature name for the feature-importance chart's colour legend.
+
+    Only ever called on ml_AHP_feature_importance.csv in this script (see
+    plot_feature_importance below, which is explicitly AHP-only), so a
+    "GI_NW" feature never actually reaches this function today — but two
+    other copies of this same classification (14_ml_catchment_structure.py
+    and 17_data_audit.py) once handled "GI_AHP" without also handling
+    "GI_NW", silently folding the NW model's composite score into "Other"
+    wherever they were applied to NW data. Handling both here too, even
+    though it is currently unreachable, so this function does not become
+    the next one to repeat that mistake if it is ever reused for NW data.
+    """
     if feature.startswith("nacc_"):
         return "Accessibility"
-    if feature == "GI_AHP":
-        return "GI_AHP"
+    if feature in ("GI_AHP", "GI_NW"):
+        return feature
     if feature == "dist_to_muni":
         return "Distance"
     if feature.startswith("n_"):
@@ -507,18 +518,34 @@ EXPECTED_OUTPUTS = {
 
 
 def print_checklist():
-    """Print, for every file in EXPECTED_OUTPUTS, whether it currently exists on disk."""
+    """Print, for every file in EXPECTED_OUTPUTS, whether it currently exists on disk.
+
+    Raises if anything is missing. A SKIP earlier in this script (an
+    upstream prerequisite wasn't found) is a deliberate tolerance for
+    running this script on its own or out of order; by the time the full
+    pipeline reaches this point every prerequisite should exist, so a gap
+    here means something upstream silently failed to produce it.
+    """
     print("=== OUTPUT CHECKLIST ===")
     total = 0
     present = 0
+    missing_files = []
     for group, paths in EXPECTED_OUTPUTS.items():
         print(f"\n{group}/")
         for p in paths:
             total += 1
             ok = p.exists()
             present += int(ok)
+            if not ok:
+                missing_files.append(str(p))
             print(f"  {'OK     ' if ok else 'MISSING'} {p.name}")
     print(f"\n{present}/{total} expected output files present.")
+    if missing_files:
+        raise RuntimeError(
+            f"{len(missing_files)} expected output file(s) missing after export: "
+            f"{missing_files}. Check the SKIP messages above for which upstream "
+            "script needs to run first."
+        )
 
 
 def main():

@@ -11,11 +11,19 @@ _RAW_MANIFEST_PATH = _REPO_ROOT / "data" / "raw_manifest.json"
 
 def _check_raw_manifest():
     """Compare every file the pipeline reads against data/raw_manifest.json
-    (SHA256 + size + mtime, frozen at the end of Stage 2B). Prints a loud
-    warning on any mismatch — this is the direct fix for how all_roads.gpkg
-    silently contaminated the analysis on 2026-08-14: DATA_RAW drifted and
-    nothing noticed for three weeks. Never raises; a missing manifest or an
-    unreachable DATA_RAW should not block running the pipeline.
+    (SHA256 + size + mtime, frozen at the end of Stage 2B). This is the
+    direct fix for how all_roads.gpkg silently contaminated the analysis on
+    2026-08-14: DATA_RAW drifted and nothing noticed for three weeks.
+
+    Two distinct outcomes, handled differently on purpose:
+    - The manifest is missing or unreadable: this is expected on a first
+      run before Stage 2B has ever frozen one, so it only warns and returns
+      — it must not block running the pipeline.
+    - The manifest exists and DATA_RAW has actually drifted from it (a
+      missing or changed file): this is exactly the condition the check
+      exists to catch, so it raises. Printing a warning and continuing
+      here is what let the all_roads.gpkg contamination run for three
+      weeks undetected in the first place.
     """
     if not _RAW_MANIFEST_PATH.exists():
         print(f"WARNING: {_RAW_MANIFEST_PATH} not found — raw-data integrity not checked.")
@@ -45,16 +53,16 @@ def _check_raw_manifest():
             mismatches.append((fname, "SHA256 differs"))
 
     if missing or mismatches:
-        print("=" * 70)
-        print("WARNING: DATA_RAW has drifted from data/raw_manifest.json")
+        lines = ["DATA_RAW has drifted from data/raw_manifest.json"]
         for fname in missing:
-            print(f"  MISSING:  {fname} (present in manifest, not found in DATA_RAW)")
+            lines.append(f"  MISSING:  {fname} (present in manifest, not found in DATA_RAW)")
         for fname, reason in mismatches:
-            print(f"  CHANGED:  {fname} ({reason})")
-        print("This is exactly how the all_roads.gpkg contamination happened — a raw file "
-              "changed silently and every downstream number drifted with it. Investigate "
-              "before trusting any output produced against the current DATA_RAW.")
-        print("=" * 70)
+            lines.append(f"  CHANGED:  {fname} ({reason})")
+        lines.append("This is exactly how the all_roads.gpkg contamination happened — a raw "
+                      "file changed silently and every downstream number drifted with it. "
+                      "Investigate before trusting any output produced against the current "
+                      "DATA_RAW, then refreeze data/raw_manifest.json once the drift is intentional.")
+        raise RuntimeError("\n".join(lines))
 
 
 _check_raw_manifest()

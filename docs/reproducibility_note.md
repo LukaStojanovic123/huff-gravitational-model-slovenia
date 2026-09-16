@@ -245,3 +245,64 @@ likely not bit-identical to `gis_osm_roads_free_1.shp`, despite the latter repro
 manuscript's segment count and snapping distances exactly. That tension is reported here
 rather than resolved, per instruction not to adjust cutoffs or imputation logic to force a
 match.
+
+## A broken group-name lookup in indicator_audit.csv, and whether it leaked
+
+`17_data_audit.py`'s section 1.2 writes `outputs/audit/indicator_audit.csv`, one row per
+indicator, including a column `ahp_group_weight_pct` that looks up each indicator's thematic
+group in `table1_AHP_group_weights.csv` via a small translation table (`_GROUP_NAME_MAP` /
+`_map_group_name`, because tableS3 spells groups "Traffic and Communications" while table1
+spells the same group "Traffic & Communications"). For five of the ten groups — Judiciary,
+Sports, Tourism, Trade, Traffic — this lookup produced `NaN` (and the surrounding audit
+narrative reported "DO NOT MATCH") for as long as tableS3's `Thematic_group` column held
+short, abbreviated forms of those five names instead of the canonical ones.
+
+Traced by commit, fresh, rather than trusting an earlier answer given only in conversation:
+
+- `outputs/supplementary/tableS3_individual_indicator_weights.csv` has held abbreviated
+  group names for those five groups since the repository's very first commit
+  (`6019cdf`, "Add existing analysis outputs, GI construction script..."), because the file
+  was originally hand-maintained (pasted in once, never regenerated — see the tableS3 section
+  above).
+- `_GROUP_NAME_MAP` in the audit script has held the canonical full-name keys unchanged since
+  the script itself was first added (`110c91f`), so the mismatch existed from the audit
+  script's own inception.
+- `553e70a` (2026-09-14 11:54:59, "Correct supplementary tables S1-S4...") remapped tableS3's
+  `Thematic_group` column to the canonical ten names, which is what fixed the lookup.
+
+So the broken window ran from the repository's first commit until 2026-09-14. The question
+that matters is whether anything downstream of `indicator_audit.csv` ever read the broken
+`ahp_group_weight_pct` column during that window. Checked directly:
+
+```
+grep -rn "indicator_audit" --include="*.py" src/ config.py
+```
+
+turns up exactly three kinds of hit: `17_data_audit.py` itself writing the file, and
+`11_export_outputs.py`'s output checklist, which only checks that the file *exists* on disk
+(`AUDIT / "indicator_audit.csv"` in `EXPECTED_OUTPUTS`) — it never opens or reads it. No
+script anywhere in `src/` ever calls `pd.read_csv` on `indicator_audit.csv`. The only other
+reference in the repository is in `docs/final_manuscript_values.md`, which cites
+`indicator_audit.csv` for exactly one number — "Indicators mapped: 100" — the row count of
+the file, unrelated to the `ahp_group_weight_pct` column. The group counts quoted immediately
+below that line in the same document (Healthcare 9, Education 14, ...) are attributed to
+`data_audit_report.md` section 1.2's *own* group-count check, which counts indicators per
+group directly from tableS3's `Thematic_group` column via `value_counts()` — a separate
+computation in the same section that never calls `_map_group_name` or touches table1 at all,
+so it was never affected by this bug either.
+
+**Conclusion: the bug never left `indicator_audit.csv`.** It degraded one diagnostic column
+in one audit-only CSV, for the entire time this repository has existed, without ever being
+read by another script or cited for any number that reached `final_manuscript_values.md`,
+the README, or any table/figure/gpkg output. `17_data_audit.py`'s five other section-1.2
+checks (group indicator counts, within-group weight sums, table1's own 100%-sum check, the
+AHP consistency ratio, and — added in this remediation pass — a full independent
+recomputation of tableS3's rarity weights) all read their inputs directly rather than through
+this lookup, and all report real, non-tautological pass/fail verdicts today (see the "cannot
+fail" fixes below).
+
+This is also, on its own, a second instance of the exact failure mode documented throughout
+this file: a broken check (`DO NOT MATCH` / `NaN`, printed) that nothing treated as a build
+failure. `17_data_audit.py::main()` now exits non-zero if any section records a real failure
+— see the top-level `record_failure` / `CHECK_FAILURES` mechanism in that script — specifically
+so that a bug shaped like this one cannot again sit unnoticed in printed output for months.

@@ -145,8 +145,14 @@ def main():
     # output rather than something to validate against.
     group_sums = weights.groupby("Thematic_group")["wi"].sum()
     max_sum_error = (group_sums - 1.0).abs().max()
-    print(f"  Max |group weight sum - 1.0|: {max_sum_error:.2e} "
-          f"({'OK' if max_sum_error < 1e-9 else 'UNEXPECTED — investigate'})")
+    print(f"  Max |group weight sum - 1.0|: {max_sum_error:.2e} (OK)")
+    if max_sum_error >= 1e-9:
+        raise RuntimeError(
+            f"Within-group weight sums deviate from 1.0 by up to {max_sum_error:.2e}. "
+            "Since wi is defined as sqrt_ri divided by its own group's sum, this can only "
+            "mean a real bug in compute_rarity_weights — investigate before trusting tableS3. "
+            f"Per-group sums: {group_sums.to_dict()}"
+        )
     print()
     print(weights.sort_values(["Thematic_group", "wi"], ascending=[True, False]).to_string(index=False))
     print()

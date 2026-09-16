@@ -33,6 +33,7 @@ Runs seventeenth, second to last — after every script whose numbers it
 checks, before only 18_output_manifest.py.
 """
 
+import re
 import sys
 import importlib.util
 from pathlib import Path
@@ -75,7 +76,57 @@ SRC_DIR = Path(__file__).resolve().parent
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
 PRIMARY_ACC_CUTOFF_M = 80_000
 
+FINAL_VALUES_PATH = REPO_ROOT / "docs" / "final_manuscript_values.md"
+
 REPORT = []
+CHECK_FAILURES = []
+
+
+def record_failure(section, message):
+    """Record a failed check so main() can exit non-zero once every section has run.
+
+    Printing a DIFFERS/MISMATCH line in the report is not enough on its
+    own — this repository shipped a broken check for weeks because
+    nothing forced anyone to notice the report said so. Every check that
+    reaches a genuine fail verdict below calls this, so the script exits
+    loudly instead of quietly succeeding regardless of what it found.
+    """
+    CHECK_FAILURES.append(f"[{section}] {message}")
+
+
+def load_final_manuscript_values():
+    """Read docs/final_manuscript_values.md once, or return None if it is unavailable.
+
+    This is the one document this repository maintains as an ongoing
+    source of truth for "what does the manuscript currently claim" —
+    several checks below used to compare against a value hardcoded
+    directly in this script ("draft claims X"), frozen at whatever the
+    manuscript said when that line was last edited. The manuscript's own
+    numbers have already moved at least once since this script was
+    written; a hardcoded comparison has no way to notice that. Reading
+    this file at call time means the comparison always uses whatever
+    final_manuscript_values.md currently says, and a missing file or a
+    missing specific value is reported as exactly that — not silently
+    replaced with an invented number.
+    """
+    if not FINAL_VALUES_PATH.exists():
+        return None
+    return FINAL_VALUES_PATH.read_text(encoding="utf-8")
+
+
+def find_reference_value(text, pattern, group=1):
+    """Search final_manuscript_values.md's text for one labelled value.
+
+    `pattern` is a regex with at least one capture group; returns the
+    text of `group`, or None if `text` is None (file missing) or the
+    pattern isn't found in it (this specific value isn't recorded there).
+    Callers must treat None as "no reference value exists" and say so
+    plainly, never fall back to a guessed number.
+    """
+    if text is None:
+        return None
+    m = re.search(pattern, text)
+    return m.group(group) if m else None
 
 
 def log(line=""):
@@ -282,6 +333,10 @@ def section_1_2():
         f"{len(unmatched)} indicator(s) present in only one of the two. "
         f"**{'CONFIRMED — tableS3 matches an independent recomputation' if weights_confirmed else 'DOES NOT MATCH — investigate 01_gi_construction.py or this recomputation'}.**\n")
 
+    if not weights_confirmed:
+        record_failure("1.2", f"tableS3 rarity-weight cross-check: max |ri diff| = {max_ri_diff:.2e}, "
+                               f"max |wi diff| = {max_wi_diff:.2e}, {len(unmatched)} unmatched indicator(s)")
+
     group_counts = ref["Thematic_group"].value_counts()
     # Keys must match tableS3's actual Thematic_group spelling exactly
     # ("Traffic and Communications", not the short form "Traffic") — see
@@ -304,6 +359,10 @@ def section_1_2():
         log(f"- {g}: {actual} ({'OK' if ok else f'MISMATCH, expected {expected}'})")
     log(f"\n**Group counts {'CONFIRMED' if all_match else 'DO NOT MATCH claim'}.**\n")
 
+    if not all_match:
+        record_failure("1.2", f"Group indicator counts do not match the expected breakdown "
+                               f"(actual: {group_counts.to_dict()})")
+
     wsum = ref.groupby("Thematic_group")["Normalised within-group weight (w_i)"].sum()
     log("### Within-group weight sums (should be 1.0 in every group)\n")
     for g, s in wsum.items():
@@ -311,11 +370,16 @@ def section_1_2():
     ok_sum = bool(((wsum - 1.0).abs() < 1e-3).all())
     log(f"\n**Within-group weights {'CONFIRMED to sum to 1' if ok_sum else 'DO NOT sum to 1'} in every group.**\n")
 
+    if not ok_sum:
+        record_failure("1.2", f"Within-group weight sums do not all equal 1.0: {wsum.to_dict()}")
+
     table1 = pd.read_csv(TABLES / "table1_AHP_group_weights.csv")
     group_pct_sum = table1.loc[table1["Thematic Group"] != "TOTAL", "AHP Priority Weight (%)"].sum()
     log(f"### AHP group weights\n\nSum of the 10 group weights in `table1_AHP_group_weights.csv`: "
         f"{group_pct_sum:.4f}% "
         f"({'CONFIRMED ~100%' if abs(group_pct_sum - 100) < 0.5 else 'DOES NOT sum to 100%'})\n")
+    if abs(group_pct_sum - 100) >= 0.5:
+        record_failure("1.2", f"AHP group weights sum to {group_pct_sum:.4f}%, not ~100%")
 
     log("### AHP consistency ratio (recomputed from the pairwise matrix in tableS2)\n")
     groups, matrix, lambda_max, CI, RI, CR, priority_vec = compute_ahp_consistency_ratio()
@@ -326,18 +390,26 @@ def section_1_2():
     log(f"- CR = CI / RI = **{CR:.4f}**  (draft claims 0.024)")
     draft_ok = abs(lambda_max - 10.322) < 0.01 and abs(CI - 0.036) < 0.001 and abs(CR - 0.024) < 0.001
     log(f"\n**Draft AHP consistency figures {'CONFIRMED' if draft_ok else 'DO NOT match recomputed values — see above for corrected figures'}.**\n")
+    if not draft_ok:
+        record_failure("1.2", f"AHP consistency ratio: recomputed lambda_max={lambda_max:.4f}, "
+                               f"CI={CI:.4f}, CR={CR:.4f} vs draft 10.322/0.036/0.024")
     log("Recomputed priority vector from the matrix's principal eigenvector "
         f"(should reproduce the group weights in table1): "
         + ", ".join(f"{g}={v:.4f}" for g, v in zip(groups, priority_vec)) + "\n")
 
     log("### Territorial descriptors vs functional counts\n")
-    log("`n_Area_km2` is a municipality-area indicator present in "
-        f"`{MUNICIPALITIES_PTS}` but excluded from the GI computation "
-        "(absent from the tableS3 100-indicator mapping used by "
-        "`01_gi_construction.py`). `06_ml_framework.py::build_municipality_features` "
-        "keeps every raw `n_` column except `n_Fitness_C`, so `n_Area_km2` **is** "
-        "included as an ML feature. This confirms the draft's claim that municipality "
-        "area is excluded from the GI but included in the ML feature set.\n")
+    area_in_pts = "n_Area_km2" in pts.columns
+    area_in_tableS3 = "n_Area_km2" in set(ref["Indicator_code"])
+    territorial_ok = area_in_pts and not area_in_tableS3
+    log(f"- `n_Area_km2` present in `{MUNICIPALITIES_PTS}`: **{area_in_pts}**")
+    log(f"- `n_Area_km2` present in tableS3's 100-indicator mapping (i.e. included in the GI): "
+        f"**{area_in_tableS3}**")
+    log(f"\n**Territorial-descriptor exclusion {'CONFIRMED' if territorial_ok else 'DOES NOT hold'}: "
+        f"`n_Area_km2` is {'correctly excluded from' if territorial_ok else 'unexpectedly included in or missing from'} "
+        "the GI's 100-indicator set.**\n")
+    if not territorial_ok:
+        record_failure("1.2", f"Territorial-descriptor exclusion: n_Area_km2 in pts={area_in_pts}, "
+                               f"in tableS3={area_in_tableS3} (expected True/False)")
 
     # indicator_audit.csv
     rows = []
@@ -441,6 +513,14 @@ def section_1_3():
     ahp_ok = abs(ahp_stats['mean'] - 0.039) < 0.001 and abs(ahp_stats['median'] - 0.013) < 0.001 and abs(ahp_stats['std'] - 0.088) < 0.001
     log(f"\n**GI_NW draft stats {'CONFIRMED' if nw_ok else 'DO NOT match — see corrected values above'}.**")
     log(f"**GI_AHP draft stats {'CONFIRMED' if ahp_ok else 'DO NOT match — see corrected values above'}.**\n")
+    if not nw_ok:
+        record_failure("1.3", f"GI_NW descriptive stats: mean={nw_stats['mean']:.4f}, "
+                               f"median={nw_stats['median']:.4f}, sd={nw_stats['std']:.4f} "
+                               "vs draft 0.044/0.020/0.084")
+    if not ahp_ok:
+        record_failure("1.3", f"GI_AHP descriptive stats: mean={ahp_stats['mean']:.4f}, "
+                               f"median={ahp_stats['median']:.4f}, sd={ahp_stats['std']:.4f} "
+                               "vs draft 0.039/0.013/0.088")
 
     rho, pval = spearmanr(merged["GI_Final_NotWeighted"], merged["GI_AHP"])
     n_big_change = int((merged["rank_change"] > 10).sum())
@@ -519,6 +599,9 @@ def section_1_4(G, node_list, node_coords, tree, noded):
         f"pre-filter segment count (254,252) and largest-component node count (390,273). "
         f"Note the manuscript's own stated connectivity percentage (98.9%) is itself a rounding "
         f"error: 390,273/394,874 = 98.835%, which rounds to 98.8%, not 98.9%.\n")
+    if not ok:
+        record_failure("1.4", f"Road-network figures: n_before={n_before}, n_nodes={n_nodes}, "
+                               f"components={len(components)} vs expected 254252/390273/1")
 
     log(f"### OSM highway classes\n")
     log(f"- Retained ({len(mod02.FCLASS_KEEP)}): {mod02.FCLASS_KEEP}")
@@ -533,11 +616,39 @@ def section_1_4(G, node_list, node_coords, tree, noded):
     _, village_dist = snap_with_dist(villages, tree, node_list)
 
     log(f"### Snapping distances\n")
-    log(f"- Municipality centroids: mean={muni_dist.mean():.1f} m, max={muni_dist.max():.1f} m  "
-        f"(draft claims mean 39.5 m, max 297.5 m)")
-    log(f"- Settlement centroids: mean={village_dist.mean():.1f} m, max={village_dist.max():.1f} m, "
-        f"count > 500 m: {int((village_dist > 500).sum())}  "
-        f"(draft claims mean 58.3 m, max 1,470.5 m)\n")
+    fm_text = load_final_manuscript_values()
+    n_gt500 = int((village_dist > 500).sum())
+
+    def _check_against_reference(section, label, computed, pattern, tol, is_int=False):
+        """Compare one computed value against its labelled line in final_manuscript_values.md.
+
+        Prints CONFIRMED/DIFFERS when a reference value is found, or says
+        plainly that no reference value exists rather than inventing one
+        to compare against.
+        """
+        raw = find_reference_value(fm_text, pattern)
+        if raw is None:
+            log(f"- {label}: {computed}  (no reference value in docs/final_manuscript_values.md)")
+            return
+        ref = int(raw.replace(",", "")) if is_int else float(raw.replace(",", ""))
+        matches = (computed == ref) if is_int else (abs(computed - ref) < tol)
+        log(f"- {label}: {computed}  (final_manuscript_values.md: {raw}) "
+            f"— {'CONFIRMED' if matches else 'DIFFERS'}")
+        if not matches:
+            record_failure(section, f"{label}: recomputed {computed}, "
+                                     f"final_manuscript_values.md says {raw}")
+
+    _check_against_reference("1.4", "Municipality snapping distance, mean (m)", round(muni_dist.mean(), 1),
+                              r"Municipality snapping distance, mean:\s*([\d,.]+)\s*m", 0.05)
+    _check_against_reference("1.4", "Municipality snapping distance, max (m)", round(muni_dist.max(), 1),
+                              r"Municipality snapping distance, max:\s*([\d,.]+)\s*m", 0.05)
+    _check_against_reference("1.4", "Settlement snapping distance, mean (m)", round(village_dist.mean(), 1),
+                              r"Settlement snapping distance, mean:\s*([\d,.]+)\s*m", 0.05)
+    _check_against_reference("1.4", "Settlement snapping distance, max (m)", round(village_dist.max(), 1),
+                              r"Settlement snapping distance, max:\s*([\d,.]+)\s*m", 0.05)
+    _check_against_reference("1.4", "Settlements snapped > 500 m", n_gt500,
+                              r"Settlements snapped > 500 m:\s*(\d+)", 0, is_int=True)
+    log("")
 
     return {
         "n_before_noding": n_before, "total_length_km": total_len_km, "n_after_noding": n_after,
@@ -599,11 +710,22 @@ def section_1_5(G, node_list, node_coords, tree):
 
     n_zero = int((filled == 0).sum())
 
-    log(f"- Matrix shape: **{filled.shape}**  (expected 6,036 x 212)")
+    fm_text_1_5 = load_final_manuscript_values()
+    shape_match = re.search(r"Shape:\s*([\d,]+)\s*villages x\s*([\d,]+)\s*municipalities", fm_text_1_5) if fm_text_1_5 else None
+    if shape_match:
+        ref_v, ref_m = int(shape_match.group(1).replace(",", "")), int(shape_match.group(2).replace(",", ""))
+        shape_ok = filled.shape == (ref_v, ref_m)
+        log(f"- Matrix shape: **{filled.shape}**  (final_manuscript_values.md: {ref_v:,} villages x "
+            f"{ref_m:,} municipalities) — {'CONFIRMED' if shape_ok else 'DIFFERS'}")
+        if not shape_ok:
+            record_failure("1.5", f"Matrix shape: recomputed {filled.shape}, "
+                                   f"final_manuscript_values.md says ({ref_v}, {ref_m})")
+    else:
+        log(f"- Matrix shape: **{filled.shape}**  (no reference value in docs/final_manuscript_values.md)")
     log(f"- Valid (reached-within-cutoff) network distances before fill: "
-        f"**{n_valid_pre_fill}/{n_total} ({pct_valid:.2f}%)**  (draft claims 99.84%)")
+        f"**{n_valid_pre_fill}/{n_total} ({pct_valid:.2f}%)**")
     log(f"- Missing pairs (unreached within {CUTOFF_M/1000:.0f} km cutoff): **{n_missing}**  "
-        f"(draft claims 2,107, filled with the maximum observed distance per municipality)")
+        f"(filled with the maximum observed distance per municipality)")
     log(f"- Fill method used by the pipeline: each missing (village, muni) pair is filled with "
         f"the **column (municipality) maximum** observed distance — confirmed by reading "
         f"`03_huff_ahp.py::compute_distance_matrix`.")
@@ -612,8 +734,26 @@ def section_1_5(G, node_list, node_coords, tree):
     log(f"- Settlements with zero distance to their own municipality (village at the "
         f"municipal seat): **{n_zero}**\n")
 
-    ok = (n_missing == 2107 and abs(pct_valid - 99.84) < 0.02)
-    log(f"**Draft OD-matrix figures {'CONFIRMED' if ok else 'DO NOT MATCH — see corrected values above'}.**\n")
+    # Compared against docs/final_manuscript_values.md, not a hardcoded
+    # literal — this used to compare against 2,107 missing pairs / 99.84%,
+    # which was the pre-road-network-fix figure and had been silently
+    # stale (reporting DO NOT MATCH on every run without anyone treating
+    # it as a failure) since the network was corrected. See
+    # docs/reproducibility_note.md's OD-matrix discussion for why the
+    # missing-pair count changed.
+    missing_ref = re.search(r"Missing pairs.*?:\s*([\d,]+)", fm_text_1_5) if fm_text_1_5 else None
+    valid_pct_ref = re.search(r"Valid.*?pairs:\s*([\d.]+)%", fm_text_1_5) if fm_text_1_5 else None
+    if missing_ref and valid_pct_ref:
+        ref_missing = int(missing_ref.group(1).replace(",", ""))
+        ref_pct = float(valid_pct_ref.group(1))
+        ok = (n_missing == ref_missing and abs(pct_valid - ref_pct) < 0.02)
+        log(f"**OD-matrix figures vs final_manuscript_values.md ({ref_missing} missing pairs, "
+            f"{ref_pct}% valid): {'CONFIRMED' if ok else 'DIFFERS'}.**\n")
+        if not ok:
+            record_failure("1.5", f"OD-matrix figures: n_missing={n_missing} ({pct_valid:.2f}% valid) "
+                                   f"vs final_manuscript_values.md's {ref_missing} ({ref_pct}% valid)")
+    else:
+        log("**OD-matrix figures: no reference value in docs/final_manuscript_values.md.**\n")
 
     return {"shape": filled.shape, "n_valid_pre_fill": n_valid_pre_fill, "pct_valid": pct_valid,
             "n_missing": n_missing, "min": filled.min(), "max": filled.max(),
@@ -688,22 +828,41 @@ def section_1_6(G, node_list, node_coords, tree, mod05, facility_paths):
 
     n_total_values = len(munis) * n_facility_types
 
-    log(f"- Facility types discovered: **{n_facility_types}**  (draft claims 86)")
-    log(f"- Total distance values computed (munis x facility types): **{n_total_values}**  "
-        f"(draft claims 18,232)")
+    log(f"- Facility types discovered: **{n_facility_types}**")
+    log(f"- Total distance values computed (munis x facility types): **{n_total_values}**")
     log(f"- Values missing after the {PRIMARY_ACC_CUTOFF_M/1000:.0f} km primary search: "
-        f"**{n_missing_after_primary}**  (draft claims 1,111)")
+        f"**{n_missing_after_primary}**")
     log(f"- Values recovered by the {CUTOFF_M/1000:.0f} km extended search: "
-        f"**{n_recovered_by_extended}**  (draft claims 1,105)")
+        f"**{n_recovered_by_extended}**")
     log(f"- Values remaining missing after both searches (filled with the column maximum): "
-        f"**{n_still_missing}**  (draft claims 6, all district courts in Prekmurje)")
+        f"**{n_still_missing}**")
     if still_missing_pairs:
         log(f"  - Remaining-missing (municipality, facility_type) pairs: {still_missing_pairs}")
     log("")
 
-    ok = (n_facility_types == 86 and n_total_values == 18232 and n_missing_after_primary == 1111
-          and n_recovered_by_extended == 1105 and n_still_missing == 6)
-    log(f"**Draft accessibility figures {'CONFIRMED' if ok else 'DO NOT MATCH — see corrected values above'}.**\n")
+    # facility-type count and total-value count have a maintained reference
+    # in docs/final_manuscript_values.md and gate record_failure below. The
+    # missing/recovered/still-missing breakdown has no reference value
+    # there (only ever compared against a stale pre-road-network-fix
+    # literal, 1111/1105/6) — reported for visibility, per "say so rather
+    # than inventing a target," but not gated until that reference exists.
+    fm_text_1_6 = load_final_manuscript_values()
+    types_ref = re.search(r"Facility types \(accessibility\):\s*(\d+)", fm_text_1_6) if fm_text_1_6 else None
+    values_ref = re.search(r"Accessibility values computed.*?:\s*([\d,]+)", fm_text_1_6) if fm_text_1_6 else None
+    if types_ref and values_ref:
+        ref_types, ref_values = int(types_ref.group(1)), int(values_ref.group(1).replace(",", ""))
+        ok = (n_facility_types == ref_types and n_total_values == ref_values)
+        log(f"**Accessibility figures vs final_manuscript_values.md ({ref_types} types, "
+            f"{ref_values:,} values): {'CONFIRMED' if ok else 'DIFFERS'}.**")
+        if not ok:
+            record_failure("1.6", f"Accessibility figures: types={n_facility_types}, "
+                                   f"total_values={n_total_values} vs final_manuscript_values.md's "
+                                   f"{ref_types}/{ref_values}")
+    else:
+        log("**Accessibility figures: no reference value in docs/final_manuscript_values.md.**")
+    log(f"(missing/recovered/still-missing breakdown — {n_missing_after_primary}/"
+        f"{n_recovered_by_extended}/{n_still_missing} — has no maintained reference value yet; "
+        "not gated.)\n")
 
     return {"n_facility_types": n_facility_types, "n_total_values": n_total_values,
             "n_missing_after_primary": n_missing_after_primary,
@@ -716,11 +875,19 @@ def section_1_6(G, node_list, node_coords, tree, mod05, facility_paths):
 # ══════════════════════════════════════════════════════════════
 
 def _feature_group(feature, indicator_group_map):
-    """Sort one ML feature name into a thematic category, for the ML audit's feature breakdown."""
+    """Sort one ML feature name into a thematic category, for the ML audit's feature breakdown.
+
+    GI_AHP and GI_NW are each their own model's single composite score
+    feature, not an "Other" — a previous version of this function only
+    special-cased "GI_AHP" by name, so ml_NW_feature_importance.csv's
+    GI_NW row silently fell through to "Other" instead of getting its own
+    category, understating "Other" and hiding the composite score's real
+    contribution whenever the NW model's breakdown was audited.
+    """
     if feature == "dist_to_muni":
         return "Distance"
-    if feature == "GI_AHP":
-        return "GI_AHP"
+    if feature in ("GI_AHP", "GI_NW"):
+        return feature
     if feature.startswith("nacc_"):
         return "Accessibility"
     if feature == "n_Area_km2":
@@ -741,15 +908,46 @@ def section_1_7():
     nacc_cols = [c for c in acc.columns if c.startswith("nacc_")]
     feature_cols = n_cols + nacc_cols + ["GI_AHP", "dist_to_muni"]
 
-    n_villages, n_munis = N_SETTLEMENTS, N_MUNICIPALITIES
-    n_rows = n_villages * n_munis
-    log(f"- Training table row count (villages x municipalities): **{n_rows:,}**  "
-        f"(draft claims 1,279,632)")
-    log(f"- Feature count: **{len(feature_cols)}**  (draft claims 189) — "
+    area_in_features = "n_Area_km2" in n_cols
+    log(f"- `n_Area_km2` present in the ML feature set (`06_ml_framework.py::build_municipality_features` "
+        f"keeps every raw `n_` column except `n_Fitness_C`): **{area_in_features}** "
+        f"({'CONFIRMED — complements 1.2, which excludes it from the GI' if area_in_features else 'MISSING — was excluded here too'})\n")
+    if not area_in_features:
+        record_failure("1.7", "n_Area_km2 expected in the ML feature set (excluded from the GI, "
+                               "but should still be an ML feature) — it is absent")
+
+    # Row count is derived from the actual OD matrix on disk, not from
+    # N_SETTLEMENTS * N_MUNICIPALITIES — those are the same two config.py
+    # constants the expected total is defined from, so multiplying them
+    # together and comparing the result to a number derived the same way
+    # can never disagree: it is arithmetic on two hardcoded literals, not
+    # a check of anything this pipeline actually computed. Reading
+    # huff_od_matrix.csv's real shape means a genuine problem upstream
+    # (a dropped settlement, a broken merge) would actually show up here.
+    od = pd.read_csv(TABLES / "huff_od_matrix.csv")
+    n_villages_actual = len(od)
+    n_munis_actual = len([c for c in od.columns if c.startswith("Pij_")])
+    n_rows = n_villages_actual * n_munis_actual
+    log(f"- Training table row count (from `huff_od_matrix.csv`: "
+        f"{n_villages_actual:,} villages x {n_munis_actual} municipalities): **{n_rows:,}**")
+    log(f"- Feature count: **{len(feature_cols)}** — "
         f"breakdown: {len(n_cols)} raw GI indicators (incl. `n_Area_km2`), "
         f"{len(nacc_cols)} accessibility, 1 GI_AHP, 1 distance-to-municipality\n")
-    ok_shape = (n_rows == 1279632 and len(feature_cols) == 189)
-    log(f"**Draft row/feature counts {'CONFIRMED' if ok_shape else 'DO NOT MATCH'}.**\n")
+
+    fm_text_1_7a = load_final_manuscript_values()
+    shape_ref = re.search(r"Training table:\s*([\d,]+)\s*rows x\s*([\d,]+)\s*features",
+                           fm_text_1_7a) if fm_text_1_7a else None
+    if shape_ref:
+        ref_rows, ref_features = int(shape_ref.group(1).replace(",", "")), int(shape_ref.group(2))
+        ok_shape = (n_rows == ref_rows and len(feature_cols) == ref_features)
+        log(f"**Row/feature counts vs final_manuscript_values.md ({ref_rows:,} rows x {ref_features} "
+            f"features): {'CONFIRMED' if ok_shape else 'DIFFERS'}.**\n")
+        if not ok_shape:
+            record_failure("1.7", f"Row/feature counts: recomputed {n_rows:,} rows x {len(feature_cols)} "
+                                   f"features, final_manuscript_values.md says {ref_rows:,} rows x "
+                                   f"{ref_features} features")
+    else:
+        log("**Row/feature counts: no reference value in docs/final_manuscript_values.md.**\n")
 
     log("### Hyperparameters (read from `06_ml_framework.py::train_rf_spatial_cv`)\n")
     log("- `RandomForestRegressor(n_estimators=100, max_depth=15, min_samples_leaf=10, "
@@ -762,10 +960,24 @@ def section_1_7():
         blocks = pd.read_csv(blocks_path)
         counts = blocks["spatial_block"].value_counts().sort_index()
         log(f"### Spatial block sizes (from cached `spatial_blocks.csv`)\n")
-        log(f"- {counts.to_dict()}  (draft claims 52, 34, 24, 61, 41)")
-        draft_blocks = sorted([52, 34, 24, 61, 41])
+        log(f"- {counts.to_dict()}")
         actual_blocks = sorted(counts.tolist())
-        log(f"\n**Block sizes {'CONFIRMED (as a set)' if draft_blocks == actual_blocks else 'DO NOT MATCH — corrected sizes above'}.**\n")
+        # Compared against docs/final_manuscript_values.md's own {block: size}
+        # dict, not a hardcoded literal — the previous hardcoded target
+        # (52, 34, 24, 61, 41) was stale from before the road-network fix
+        # and had been silently reporting DO NOT MATCH on every run.
+        fm_text_1_7b = load_final_manuscript_values()
+        blocks_ref = re.search(r"Spatial CV blocks.*?:\s*\{([^}]+)\}", fm_text_1_7b) if fm_text_1_7b else None
+        if blocks_ref:
+            ref_blocks = sorted(int(v.strip()) for v in re.findall(r":\s*(\d+)", blocks_ref.group(1)))
+            blocks_ok = actual_blocks == ref_blocks
+            log(f"\n**Block sizes vs final_manuscript_values.md ({ref_blocks}): "
+                f"{'CONFIRMED (as a set)' if blocks_ok else 'DIFFERS'}.**\n")
+            if not blocks_ok:
+                record_failure("1.7", f"Spatial block sizes: {actual_blocks} vs "
+                                       f"final_manuscript_values.md's {ref_blocks}")
+        else:
+            log("\n**Block sizes: no reference value in docs/final_manuscript_values.md.**\n")
     else:
         log("- `spatial_blocks.csv` cache not found — cannot verify block sizes.\n")
 
@@ -800,8 +1012,24 @@ def section_1_7():
     ref = ref.dropna(subset=["Indicator_code"])
     ref = ref[ref["Indicator_code"] != "Total"]
 
-    for label, path in [("AHP", TABLES / "ml_AHP_feature_importance.csv"),
-                         ("NW", TABLES / "ml_NW_feature_importance.csv")]:
+    def _parse_feature_importance_reference(text, gi_label):
+        """Extract the five feature-group percentages for one model from final_manuscript_values.md."""
+        if text is None:
+            return None
+        pattern = (r"Feature importance by group:\s*Distance\s*([\d.]+)%,\s*"
+                   + re.escape(gi_label) + r"\s*([\d.]+)%,\s*Accessibility\s*([\d.]+)%,\s*"
+                   r"Individual GI indicators\s*([\d.]+)%,\s*Municipality area\s*([\d.]+)%")
+        m = re.search(pattern, text)
+        if not m:
+            return None
+        return {"Distance": float(m.group(1)), gi_label: float(m.group(2)),
+                "Accessibility": float(m.group(3)), "Individual GI indicators": float(m.group(4)),
+                "Municipality area": float(m.group(5))}
+
+    fm_text_1_7 = load_final_manuscript_values()
+
+    for label, gi_label, path in [("AHP", "GI_AHP", TABLES / "ml_AHP_feature_importance.csv"),
+                                   ("NW", "GI_NW", TABLES / "ml_NW_feature_importance.csv")]:
         if not path.exists():
             log(f"- **{label}**: `{path.name}` not found — skipped.\n")
             continue
@@ -809,16 +1037,24 @@ def section_1_7():
         fi["group"] = fi["feature"].apply(lambda f: _feature_group(f, group_map))
         by_group = fi.groupby("group")["importance"].sum().sort_values(ascending=False)
         total = fi["importance"].sum()
+        computed_pct = {g: 100 * v / total for g, v in by_group.items()}
         log(f"**{label}** feature importance by group (of total {total:.4f}):\n")
         for g, v in by_group.items():
             log(f"- {g}: {100*v/total:.2f}%")
         log("")
-        if label == "AHP":
-            log("(draft claims: distance 62.54%, GI_AHP 22.83%, accessibility 7.52%, "
-                "individual GI indicators 6.38%, municipality area 0.74%)\n")
 
-    log("Note: NW-target feature importance breakdown above is not reported anywhere "
-        "in the current manuscript draft; it is produced here for the first time.\n")
+        ref_pct = _parse_feature_importance_reference(fm_text_1_7, gi_label)
+        if ref_pct is None:
+            log(f"(no reference value in docs/final_manuscript_values.md for the {label} model)\n")
+            continue
+        diffs = {g: abs(computed_pct.get(g, 0.0) - v) for g, v in ref_pct.items()}
+        max_diff = max(diffs.values())
+        matches = max_diff < 0.5
+        log(f"(final_manuscript_values.md: " + ", ".join(f"{g} {v:.2f}%" for g, v in ref_pct.items())
+            + f") — {'CONFIRMED' if matches else 'DIFFERS'} (max |diff| = {max_diff:.2f} pp)\n")
+        if not matches:
+            record_failure("1.7", f"{label} feature importance by group: max |diff| = {max_diff:.2f} pp "
+                                   f"vs final_manuscript_values.md ({diffs})")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -834,9 +1070,55 @@ def _agreement_from_gpkg(path, col="agreement"):
 
 
 def section_1_8():
-    """Check a fixed list of specific numbers quoted in the manuscript draft against the pipeline's current output."""
+    """Check a fixed list of specific numbers quoted in the manuscript draft against the pipeline's current output, and separately against the maintained reference doc.
+
+    Two different comparisons, on purpose. `draft_value` is what the
+    *original* manuscript draft claimed — informational only, since this
+    repository's rerun is expected to differ from it permanently (the
+    road-network provenance gap documented at length in
+    docs/reproducibility_note.md's "Two residual discrepancies, honestly"
+    section is not a bug to fix). `reference_value`, pulled from
+    docs/final_manuscript_values.md — the document this repository
+    actually maintains as current truth — is what gates `record_failure`:
+    if this run's own output no longer matches what was already verified
+    and written down there, that is a real regression, not an old,
+    understood gap.
+    """
     log("## 1.8 Manuscript number verification\n")
     rows = []
+    fm_text_1_8 = load_final_manuscript_values()
+
+    def ref(pattern, group=1):
+        return find_reference_value(fm_text_1_8, pattern, group)
+
+    def refs(pattern, groups=1):
+        """Like ref(), but returns every match (as tuples) for a pattern that repeats in the doc."""
+        if fm_text_1_8 is None:
+            return []
+        return re.findall(pattern, fm_text_1_8)
+
+    def add_ref_check(row, ref_value_str, matches):
+        """Attach a reference_value / ref_status pair to a row already appended to `rows`.
+
+        matches=None means no reference value could be found — noted, but
+        never gates record_failure, per the same "say so rather than
+        inventing a target" rule used elsewhere in this file.
+        """
+        row["reference_value"] = ref_value_str if ref_value_str is not None else "(none in final_manuscript_values.md)"
+        # `matches is True` / `is False` deliberately avoided: most callers
+        # pass the result of a numpy/pandas comparison (numpy.bool_), and
+        # `numpy.bool_(True) is True` is False — identity, not equality —
+        # which silently sent every genuine numpy-bool match (and, more
+        # dangerously, every genuine numpy-bool MISMATCH) into "no
+        # reference value" instead of being recorded at all. Caught by
+        # actually running this section end to end rather than trusting
+        # the code read right.
+        if matches is None:
+            row["ref_status"] = "no reference value"
+        elif bool(matches):
+            row["ref_status"] = "CONFIRMED vs reference"
+        else:
+            row["ref_status"] = "DIFFERS vs reference"
 
     # AHP vs NW
     n_agree, n_total = _agreement_from_gpkg(GPKG / "map_AHP_vs_NW_villages.gpkg")
@@ -845,6 +1127,9 @@ def section_1_8():
                  "repository_value": f"{pct:.2f}%, {n_agree}/{n_total}",
                  "status": "CONFIRMED" if (n_agree == 5349) else "DIFFERS",
                  "source_file": "outputs/gpkg/map_AHP_vs_NW_villages.gpkg"})
+    r_agree = ref(r"AHP vs NW: n_agree ([\d,]+) / [\d,]+")
+    add_ref_check(rows[-1], f"{r_agree}/6036" if r_agree else None,
+                  None if r_agree is None else n_agree == int(r_agree.replace(",", "")))
 
     n_agree, n_total = _agreement_from_gpkg(GPKG / "map_AHP_vs_ML_villages.gpkg")
     pct = 100 * n_agree / n_total
@@ -852,6 +1137,9 @@ def section_1_8():
                  "repository_value": f"{pct:.2f}%, {n_agree}/{n_total}",
                  "status": "CONFIRMED" if (n_agree == 4551) else "DIFFERS",
                  "source_file": "outputs/gpkg/map_AHP_vs_ML_villages.gpkg"})
+    r_agree = ref(r"AHP vs ML: n_agree ([\d,]+) / [\d,]+")
+    add_ref_check(rows[-1], f"{r_agree}/6036" if r_agree else None,
+                  None if r_agree is None else n_agree == int(r_agree.replace(",", "")))
 
     n_agree, n_total = _agreement_from_gpkg(GPKG / "map_NW_vs_ML_villages.gpkg")
     pct = 100 * n_agree / n_total
@@ -859,6 +1147,9 @@ def section_1_8():
                  "repository_value": f"{pct:.2f}%, {n_agree}/{n_total}",
                  "status": "CONFIRMED" if (n_agree == 4672) else "DIFFERS",
                  "source_file": "outputs/gpkg/map_NW_vs_ML_villages.gpkg"})
+    r_agree = ref(r"NW vs ML: n_agree ([\d,]+) / [\d,]+")
+    add_ref_check(rows[-1], f"{r_agree}/6036" if r_agree else None,
+                  None if r_agree is None else n_agree == int(r_agree.replace(",", "")))
 
     euc = pd.read_csv(TABLES / "table_euclidean_vs_network.csv")
     n_agree = int(euc["agreement"].sum())
@@ -869,60 +1160,90 @@ def section_1_8():
                  "repository_value": f"{pct_euc:.2f}%, {n_agree}/{n_total_euc}, kappa {kappa_euc:.4f}",
                  "status": "CONFIRMED" if n_agree == 5335 else "DIFFERS",
                  "source_file": "outputs/tables/table_euclidean_vs_network.csv"})
+    r_agree = ref(r"Euclidean vs network-distance agreement: n_agree ([\d,]+) / [\d,]+")
+    add_ref_check(rows[-1], f"{r_agree}/6036" if r_agree else None,
+                  None if r_agree is None else n_agree == int(r_agree.replace(",", "")))
 
     mi = pd.read_csv(TABLES / "table_morans_i_results.csv")
+    mi_ref_patterns = {
+        "AHP_vs_NW": r"AHP vs NW: n_agree.*?Moran's I ([\d.]+)",
+        "AHP_vs_ML": r"AHP vs ML: n_agree.*?Moran's I ([\d.]+)",
+        "NW_vs_ML": r"NW vs ML: n_agree.*?Moran's I ([\d.]+)",
+    }
     for label, draft, draft_I in [("AHP_vs_NW", "0.184, z 24.31", 0.184),
                                    ("AHP_vs_ML", "0.451, z 59.55", 0.451),
                                    ("NW_vs_ML", "0.447, z 57.40", 0.447)]:
         r = mi[mi["layer"] == label]
-        if len(r):
-            I, z = r.iloc[0]["morans_I"], r.iloc[0]["z_score"]
-            i_matches = abs(I - draft_I) < 0.002
-            rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
-                         "repository_value": f"I={I:.4f}, z={z:.2f}",
-                         "status": ("CONFIRMED (I; z is a permutation estimate and fluctuates run to run)"
-                                    if i_matches else
-                                    f"DIFFERS (I) — draft {draft_I}, repository {I:.4f}; "
-                                    "z is a permutation estimate and fluctuates run to run"),
-                         "source_file": "outputs/tables/table_morans_i_results.csv"})
-        else:
-            rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
-                         "repository_value": "NOT YET COMPUTED",
-                         "status": "PENDING — run src/12_morans_lisa.py first",
-                         "source_file": "outputs/tables/table_morans_i_results.csv"})
+        if not len(r):
+            # table_morans_i_results.csv exists (the read above would already
+            # have raised FileNotFoundError otherwise) but is missing a row
+            # 12_morans_lisa.py always produces in one pass — a partial or
+            # stale file, not a "not yet run" state a soft status can paper
+            # over.
+            raise RuntimeError(
+                f"outputs/tables/table_morans_i_results.csv has no '{label}' row — "
+                f"rows present: {sorted(mi['layer'].unique())}. Re-run src/12_morans_lisa.py; "
+                "it should always produce all four comparisons in one pass."
+            )
+        I, z = r.iloc[0]["morans_I"], r.iloc[0]["z_score"]
+        i_matches = abs(I - draft_I) < 0.002
+        rows.append({"claim": f"Moran's I {label.replace('_', ' ')}", "draft_value": draft,
+                     "repository_value": f"I={I:.4f}, z={z:.2f}",
+                     "status": ("CONFIRMED (I; z is a permutation estimate and fluctuates run to run)"
+                                if i_matches else
+                                f"DIFFERS (I) — draft {draft_I}, repository {I:.4f}; "
+                                "z is a permutation estimate and fluctuates run to run"),
+                     "source_file": "outputs/tables/table_morans_i_results.csv"})
+        r_I = ref(mi_ref_patterns[label])
+        add_ref_check(rows[-1], f"I={r_I}" if r_I else None,
+                      None if r_I is None else abs(I - float(r_I)) < 0.002)
 
+    # No soft fallback here: this check needs table_lisa_summary.csv with an
+    # AHP_vs_ML row to mean anything at all. A previous version of this
+    # block handled a missing file by printing a "FLAGGED — cannot be
+    # checked" row containing a paragraph of narrative about a repository
+    # state from before all four LISA comparisons existed (a single
+    # AHP-vs-NW-only layer, with specific stale counts baked into the
+    # text) — that branch could never fire once 12_morans_lisa.py started
+    # producing all four comparisons, but the stale prose would still have
+    # printed as if current had it ever been reached again. Raising here
+    # instead means a genuinely missing prerequisite stops the run loudly,
+    # rather than being described by a paragraph nobody kept up to date.
     lisa_summary_path = TABLES / "table_lisa_summary.csv"
-    if lisa_summary_path.exists():
-        lisa_df = pd.read_csv(lisa_summary_path)
-        r = lisa_df[lisa_df["comparison"] == "AHP_vs_ML"]
-        if len(r):
-            r = r.iloc[0]
-            n_sig = int(r["HH"] + r["LL"] + r["HL"] + r["LH"])
-            draft_ll, draft_hl, draft_lh, draft_sig = 706, 255, 116, 1077
-            counts_match = (r["LL"] == draft_ll and r["HL"] == draft_hl
-                             and r["LH"] == draft_lh and n_sig == draft_sig)
-            rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
-                         "repository_value": f"HH={r['HH']}, LL={r['LL']}, HL={r['HL']}, LH={r['LH']}, "
-                                              f"significant={n_sig}",
-                         "status": ("CONFIRMED" if counts_match else
-                                    f"DIFFERS — draft LL={draft_ll}/HL={draft_hl}/LH={draft_lh}/"
-                                    f"sig={draft_sig} vs repository LL={r['LL']}/HL={r['HL']}/"
-                                    f"LH={r['LH']}/sig={n_sig}"),
-                         "source_file": "outputs/gpkg/map_lisa_AHP_vs_ML.gpkg"})
-        else:
-            rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
-                         "repository_value": "table_lisa_summary.csv exists but has no AHP_vs_ML row",
-                         "status": "FLAGGED — cannot be checked from current outputs",
-                         "source_file": "outputs/tables/table_lisa_summary.csv"})
+    if not lisa_summary_path.exists():
+        raise RuntimeError(
+            f"{lisa_summary_path} not found — run src/12_morans_lisa.py before "
+            "src/17_data_audit.py; section 1.8's LISA AHP vs ML check has no "
+            "meaningful fallback without it."
+        )
+    lisa_df = pd.read_csv(lisa_summary_path)
+    r = lisa_df[lisa_df["comparison"] == "AHP_vs_ML"]
+    if not len(r):
+        raise RuntimeError(
+            f"{lisa_summary_path} exists but has no AHP_vs_ML row — "
+            f"comparisons present: {sorted(lisa_df['comparison'].unique())}. "
+            "Re-run src/12_morans_lisa.py; it should always produce all four comparisons."
+        )
+    r = r.iloc[0]
+    n_sig = int(r["HH"] + r["LL"] + r["HL"] + r["LH"])
+    draft_ll, draft_hl, draft_lh, draft_sig = 706, 255, 116, 1077
+    counts_match = (r["LL"] == draft_ll and r["HL"] == draft_hl
+                     and r["LH"] == draft_lh and n_sig == draft_sig)
+    rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
+                 "repository_value": f"HH={r['HH']}, LL={r['LL']}, HL={r['HL']}, LH={r['LH']}, "
+                                      f"significant={n_sig}",
+                 "status": ("CONFIRMED" if counts_match else
+                            f"DIFFERS — draft LL={draft_ll}/HL={draft_hl}/LH={draft_lh}/"
+                            f"sig={draft_sig} vs repository LL={r['LL']}/HL={r['HL']}/"
+                            f"LH={r['LH']}/sig={n_sig}"),
+                 "source_file": "outputs/gpkg/map_lisa_AHP_vs_ML.gpkg"})
+    lisa_ref = re.search(r"AHP vs ML: HH (\d+), LL (\d+), HL (\d+), LH (\d+)", fm_text_1_8) if fm_text_1_8 else None
+    if lisa_ref:
+        r_hh, r_ll, r_hl, r_lh = (int(x) for x in lisa_ref.groups())
+        ref_match = (r["HH"] == r_hh and r["LL"] == r_ll and r["HL"] == r_hl and r["LH"] == r_lh)
+        add_ref_check(rows[-1], f"HH={r_hh}, LL={r_ll}, HL={r_hl}, LH={r_lh}", ref_match)
     else:
-        rows.append({"claim": "LISA AHP vs ML", "draft_value": "706 LL, 255 HL, 116 LH, 1077 significant",
-                     "repository_value": "NO CORRESPONDING OUTPUT EXISTS — the only LISA layer in this "
-                                          "repository is map_lisa_AHP_vs_NW.gpkg (a different comparison), "
-                                          "and its cluster_type has no HL/LH categories at all "
-                                          "(counts: HH=4024, LL=361, not significant=1651). "
-                                          "Run src/12_morans_lisa.py to compute it.",
-                     "status": "FLAGGED — cannot be checked from current outputs",
-                     "source_file": "outputs/gpkg/map_lisa_AHP_vs_NW.gpkg (wrong comparison)"})
+        add_ref_check(rows[-1], None, None)
 
     ahp_sum = pd.read_csv(TABLES / "huff_AHP_summary.csv")
     nw_sum = pd.read_csv(TABLES / "huff_NW_summary.csv")
@@ -932,10 +1253,17 @@ def section_1_8():
                  "repository_value": f"{lj_ahp} settlements",
                  "status": "CONFIRMED" if lj_ahp == 1222 else "DIFFERS",
                  "source_file": "outputs/tables/huff_AHP_summary.csv"})
+    r_lj_ahp = ref(r"Top 15, AHP weighting: Ljubljana ([\d,]+)")
+    add_ref_check(rows[-1], f"{r_lj_ahp} settlements" if r_lj_ahp else None,
+                  None if r_lj_ahp is None else lj_ahp == int(r_lj_ahp.replace(",", "")))
+
     rows.append({"claim": "Ljubljana catchment NW", "draft_value": "1022 settlements",
                  "repository_value": f"{lj_nw} settlements",
                  "status": "CONFIRMED" if lj_nw == 1022 else "DIFFERS",
                  "source_file": "outputs/tables/huff_NW_summary.csv"})
+    r_lj_nw = ref(r"Top 15, NW weighting: Ljubljana ([\d,]+)")
+    add_ref_check(rows[-1], f"{r_lj_nw} settlements" if r_lj_nw else None,
+                  None if r_lj_nw is None else lj_nw == int(r_lj_nw.replace(",", "")))
 
     catchment_sizes = ahp_sum["dominant_municipality"].value_counts()
     top5 = catchment_sizes.head(5).sum()
@@ -945,19 +1273,46 @@ def section_1_8():
                  "repository_value": f"{top5}, {100*top5/n_total_v:.1f}%",
                  "status": "CONFIRMED" if top5 == 2147 else "DIFFERS",
                  "source_file": "outputs/tables/huff_AHP_summary.csv"})
+    top5_ref = re.search(r"Top 5 catchments combined \(AHP\): ([\d,]+) settlements, ([\d.]+)%", fm_text_1_8) if fm_text_1_8 else None
+    if top5_ref:
+        r_top5, r_top5_pct = int(top5_ref.group(1).replace(",", "")), float(top5_ref.group(2))
+        add_ref_check(rows[-1], f"{r_top5}, {r_top5_pct}%",
+                      top5 == r_top5 and abs(100*top5/n_total_v - r_top5_pct) < 0.05)
+    else:
+        add_ref_check(rows[-1], None, None)
+
     rows.append({"claim": "Top 10 catchments combined", "draft_value": "2830, 46.9%",
                  "repository_value": f"{top10}, {100*top10/n_total_v:.1f}%",
                  "status": "CONFIRMED" if top10 == 2830 else "DIFFERS",
                  "source_file": "outputs/tables/huff_AHP_summary.csv"})
+    top10_ref = re.search(r"Top 10 catchments combined \(AHP\): ([\d,]+) settlements, ([\d.]+)%", fm_text_1_8) if fm_text_1_8 else None
+    if top10_ref:
+        r_top10, r_top10_pct = int(top10_ref.group(1).replace(",", "")), float(top10_ref.group(2))
+        add_ref_check(rows[-1], f"{r_top10}, {r_top10_pct}%",
+                      top10 == r_top10 and abs(100*top10/n_total_v - r_top10_pct) < 0.05)
+    else:
+        add_ref_check(rows[-1], None, None)
+
     n_single = int((catchment_sizes == 1).sum())
     rows.append({"claim": "Municipalities with 1 settlement", "draft_value": "32",
                  "repository_value": f"{n_single}",
                  "status": "CONFIRMED" if n_single == 32 else "DIFFERS",
                  "source_file": "outputs/tables/huff_AHP_summary.csv"})
+    r_single = ref(r"Single-settlement municipalities: (\d+)")
+    add_ref_check(rows[-1], r_single, None if r_single is None else n_single == int(r_single))
+
     rows.append({"claim": "Mean catchment size", "draft_value": "28.5, median 6.0",
                  "repository_value": f"{catchment_sizes.mean():.1f}, median {catchment_sizes.median():.1f}",
                  "status": "CONFIRMED" if abs(catchment_sizes.mean() - 28.5) < 0.1 and catchment_sizes.median() == 6.0 else "DIFFERS",
                  "source_file": "outputs/tables/huff_AHP_summary.csv"})
+    r_mean = ref(r"Mean catchment size: ([\d.]+)")
+    r_median = ref(r"Median catchment size: ([\d.]+)")
+    if r_mean and r_median:
+        add_ref_check(rows[-1], f"{r_mean}, median {r_median}",
+                      abs(catchment_sizes.mean() - float(r_mean)) < 0.1
+                      and catchment_sizes.median() == float(r_median))
+    else:
+        add_ref_check(rows[-1], None, None)
 
     ahp_ml = gpd.read_file(GPKG / "map_AHP_vs_ML_villages.gpkg")
     lj_col = "AHP_dominant_muni" if "AHP_dominant_muni" in ahp_ml.columns else None
@@ -970,6 +1325,7 @@ def section_1_8():
                  "status": ("CONFIRMED" if lj_disagree == 940 else
                             ("MATCHES USER'S SUSPECTED CORRECTION (915)" if lj_disagree == 915 else "DIFFERS")),
                  "source_file": "outputs/gpkg/map_AHP_vs_ML_villages.gpkg"})
+    add_ref_check(rows[-1], None, None)  # not itemised anywhere in final_manuscript_values.md
 
     ent = pd.read_csv(TABLES / "table_entropy_summary.csv")
     ent_ahp = ent[ent["GI_scenario"] == "AHP"].iloc[0]
@@ -996,17 +1352,43 @@ def section_1_8():
                             f"DIFFERS — mean AHP {ent_ahp['mean']:.4f} vs draft ~{draft_mean_ahp}, "
                             f"mean NW {ent_nw['mean']:.4f} vs draft ~{draft_mean_nw}"),
                  "source_file": "outputs/tables/table_entropy_summary.csv"})
+    ahp_ent_ref = re.search(r"Entropy, AHP weighting: min [\-\d.]+, max ([\d.]+), mean ([\d.]+)", fm_text_1_8) if fm_text_1_8 else None
+    nw_ent_ref = re.search(r"Entropy, NW weighting: min [\-\d.]+, max ([\d.]+), mean ([\d.]+)", fm_text_1_8) if fm_text_1_8 else None
+    if ahp_ent_ref and nw_ent_ref:
+        r_ahp_max, r_ahp_mean = float(ahp_ent_ref.group(1)), float(ahp_ent_ref.group(2))
+        r_nw_max, r_nw_mean = float(nw_ent_ref.group(1)), float(nw_ent_ref.group(2))
+        ent_ref_match = (abs(ent_ahp["mean"] - r_ahp_mean) < 0.001 and abs(ent_ahp["max"] - r_ahp_max) < 0.001
+                          and abs(ent_nw["mean"] - r_nw_mean) < 0.001 and abs(ent_nw["max"] - r_nw_max) < 0.001)
+        add_ref_check(rows[-1], f"AHP mean={r_ahp_mean} max={r_ahp_max}; NW mean={r_nw_mean} max={r_nw_max}",
+                      ent_ref_match)
+    else:
+        add_ref_check(rows[-1], None, None)
 
     ahp_cv = pd.read_csv(TABLES / "ml_AHP_cv_results.csv")
     nw_cv = pd.read_csv(TABLES / "ml_NW_cv_results.csv")
+    r2_refs = refs(r"Mean R² ± sd: ([\d.]+) ± ([\d.]+)") if fm_text_1_8 else []
+
     rows.append({"claim": "RF AHP mean R squared", "draft_value": "0.845 +/- 0.088",
                  "repository_value": f"{ahp_cv['r2'].mean():.3f} +/- {ahp_cv['r2'].std():.3f}",
                  "status": "CONFIRMED" if abs(ahp_cv['r2'].mean() - 0.845) < 0.002 else "DIFFERS (rounding)",
                  "source_file": "outputs/tables/ml_AHP_cv_results.csv"})
+    if len(r2_refs) >= 1:
+        r_ahp_r2, r_ahp_sd = (float(x) for x in r2_refs[0])
+        add_ref_check(rows[-1], f"{r_ahp_r2} +/- {r_ahp_sd}",
+                      abs(ahp_cv['r2'].mean() - r_ahp_r2) < 0.002)
+    else:
+        add_ref_check(rows[-1], None, None)
+
     rows.append({"claim": "RF NW mean R squared", "draft_value": "0.844 +/- 0.066",
                  "repository_value": f"{nw_cv['r2'].mean():.3f} +/- {nw_cv['r2'].std():.3f}",
                  "status": "CONFIRMED" if abs(nw_cv['r2'].mean() - 0.844) < 0.002 else "DIFFERS (rounding)",
                  "source_file": "outputs/tables/ml_NW_cv_results.csv"})
+    if len(r2_refs) >= 2:
+        r_nw_r2, r_nw_sd = (float(x) for x in r2_refs[1])
+        add_ref_check(rows[-1], f"{r_nw_r2} +/- {r_nw_sd}",
+                      abs(nw_cv['r2'].mean() - r_nw_r2) < 0.002)
+    else:
+        add_ref_check(rows[-1], None, None)
 
     commute = pd.read_csv(TABLES / "table_huff_vs_commuting_summary.csv")
     n_agree_com = int(commute['n_agree'].iloc[0])
@@ -1018,6 +1400,15 @@ def section_1_8():
                                       f"{n_agree_com}/{n_muni_com}, kappa {kappa_com:.4f}",
                  "status": "CONFIRMED" if commute_matches else "DIFFERS",
                  "source_file": "outputs/tables/table_huff_vs_commuting_summary.csv"})
+    commute_ref = re.search(r"Agreement: ([\d.]+)% \(([\d,]+) / ([\d,]+) municipalities\)", fm_text_1_8) if fm_text_1_8 else None
+    kappa_ref = ref(r"Cohen's kappa: ([\d.]+)")
+    if commute_ref and kappa_ref:
+        r_pct, r_n_agree, r_n_muni = float(commute_ref.group(1)), int(commute_ref.group(2)), int(commute_ref.group(3))
+        r_kappa = float(kappa_ref)
+        add_ref_check(rows[-1], f"{r_pct}%, {r_n_agree}/{r_n_muni}, kappa {r_kappa}",
+                      n_agree_com == r_n_agree and n_muni_com == r_n_muni and abs(kappa_com - r_kappa) < 0.002)
+    else:
+        add_ref_check(rows[-1], None, None)
 
     commute_full = pd.read_csv(TABLES / "table_huff_vs_commuting.csv")
     n_centres = int(commute_full["commuting_is_centre"].sum())
@@ -1025,6 +1416,8 @@ def section_1_8():
                  "repository_value": f"{n_centres}",
                  "status": "CONFIRMED" if n_centres == 101 else "DIFFERS",
                  "source_file": "outputs/tables/table_huff_vs_commuting.csv"})
+    r_centres = ref(r"Functional centres \(Huff self-flow dominant\): (\d+)")
+    add_ref_check(rows[-1], r_centres, None if r_centres is None else n_centres == int(r_centres))
 
     beta = pd.read_csv(TABLES / "table_beta_sensitivity_clean.csv")
     non_trivial = beta[beta["beta"] != BETA]
@@ -1033,6 +1426,33 @@ def section_1_8():
                  "repository_value": krange,
                  "status": "CONFIRMED" if krange == "0.732 to 0.826" else "DIFFERS",
                  "source_file": "outputs/tables/table_beta_sensitivity_clean.csv"})
+    beta_kappas = re.findall(r"β=[123]\.[05] → [\d.]+% / ([\d.]+)", fm_text_1_8) if fm_text_1_8 else []
+    if len(beta_kappas) == 3:
+        r_kappas = sorted(float(k) for k in beta_kappas)
+        r_krange = f"{r_kappas[0]:.3f} to {r_kappas[-1]:.3f}"
+        add_ref_check(rows[-1], r_krange,
+                      abs(non_trivial['cohen_kappa'].min() - r_kappas[0]) < 0.002
+                      and abs(non_trivial['cohen_kappa'].max() - r_kappas[-1]) < 0.002)
+    else:
+        add_ref_check(rows[-1], None, None)
+
+    # One closing sweep over every row collected above, rather than an
+    # individual record_failure call at each of the ~20 individual claims
+    # in this section. Gates on ref_status (this run vs
+    # docs/final_manuscript_values.md, the maintained reference), not on
+    # `status` (this run vs the original manuscript draft) — the draft
+    # comparison is expected to differ permanently for reasons already
+    # documented in docs/reproducibility_note.md, so treating it as a
+    # failure would make this script fail every run forever regardless of
+    # whether anything is actually wrong. A row with no reference value at
+    # all ("no reference value") is reported but never gates failure,
+    # per the same "say so rather than inventing a target" rule used
+    # throughout this file.
+    for row in rows:
+        if row["ref_status"] == "DIFFERS vs reference":
+            record_failure("1.8", f"{row['claim']}: repository {row['repository_value']}, "
+                                   f"final_manuscript_values.md {row['reference_value']} "
+                                   f"(draft was {row['draft_value']})")
 
     df = pd.DataFrame(rows)
     df.to_csv(AUDIT_DIR / "manuscript_number_check.csv", index=False)
@@ -1069,7 +1489,15 @@ def main():
     report_path = AUDIT_DIR / "data_audit_report.md"
     report_path.write_text("\n".join(REPORT), encoding="utf-8")
     print(f"\nSaved {report_path}")
-    print("Done.")
+
+    if CHECK_FAILURES:
+        print(f"\n=== {len(CHECK_FAILURES)} CHECK(S) FAILED ===")
+        for f in CHECK_FAILURES:
+            print(f"  - {f}")
+        print("\nSee the sections above and data_audit_report.md for full detail.")
+        sys.exit(1)
+
+    print("Done. All checks passed.")
 
 
 if __name__ == "__main__":
