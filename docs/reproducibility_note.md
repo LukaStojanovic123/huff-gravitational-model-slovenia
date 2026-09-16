@@ -306,3 +306,33 @@ this file: a broken check (`DO NOT MATCH` / `NaN`, printed) that nothing treated
 failure. `17_data_audit.py::main()` now exits non-zero if any section records a real failure
 — see the top-level `record_failure` / `CHECK_FAILURES` mechanism in that script — specifically
 so that a bug shaped like this one cannot again sit unnoticed in printed output for months.
+
+## A Table 7 relabeling that was not a regression, once checked against current data
+
+`10_commuting_comparison.py`'s `classify_pattern()` — unchanged, byte-for-byte, since the
+script was first created — has always defined "Pattern 1" as Huff-self-contained /
+commuting-external, and "Pattern 2" as commuting-self-contained / Huff-external. When
+`table7_commuting_comparison.csv` was built (promoting a local, untracked prototype file
+into a real pipeline output), an earlier hand-built version of that prototype had swapped the
+English descriptions attached to each pattern's count relative to `classify_pattern()`'s own
+convention. The fix wrote `table7_commuting_comparison.csv` to match `classify_pattern()`
+instead of the prototype.
+
+That fix was then itself questioned, based on a manual, by-hand verification of one
+municipality done earlier in this project, before it — asserting the opposite pairing: Huff-
+external/commuting-self-contained at 31 municipalities, not 22. Checked three separate ways
+against the *current* `table_huff_vs_commuting.csv`, with zero reference to either
+`classify_pattern()`'s labels or the prototype's: a full 2x2 cross-tab of
+`huff_majority_centre == SIFRA` against `commuting_is_centre`; the `pattern` column's own
+per-row consistency; and a plain-language filter with no pattern labels at all, printing the
+full municipality list for each group. All three agree, exactly: Huff-self-contained /
+commuting-external is 31 municipalities, commuting-self-contained / Huff-external is 22 —
+matching `classify_pattern()`, not the earlier by-hand check.
+
+**Conclusion: the by-hand verification was stale, not the code.** It most likely predates one
+or more of the corrections documented elsewhere in this file that changed `huff_majority_centre`
+assignments broadly (the road-network fix, the NW-target model refit) — a specific
+municipality checked by hand before those landed would no longer necessarily fall in the same
+group afterward. `classify_pattern()` itself was never edited during this investigation;
+`table7_commuting_comparison.csv` already matched it correctly from the commit that created
+it, and needed no further change.
