@@ -151,8 +151,13 @@ def main():
             "beta": beta,
             "n_villages": n_total,
             "n_agree": n_agree,
-            "agreement_pct": agreement_pct,
-            "cohen_kappa": kappa,
+            # Rounded here, at the source, not just in a downstream copy —
+            # a previous fix rounded table5/tableS4's copies directly and
+            # the next rerun of this script silently reverted it back to
+            # full float64 precision, since neither copy is this script's
+            # own output.
+            "agreement_pct": round(agreement_pct, 2),
+            "cohen_kappa": round(kappa, 4),
             "ljubljana_catchment": ljubljana_catchment,
             "maribor_catchment": maribor_catchment,
         })
