@@ -475,6 +475,11 @@ EXPECTED_OUTPUTS = {
         SUPPLEMENTARY / "tableS2_AHP_priority_weights.csv",
         SUPPLEMENTARY / "tableS3_individual_indicator_weights.csv",
         SUPPLEMENTARY / "tableS4_beta_sensitivity.csv",
+        # S5-S7 are written by 12_morans_lisa.py, 14_ml_catchment_structure.py
+        # and 17_data_audit.py respectively, not by this script.
+        SUPPLEMENTARY / "tableS5_lisa_summary.csv",
+        SUPPLEMENTARY / "tableS6_rf_catchment_sizes.csv",
+        SUPPLEMENTARY / "tableS7_road_network_statistics.csv",
     ],
     "outputs/figures": [
         FIGURES / "fig_beta_sensitivity.png",
@@ -526,32 +531,41 @@ EXPECTED_OUTPUTS = {
 def print_checklist():
     """Print, for every file in EXPECTED_OUTPUTS, whether it currently exists on disk.
 
-    Raises if anything is missing. A SKIP earlier in this script (an
-    upstream prerequisite wasn't found) is a deliberate tolerance for
-    running this script on its own or out of order; by the time the full
-    pipeline reaches this point every prerequisite should exist, so a gap
-    here means something upstream silently failed to produce it.
+    Informational only — does not raise. EXPECTED_OUTPUTS deliberately
+    covers the whole 18-script pipeline's output, not just what this
+    script itself produces (see its own comments: "src/12, 13, 14",
+    "LISA for all three comparisons (src/12)", "Study area... (src/16)"),
+    but this script runs at position 11, strictly before 12 through 18 in
+    the documented run order. A previous version of this function raised
+    on any missing file — which meant a genuine, fresh, top-to-bottom
+    pipeline run would crash here every single time, since scripts 12-18
+    genuinely have not produced anything yet at this point. That this
+    wasn't caught immediately is itself an instance of the exact failure
+    mode this whole remediation has been fixing: the fix was verified by
+    rerunning 11_export_outputs.py after 12-18 had already completed
+    earlier in the same working session, which made the check pass for
+    the wrong reason (everything already existed on disk from prior
+    unrelated runs) rather than the right one (this script's own position
+    in a genuine single pass). 18_output_manifest.py is the correctly
+    positioned hard gate for "is everything present" — it runs last, and
+    checks each script's own OUTPUT_FILES declaration against reality
+    regardless of when it's invoked, which this checklist's whole-pipeline
+    scope can never safely do from position 11.
     """
     print("=== OUTPUT CHECKLIST ===")
     total = 0
     present = 0
-    missing_files = []
     for group, paths in EXPECTED_OUTPUTS.items():
         print(f"\n{group}/")
         for p in paths:
             total += 1
             ok = p.exists()
             present += int(ok)
-            if not ok:
-                missing_files.append(str(p))
             print(f"  {'OK     ' if ok else 'MISSING'} {p.name}")
-    print(f"\n{present}/{total} expected output files present.")
-    if missing_files:
-        raise RuntimeError(
-            f"{len(missing_files)} expected output file(s) missing after export: "
-            f"{missing_files}. Check the SKIP messages above for which upstream "
-            "script needs to run first."
-        )
+    print(f"\n{present}/{total} expected output files present "
+          f"(informational — includes files scripts 12-18 have not produced yet "
+          f"if this is a genuine single top-to-bottom run; see 18_output_manifest.py "
+          f"for the authoritative completeness gate).")
 
 
 def main():

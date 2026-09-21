@@ -20,8 +20,9 @@ Reads: huff_AHP_summary.csv, huff_NW_summary.csv, ml_AHP_vs_AHP_comparison.csv,
 ml_NW_vs_NW_comparison.csv, ml_AHP_feature_importance.csv,
 ml_NW_feature_importance.csv — all already computed by 03, 04 and 06.
 
-Writes: table_ml_catchment_sizes.csv, table_feature_importance_comparison.csv,
-fig_feature_importance_comparison.png/.pdf.
+Writes: table_ml_catchment_sizes.csv (plus the same content saved again as
+Supplementary Table S6, tableS6_rf_catchment_sizes.csv),
+table_feature_importance_comparison.csv, fig_feature_importance_comparison.png/.pdf.
 
 Runs fourteenth. Needs 03, 04 and 06's outputs.
 """
@@ -46,6 +47,7 @@ FI_COMPARISON_FIG_PATH = FIGURES / "fig_feature_importance_comparison"
 OUTPUT_FILES = [
     "tables/table_ml_catchment_sizes.csv",
     "tables/table_feature_importance_comparison.csv",
+    "supplementary/tableS6_rf_catchment_sizes.csv",
     "figures/fig_feature_importance_comparison.png",
     "figures/fig_feature_importance_comparison.pdf",
 ]
@@ -111,6 +113,17 @@ def catchment_sizes():
           f"model's top {TOP_N} by catchment size, since the RF hierarchy differs "
           f"substantially from the Huff hierarchies and a plain AHP-top-20 slice "
           f"would hide that)")
+
+    # Supplementary Table S6 — same DataFrame, saved a second time under the
+    # manuscript-facing name, not re-read from disk. Note this is the union
+    # of each model's top 20 (24 municipalities), not a table trimmed to
+    # exactly 15 rows — sorting this file by RF_AHP_target_size or
+    # RF_NW_target_size and taking the top 15 reproduces the manuscript's
+    # stated top-15 lists for both RF models exactly.
+    table_s6_path = SUPPLEMENTARY / "tableS6_rf_catchment_sizes.csv"
+    SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
+    top_df.to_csv(table_s6_path, index=False)
+    print(f"Saved {table_s6_path}")
     print()
     print(top_df.to_string(index=False))
     print()

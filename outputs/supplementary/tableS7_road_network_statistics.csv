@@ -1,0 +1,16 @@
+metric,value
+Road classes retained,14: motorway; motorway_link; trunk; trunk_link; primary; primary_link; secondary; secondary_link; tertiary; tertiary_link; residential; living_street; unclassified; service
+Road classes excluded,14: bridleway; busway; cycleway; footway; path; pedestrian; steps; track; track_grade1; track_grade2; track_grade3; track_grade4; track_grade5; unknown
+Filtered segments (pre-noding),254252
+"Total drivable length, pre-noding (km)",55061.7
+"Noded segments (largest connected component, saved file)",435935
+Graph edges (largest connected component),435935
+"Total nodes before largest-component filter (cited, not independently recomputed here — see note above)",394874
+"Graph nodes, largest connected component",390273
+"Largest component as % of pre-filter nodes (cited, not independently recomputed here — see note above)",98.8
+Largest component drivable length (km),54431.8
+"Municipality snapping distance, mean (m)",39.5
+"Municipality snapping distance, max (m)",297.5
+"Settlement snapping distance, mean (m)",58.3
+"Settlement snapping distance, max (m)",1470.5
+Settlements snapped > 500 m,77

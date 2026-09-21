@@ -27,7 +27,10 @@ Reads: nearly everything — the raw data files directly, and the outputs
 of 01 through 17.
 
 Writes: data_audit_report.md, raw_input_inventory.csv, indicator_audit.csv,
-GI_full_212_municipalities.csv, manuscript_number_check.csv.
+GI_full_212_municipalities.csv, manuscript_number_check.csv, and
+supplementary/tableS7_road_network_statistics.csv (assembled from values
+this section's own section 1.4 already independently recomputes, not a
+separate computation).
 
 Runs seventeenth, second to last — after every script whose numbers it
 checks, before only 18_output_manifest.py.
@@ -71,6 +74,7 @@ OUTPUT_FILES = [
     "audit/GI_full_212_municipalities.csv",
     "audit/manuscript_number_check.csv",
     "audit/data_audit_report.md",
+    "supplementary/tableS7_road_network_statistics.csv",
 ]
 SRC_DIR = Path(__file__).resolve().parent
 NODED_ROADS_PATH = DATA_PROCESSED / "roads_noded.gpkg"
@@ -649,6 +653,42 @@ def section_1_4(G, node_list, node_coords, tree, noded):
     _check_against_reference("1.4", "Settlements snapped > 500 m", n_gt500,
                               r"Settlements snapped > 500 m:\s*(\d+)", 0, is_int=True)
     log("")
+
+    # Supplementary Table S7 — road network statistics, assembled from the
+    # values this section already independently recomputed above (including
+    # the largest-component length, summed fresh from roads_noded.gpkg's
+    # own length_m column). Two exceptions, both clearly labelled rather
+    # than silently presented as equally verified: total nodes before the
+    # largest-component filter (394,874) and that filter's percentage
+    # (98.8%, the audit-corrected figure — see the CONFIRMED/DIFFERS check
+    # above for why not 98.9%) are not recoverable from `roads_noded.gpkg`
+    # as saved, since that file is already filtered to a single component —
+    # there is no pre-filter graph left to recompute them from without
+    # re-noding the raw segments from scratch. They are carried from
+    # final_manuscript_values.md / data_audit_report.md's own citation, not
+    # independently verified here.
+    s7_rows = [
+        {"metric": "Road classes retained", "value": f"{len(mod02.FCLASS_KEEP)}: " + "; ".join(mod02.FCLASS_KEEP)},
+        {"metric": "Road classes excluded", "value": f"{len(excluded_classes)}: " + "; ".join(excluded_classes)},
+        {"metric": "Filtered segments (pre-noding)", "value": n_before},
+        {"metric": "Total drivable length, pre-noding (km)", "value": round(total_len_km, 1)},
+        {"metric": "Noded segments (largest connected component, saved file)", "value": n_after},
+        {"metric": "Graph edges (largest connected component)", "value": n_edges},
+        {"metric": "Total nodes before largest-component filter (cited, not independently recomputed here — see note above)", "value": 394874},
+        {"metric": "Graph nodes, largest connected component", "value": n_nodes},
+        {"metric": "Largest component as % of pre-filter nodes (cited, not independently recomputed here — see note above)", "value": 98.8},
+        {"metric": "Largest component drivable length (km)", "value": round(noded["length_m"].sum() / 1000, 1)},
+        {"metric": "Municipality snapping distance, mean (m)", "value": round(muni_dist.mean(), 1)},
+        {"metric": "Municipality snapping distance, max (m)", "value": round(muni_dist.max(), 1)},
+        {"metric": "Settlement snapping distance, mean (m)", "value": round(village_dist.mean(), 1)},
+        {"metric": "Settlement snapping distance, max (m)", "value": round(village_dist.max(), 1)},
+        {"metric": "Settlements snapped > 500 m", "value": n_gt500},
+    ]
+    s7_df = pd.DataFrame(s7_rows)
+    s7_path = SUPPLEMENTARY / "tableS7_road_network_statistics.csv"
+    SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
+    s7_df.to_csv(s7_path, index=False)
+    log(f"Saved `{s7_path.name}` (Supplementary Table S7).\n")
 
     return {
         "n_before_noding": n_before, "total_length_km": total_len_km, "n_after_noding": n_after,

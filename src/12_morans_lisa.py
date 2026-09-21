@@ -19,8 +19,9 @@ since both describe the same underlying agreement layers.
 Reads: the four agreement map GPKGs built by 11_export_outputs.py.
 
 Writes: table_morans_i_results.csv, table_three_way_agreement.csv,
-table_join_counts.csv, table_lisa_summary.csv, and one map_lisa_*.gpkg
-layer per comparison.
+table_join_counts.csv, table_lisa_summary.csv (plus the same content
+saved again as Supplementary Table S5, tableS5_lisa_summary.csv), and
+one map_lisa_*.gpkg layer per comparison.
 
 Runs after 11_export_outputs.py — its position right after 11 in the
 numbering is deliberate: this script depends on the maps 11 builds, and
@@ -44,13 +45,14 @@ import esda
 from esda.join_counts import Join_Counts
 from sklearn.metrics import cohen_kappa_score
 
-from config import GPKG, TABLES
+from config import GPKG, TABLES, SUPPLEMENTARY
 
 OUTPUT_FILES = [
     "tables/table_morans_i_results.csv",
     "tables/table_three_way_agreement.csv",
     "tables/table_join_counts.csv",
     "tables/table_lisa_summary.csv",
+    "supplementary/tableS5_lisa_summary.csv",
     "gpkg/map_lisa_AHP_vs_NW.gpkg",
     "gpkg/map_lisa_AHP_vs_ML.gpkg",
     "gpkg/map_lisa_NW_vs_ML.gpkg",
@@ -96,6 +98,7 @@ LISA_OUTPUT_PATHS = {
 RESULTS_PATH = TABLES / "table_morans_i_results.csv"
 THREE_WAY_PATH = TABLES / "table_three_way_agreement.csv"
 LISA_SUMMARY_PATH = TABLES / "table_lisa_summary.csv"
+TABLE_S5_PATH = SUPPLEMENTARY / "tableS5_lisa_summary.csv"
 
 SIGNIFICANCE_LEVEL = 0.05
 LISA_SEED = 42
@@ -331,6 +334,13 @@ def main():
     lisa_summary_df = pd.DataFrame(lisa_summary_rows)
     lisa_summary_df.to_csv(LISA_SUMMARY_PATH, index=False)
     print(f"Saved {LISA_SUMMARY_PATH}")
+
+    # Supplementary Table S5 — same DataFrame, saved a second time under the
+    # manuscript-facing name, not re-read from disk, so the two copies can
+    # never drift apart.
+    SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
+    lisa_summary_df.to_csv(TABLE_S5_PATH, index=False)
+    print(f"Saved {TABLE_S5_PATH}")
 
     print()
     print("Done.")

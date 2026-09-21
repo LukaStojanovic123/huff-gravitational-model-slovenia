@@ -179,6 +179,8 @@ Saved `GI_full_212_municipalities.csv` (212 municipalities, 10 NW group scores +
 - Settlement snapping distance, max (m): 1470.5  (final_manuscript_values.md: 1,470.5) — CONFIRMED
 - Settlements snapped > 500 m: 77  (final_manuscript_values.md: 77) — CONFIRMED
 
+Saved `tableS7_road_network_statistics.csv` (Supplementary Table S7).
+
 ## 1.5 Origin-destination matrix audit
 
 `data/processed/distance_matrix.npy` is absent (see 1.1), so this matrix is reconstructed directly here via the identical Dijkstra procedure used by `03_huff_ahp.py::compute_distance_matrix`, to recover true pre-fill NaN counts.

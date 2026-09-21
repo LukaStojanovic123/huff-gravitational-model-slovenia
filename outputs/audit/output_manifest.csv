@@ -63,6 +63,9 @@ outputs/supplementary/tableS1_indicators_sources.csv,11_export_outputs.py
 outputs/supplementary/tableS2_AHP_priority_weights.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
 outputs/supplementary/tableS3_individual_indicator_weights.csv,01_gi_construction.py
 outputs/supplementary/tableS4_beta_sensitivity.csv,11_export_outputs.py
+outputs/supplementary/tableS5_lisa_summary.csv,12_morans_lisa.py
+outputs/supplementary/tableS6_rf_catchment_sizes.csv,14_ml_catchment_structure.py
+outputs/supplementary/tableS7_road_network_statistics.csv,17_data_audit.py
 outputs/tables/accessibility_normalized.csv,05_accessibility.py
 outputs/tables/accessibility_raw_distances.csv,05_accessibility.py
 outputs/tables/huff_AHP_summary.csv,03_huff_ahp.py
