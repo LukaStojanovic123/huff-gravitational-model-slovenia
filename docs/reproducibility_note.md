@@ -336,3 +336,27 @@ municipality checked by hand before those landed would no longer necessarily fal
 group afterward. `classify_pattern()` itself was never edited during this investigation;
 `table7_commuting_comparison.csv` already matched it correctly from the commit that created
 it, and needed no further change.
+
+## A latent gap in table_ml_catchment_sizes.csv's union logic
+
+`14_ml_catchment_structure.py::catchment_sizes()` builds `table_ml_catchment_sizes.csv` by
+taking the union of each model's own top `TOP_N` (20) municipalities by catchment size, across
+four separate rankings — but only three of the four rank columns it computes are actually
+included in that union: `rank_AHP_Huff_size`, `rank_NW_Huff_size`, and
+`rank_RF_AHP_target_size`. `rank_RF_NW_target_size` is computed (it appears as a column in the
+saved table) but never contributes to which municipalities get selected into the union.
+
+This is currently harmless: every municipality in RF(NW-target)'s real top 15 already enters
+the table via one of the other three rankings (confirmed while building Supplementary Table S6
+from the same underlying data — see that table's own construction, which unions
+`RF_AHP_target_size` and `RF_NW_target_size` top-15 directly and independently, with no such
+gap). But it is a real gap in `table_ml_catchment_sizes.csv`'s own selection logic, not just an
+appearance of one: if the RF(NW-target) model's catchment hierarchy were ever to diverge enough
+from the other three rankings that some municipality ranked highly under
+`RF_NW_target_size` alone and nowhere else, that municipality would be silently dropped from
+`table_ml_catchment_sizes.csv` without any error or warning — the same "reported but not
+checked" shape as several other findings in this file, just not yet manifested as a wrong
+number in anything currently published. Worth fixing (add
+`set(full["rank_RF_NW_target_size"][full["rank_RF_NW_target_size"] <= TOP_N].index)` to the
+union in `catchment_sizes()`) if this table's selection logic is ever reused for a different
+`TOP_N` cutoff or a different set of models, where the current coincidence may not hold.

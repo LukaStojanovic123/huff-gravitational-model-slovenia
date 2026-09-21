@@ -20,8 +20,10 @@ Reads: huff_AHP_summary.csv, huff_NW_summary.csv, ml_AHP_vs_AHP_comparison.csv,
 ml_NW_vs_NW_comparison.csv, ml_AHP_feature_importance.csv,
 ml_NW_feature_importance.csv — all already computed by 03, 04 and 06.
 
-Writes: table_ml_catchment_sizes.csv (plus the same content saved again as
-Supplementary Table S6, tableS6_rf_catchment_sizes.csv),
+Writes: table_ml_catchment_sizes.csv, plus Supplementary Table S6
+(tableS6_rf_catchment_sizes.csv — a narrower, distinct selection: the
+union of each RF model's own top 15 by catchment size, not this table's
+top-20-per-model union),
 table_feature_importance_comparison.csv, fig_feature_importance_comparison.png/.pdf.
 
 Runs fourteenth. Needs 03, 04 and 06's outputs.
@@ -114,18 +116,31 @@ def catchment_sizes():
           f"substantially from the Huff hierarchies and a plain AHP-top-20 slice "
           f"would hide that)")
 
-    # Supplementary Table S6 — same DataFrame, saved a second time under the
-    # manuscript-facing name, not re-read from disk. Note this is the union
-    # of each model's top 20 (24 municipalities), not a table trimmed to
-    # exactly 15 rows — sorting this file by RF_AHP_target_size or
-    # RF_NW_target_size and taking the top 15 reproduces the manuscript's
-    # stated top-15 lists for both RF models exactly.
+    # Supplementary Table S6 — a distinct, narrower selection from `full`
+    # (all 212 municipalities), not a slice of top_df above: exactly the
+    # union of each RF model's own top 15 by its own catchment size, each
+    # municipality appearing once even if it ranks in both models' top 15,
+    # with the corresponding Huff catchment size (both weighting schemes)
+    # for each. top_df above is a different, broader selection (each
+    # model's top TOP_N=20, four rankings including the two Huff ones) kept
+    # unchanged as this script's own main table.
+    rf_ahp_top15 = set(full["RF_AHP_target_size"].rank(ascending=False, method="min")
+                        [lambda r: r <= 15].index)
+    rf_nw_top15 = set(full["RF_NW_target_size"].rank(ascending=False, method="min")
+                       [lambda r: r <= 15].index)
+    s6_munis = sorted(rf_ahp_top15 | rf_nw_top15)
+    s6_df = full.loc[s6_munis, ["AHP_Huff_size", "NW_Huff_size",
+                                 "RF_AHP_target_size", "RF_NW_target_size"]] \
+        .sort_values("RF_AHP_target_size", ascending=False).reset_index()
+
     table_s6_path = SUPPLEMENTARY / "tableS6_rf_catchment_sizes.csv"
     SUPPLEMENTARY.mkdir(parents=True, exist_ok=True)
-    top_df.to_csv(table_s6_path, index=False)
-    print(f"Saved {table_s6_path}")
+    s6_df.to_csv(table_s6_path, index=False)
+    print(f"Saved {table_s6_path} ({len(s6_df)} municipalities — union of RF(AHP-target)'s "
+          f"own top 15 and RF(NW-target)'s own top 15 by catchment size, each municipality "
+          f"once, with both Huff catchment sizes alongside)")
     print()
-    print(top_df.to_string(index=False))
+    print(s6_df.to_string(index=False))
     print()
 
     lj = full.loc["Ljubljana"]
