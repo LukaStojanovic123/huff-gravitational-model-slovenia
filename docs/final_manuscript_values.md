@@ -155,13 +155,13 @@ representative draw, not an exactly reproducible constant.
 - Disagreement synthesis (n_disagree=2): 1,234 settlements, 20.44% (`table_disagreement_synthesis.csv`)
 - Disagreement synthesis (n_disagree=3): 62 settlements, 1.03% (`table_disagreement_synthesis.csv`)
 - Entropy x n_disagree crosstab, n_disagree=0: low 397, medium 1,646, high 1,905 (of 3,948)
-  (`map_disagreement_count_villages.gpkg`)
+  (`table6_entropy_by_divergence.csv`)
 - Entropy x n_disagree crosstab, n_disagree=1: low 0, medium 130, high 662 (of 792)
-  (`map_disagreement_count_villages.gpkg`)
+  (`table6_entropy_by_divergence.csv`)
 - Entropy x n_disagree crosstab, n_disagree=2: low 0, medium 112, high 1,122 (of 1,234)
-  (`map_disagreement_count_villages.gpkg`)
+  (`table6_entropy_by_divergence.csv`)
 - Entropy x n_disagree crosstab, n_disagree=3: low 0, medium 4, high 58 (of 62)
-  (`map_disagreement_count_villages.gpkg`)
+  (`table6_entropy_by_divergence.csv`)
 
 ## Commuting comparison
 
