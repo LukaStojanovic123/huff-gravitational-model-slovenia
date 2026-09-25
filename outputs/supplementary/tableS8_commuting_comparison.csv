@@ -1,0 +1,10 @@
+category,Number of municipalities,Share (%)
+Agreement,146,68.87
+"Pattern 1: Huff self-contained, Commuting external",31,14.62
+"Pattern 2: Commuting self-contained, Huff external",22,10.38
+"Pattern 3: Both external, different centre",13,6.13
+Total,212,100.0
+Cohen's kappa,0.6755,
+Commuting-based self-contained municipalities,101,
+Huff-based self-contained municipalities,110,
+Self-contained under both definitions,79,

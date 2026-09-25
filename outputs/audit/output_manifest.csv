@@ -66,6 +66,7 @@ outputs/supplementary/tableS4_beta_sensitivity.csv,11_export_outputs.py
 outputs/supplementary/tableS5_lisa_summary.csv,12_morans_lisa.py
 outputs/supplementary/tableS6_rf_catchment_sizes.csv,14_ml_catchment_structure.py
 outputs/supplementary/tableS7_road_network_statistics.csv,17_data_audit.py
+outputs/supplementary/tableS8_commuting_comparison.csv,11_export_outputs.py
 outputs/tables/accessibility_normalized.csv,05_accessibility.py
 outputs/tables/accessibility_raw_distances.csv,05_accessibility.py
 outputs/tables/huff_AHP_summary.csv,03_huff_ahp.py
@@ -74,9 +75,7 @@ outputs/tables/huff_NW_summary.csv,04_huff_nonweighted.py
 outputs/tables/huff_od_matrix.csv,03_huff_ahp.py
 outputs/tables/ml_AHP_cv_results.csv,06_ml_framework.py
 outputs/tables/ml_AHP_feature_importance.csv,06_ml_framework.py
-outputs/tables/ml_AHP_feature_importance_original.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
 outputs/tables/ml_AHP_vs_AHP_comparison.csv,06_ml_framework.py
-outputs/tables/ml_AHP_vs_AHP_comparison_original.csv,"(none — maintained directly, see KNOWN_NON_SCRIPT_OUTPUTS)"
 outputs/tables/ml_NW_cv_results.csv,06_ml_framework.py
 outputs/tables/ml_NW_feature_importance.csv,06_ml_framework.py
 outputs/tables/ml_NW_vs_NW_comparison.csv,06_ml_framework.py

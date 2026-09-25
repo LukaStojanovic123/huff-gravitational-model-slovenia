@@ -3,7 +3,7 @@ Step 11 of the pipeline: assemble every paper-ready table, figure and map
 layer into outputs/, and report which of them are actually present.
 
 What this script does: three things. First, it builds or copies table1,
-table3-5 and four supplementary tables into outputs/tables/ and
+table3-5 and five supplementary tables into outputs/tables/ and
 outputs/supplementary/, computing the ones that are pure derivations
 directly from other outputs rather than trusting a possibly stale
 pre-existing copy (see consolidate_tables below) — Table 2 is
@@ -22,8 +22,9 @@ silently absent.
 Reads: whichever upstream outputs each table/map needs — see the specific
 functions below and the EXPECTED_OUTPUTS checklist for the full list.
 
-Writes: table1, table3-5, tableS1-S4, the four agreement map GPKGs, and
-fig07_feature_importance.png/.pdf, listed in full in OUTPUT_FILES below.
+Writes: table1, table3-5, tableS1-S4, tableS8, the four agreement map
+GPKGs, and fig07_feature_importance.png/.pdf, listed in full in
+OUTPUT_FILES below.
 
 Runs eleventh, after every other numbered table- or map-producing script
 it depends on (03, 04, 06, 07). 12_morans_lisa.py in turn depends on the
@@ -60,6 +61,7 @@ OUTPUT_FILES = [
     "tables/table5_beta_sensitivity.csv",
     "supplementary/tableS1_indicators_sources.csv",
     "supplementary/tableS4_beta_sensitivity.csv",
+    "supplementary/tableS8_commuting_comparison.csv",
     "figures/fig07_feature_importance.png",
     "figures/fig07_feature_importance.pdf",
     "gpkg/map_AHP_vs_NW_villages.gpkg",
@@ -150,7 +152,7 @@ def build_cv_performance_table(out_path, label):
 
 
 def consolidate_tables():
-    """Build/copy the paper's final tables (table1, table3-4, tableS1-S4) into place.
+    """Build/copy the paper's final tables (table1, table3-4, tableS1-S4, tableS8) into place.
 
     table1 and tableS1 are genuine inputs (the AHP pairwise-comparison result
     and the indicator source citations) that no script computes from data —
@@ -208,6 +210,15 @@ def consolidate_tables():
     # pipeline verification.
     safe_copy(DATA_EXTERNAL / "tableS1_indicators_sources.csv",
               SUPPLEMENTARY / "tableS1_indicators_sources.csv", "tableS1_indicators_sources")
+
+    # tableS8: the Huff-vs-commuting pattern breakdown, already computed by
+    # 10_commuting_comparison.py (which runs before this script) into
+    # table7_commuting_comparison.csv — a plain copy, same pattern as
+    # tableS4/table5 above, not a recomputation, so it can never drift from
+    # the counts 10_commuting_comparison.py actually derived (Pattern 1/2/3
+    # = 31/22/13, cross-checked against table_huff_vs_commuting_summary.csv).
+    safe_copy(TABLES / "table7_commuting_comparison.csv",
+              SUPPLEMENTARY / "tableS8_commuting_comparison.csv", "tableS8_commuting_comparison")
 
     # tableS2 is maintained directly (an AHP pairwise-comparison judgment,
     # not something any script computes) — just check it is present.
@@ -480,6 +491,7 @@ EXPECTED_OUTPUTS = {
         SUPPLEMENTARY / "tableS5_lisa_summary.csv",
         SUPPLEMENTARY / "tableS6_rf_catchment_sizes.csv",
         SUPPLEMENTARY / "tableS7_road_network_statistics.csv",
+        SUPPLEMENTARY / "tableS8_commuting_comparison.csv",
     ],
     "outputs/figures": [
         FIGURES / "fig_beta_sensitivity.png",
